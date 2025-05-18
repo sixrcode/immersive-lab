@@ -251,7 +251,6 @@ export default function PromptToPrototypePage() {
 
 
   const handleImageAction = (action: 'thumbsUp' | 'thumbsDown' | 'share') => {
-    // Placeholder actions
     switch (action) {
       case 'thumbsUp':
         toast({ title: "Feedback Submitted (Placeholder)", description: "Thanks for the thumbs up!" });
@@ -262,8 +261,8 @@ export default function PromptToPrototypePage() {
       case 'share':
         if (results?.moodBoardImage && !isPlaceholderImage) {
             navigator.clipboard.writeText(results.moodBoardImage)
-            .then(() => toast({ title: "Image URL Copied (Placeholder)", description: "Image URL copied to clipboard."}))
-            .catch(() => toast({ title: "Share Failed", description: "Could not copy image URL.", variant: "destructive" }));
+            .then(() => toast({ title: "Image Data URI Copied", description: "Image data URI copied. This is not a direct shareable link for others."}))
+            .catch(() => toast({ title: "Share Failed", description: "Could not copy image data URI.", variant: "destructive" }));
         } else {
             toast({ title: "Share Failed", description: "No image to share.", variant: "destructive" });
         }
@@ -448,10 +447,10 @@ export default function PromptToPrototypePage() {
                     headerActions={
                       <>
                         <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
-                            <Download className="h-4 w-4" />
+                            <Download />
                         </Button>
                         <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
-                           <Copy className="h-4 w-4" />
+                           <Copy />
                         </Button>
                        </>
                     }
@@ -486,7 +485,7 @@ export default function PromptToPrototypePage() {
                               aria-label="Download mood board image"
                               disabled={!results.moodBoardImage || isPlaceholderImage}
                             >
-                              <Download className="h-4 w-4" />
+                              <Download />
                             </Button>
                           )}
                           {results.moodBoardCellsJsonString && (
@@ -497,7 +496,7 @@ export default function PromptToPrototypePage() {
                               onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
                               aria-label="Copy mood board themes JSON to clipboard"
                             >
-                              <Copy className="h-4 w-4" />
+                              <Copy />
                             </Button>
                           )}
                        </>
@@ -648,8 +647,7 @@ export default function PromptToPrototypePage() {
                     aria-label="Download all text assets as JSON"
                     disabled={isLoading || !results}
                 >
-                    <FileJson className="mr-2 h-4 w-4" />
-                    Download All Text Assets
+                    <FileJson />
                 </Button>
             )}
             <Button
@@ -660,8 +658,7 @@ export default function PromptToPrototypePage() {
                 aria-label="Print or Save as PDF"
                 disabled={isLoading || !results}
             >
-                <Printer className="mr-2 h-4 w-4" />
-                Print / Save as PDF
+                <Printer />
             </Button>
           </div>
         </CardHeader>
@@ -763,7 +760,7 @@ export default function PromptToPrototypePage() {
                       onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
                       aria-label="Copy loglines JSON to clipboard"
                   >
-                      <Copy className="h-4 w-4" />
+                      <Copy />
                   </Button>
                 )
               }
@@ -796,7 +793,7 @@ export default function PromptToPrototypePage() {
                         onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
                         aria-label="Copy shotlist markdown to clipboard"
                     >
-                        <Copy className="h-4 w-4" />
+                        <Copy />
                     </Button>
                   )
               }
@@ -844,7 +841,7 @@ export default function PromptToPrototypePage() {
                     onClick={() => handleCopyToClipboard(results.proxyClipAnimaticDescription, "Animatic Description")}
                     aria-label="Copy animatic description to clipboard"
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy />
                   </Button>
                 )
               }
@@ -871,7 +868,7 @@ export default function PromptToPrototypePage() {
                     onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
                     aria-label="Copy pitch summary to clipboard"
                   >
-                    <Copy className="h-4 w-4" />
+                    <Copy />
                   </Button>
                 )
               }
