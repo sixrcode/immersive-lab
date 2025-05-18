@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
@@ -378,38 +378,26 @@ export default function PromptToPrototypePage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6"> {/* Updated for single column flow */}
+              {/* Input Panel Skeleton */}
               <div className="space-y-6 p-6 bg-muted/30 rounded-lg">
                 <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-32 w-full" />
                 <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-12 w-full mt-4" />
               </div>
-              <div className="print-card"> {/* For print layout consistency */}
-                 <ResultCard
-                    title="Mood Board Concept"
-                    icon={<Palette className="h-6 w-6 text-accent" />}
-                    isLoading={true}
-                    loadingHeight="min-h-[400px]"
-                    className="print-card"
-                    contentClassName="flex flex-col"
-                    headerActions={
-                      <div className="flex items-center gap-1">
-                        <Skeleton className="h-8 w-8" />
-                        <Skeleton className="h-8 w-8" />
-                      </div>
-                    }
-                  >
-                    <div className="flex flex-col gap-6 flex-grow">
-                      <Skeleton className="aspect-video w-full print-image"/>
-                      <div className="flex-grow print-moodboard-grid-container">
-                        <h4 className="font-semibold text-sm mb-2 text-foreground"><Skeleton className="h-4 w-1/2"/></h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
-                          {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
-                        </div>
-                      </div>
+              {/* Mood Board Placeholder Skeleton (below input panel) */}
+               <div className="print-card">
+                <Skeleton className="h-10 w-1/2 mb-2" /> {/* Approx width of ResultCard title */}
+                <div className="flex flex-col gap-6 flex-grow">
+                    <Skeleton className="aspect-video w-full print-image"/>
+                    <div className="flex-grow print-moodboard-grid-container">
+                    <Skeleton className="h-6 w-1/3 mb-2" /> {/* Approx width of "Detailed Thematic Descriptions" title */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
+                        {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
                     </div>
-                  </ResultCard>
+                    </div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -431,7 +419,7 @@ export default function PromptToPrototypePage() {
               Enter a prompt, optionally upload an image and select a style, to generate a mood board concept, loglines, a shot list, an animatic description, and a pitch summary. Process takes up to 30-45 seconds.
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2 ml-auto no-print">
+           <div className="flex items-center gap-2 ml-auto no-print">
             <DropdownMenu>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -459,8 +447,8 @@ export default function PromptToPrototypePage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
-                {/* Input Panel */}
-              <div className="space-y-6 p-6 bg-muted/30 rounded-lg no-print">
+                {/* Input Panel & Mood Board Output Panel (now stacked) */}
+                <div className="p-6 bg-muted/30 rounded-lg no-print space-y-6"> {/* Input fields container */}
                   <FormField
                     control={form.control}
                     name="prompt"
@@ -546,17 +534,17 @@ export default function PromptToPrototypePage() {
                       </>
                     )}
                   </Button>
-              </div>
+                </div>
 
-              {/* Output Panel (Mood Board) */}
-              <div className="print-card">
+                {/* Mood Board Concept Output (below input panel) */}
+                <div className="print-card"> {/* This div will ensure it stacks and is styled for print */}
                   { isLoading ? (
                        <ResultCard
                           title="Mood Board Concept"
                           icon={<Palette className="h-6 w-6 text-accent" />}
                           isLoading={true}
                           loadingHeight="min-h-[400px]"
-                          className="print-card"
+                          className="print-card" 
                           contentClassName="flex flex-col"
                            headerActions={
                              <div className="flex items-center gap-1">
@@ -582,7 +570,7 @@ export default function PromptToPrototypePage() {
                           <div className="flex flex-col gap-6 flex-grow">
                             <Skeleton className="aspect-video w-full print-image"/>
                             <div className="flex-grow print-moodboard-grid-container">
-                              <h4 className="font-semibold text-sm mb-2 text-foreground"><Skeleton className="h-4 w-1/2"/></h4>
+                              <Skeleton className="h-6 w-1/2 mb-2"/>
                               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
                                 {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
                               </div>
@@ -712,11 +700,11 @@ export default function PromptToPrototypePage() {
                                       {results.moodBoardCells.map((cell, index) => (
                                         <div
                                           key={index}
-                                          className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5 print-overflow-visible"
+                                          className="border p-3 rounded bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow print-overflow-visible"
                                           aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
                                         >
-                                          <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
-                                          <div className="text-[0.75rem] text-muted-foreground space-y-1">
+                                          <span className="font-semibold text-foreground text-sm mb-1.5 block">{cell.title || moodBoardPositionalLabels[index]}</span>
+                                          <div className="text-xs text-muted-foreground">
                                             <p>{cell.description}</p>
                                           </div>
                                         </div>
@@ -740,7 +728,7 @@ export default function PromptToPrototypePage() {
                         </div>
                       )
                     )}
-              </div>
+                </div>
             </form>
           </Form>
         </CardContent>
@@ -919,5 +907,7 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
+    
 
     
