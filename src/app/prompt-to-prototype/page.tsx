@@ -5,13 +5,15 @@ import type { PromptToPrototypeInput, PromptToPrototypeOutput } from "@/ai/flows
 import { promptToPrototype } from "@/ai/flows/prompt-to-prototype";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video, Palette } from "lucide-react";
+import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle } from "lucide-react";
 import NextImage from "next/image";
-import { useState, type ReactNode, useMemo } from "react";
+import { useState, type ReactNode, useMemo, ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +23,9 @@ import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   prompt: z.string().min(10, "Prompt must be at least 10 characters long."),
+  imageDataUri: z.string().optional(),
+  imageFileName: z.string().optional(),
+  stylePreset: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -31,13 +36,23 @@ interface ResultCardProps {
   children: ReactNode;
   isLoading: boolean;
   hasContentAfterLoading?: boolean;
+  noContentMessage?: string;
   loadingHeight?: string;
   className?: string;
 }
 
 const PLACEHOLDER_IMAGE_URL_TEXT = "Image+Gen+Failed";
 
-function ResultCard({ title, icon, children, isLoading, hasContentAfterLoading = true, loadingHeight = "h-32", className }: ResultCardProps) {
+function ResultCard({ 
+  title, 
+  icon, 
+  children, 
+  isLoading, 
+  hasContentAfterLoading = true, 
+  noContentMessage = "No content was generated for this section.",
+  loadingHeight = "h-32", 
+  className 
+}: ResultCardProps) {
   return (
     <Card className={cn("shadow-lg flex flex-col", className)}>
       <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
@@ -48,7 +63,7 @@ function ResultCard({ title, icon, children, isLoading, hasContentAfterLoading =
         {isLoading ? (
           <Skeleton className={`w-full ${loadingHeight}`} />
         ) : !hasContentAfterLoading ? (
-          <p className="text-sm text-muted-foreground p-3 text-center">No content was generated for this section.</p>
+          <p className="text-sm text-muted-foreground p-3 text-center">{noContentMessage}</p>
         ) : (
           children
         )}
@@ -64,6 +79,16 @@ interface Shot {
   framing: string;
 }
 
+const stylePresets = [
+  { value: "A24 Cinematic", label: "A24 Cinematic" },
+  { value: "Afrofuturist Urban", label: "Afrofuturist Urban" },
+  { value: "Dreamlike Sci-Fi", label: "Dreamlike Sci-Fi" },
+  { value: "Teen Drama", label: "Teen Drama" },
+  { value: "Gritty Noir", label: "Gritty Noir" },
+  { value: "Epic Fantasy", label: "Epic Fantasy" },
+  { value: "Whimsical Animation", label: "Whimsical Animation" },
+];
+
 export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<PromptToPrototypeOutput | null>(null);
@@ -73,19 +98,49 @@ export default function PromptToPrototypePage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       prompt: "",
+      imageDataUri: undefined,
+      imageFileName: undefined,
+      stylePreset: undefined,
     },
   });
+
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue("imageDataUri", reader.result as string);
+        form.setValue("imageFileName", file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    form.setValue("imageDataUri", undefined);
+    form.setValue("imageFileName", undefined);
+    // Reset the file input visually
+    const fileInput = document.getElementById('imageUpload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
     setResults(null);
     try {
-      const input: PromptToPrototypeInput = { prompt: values.prompt };
+      const input: PromptToPrototypeInput = { 
+        prompt: values.prompt,
+        imageDataUri: values.imageDataUri,
+        stylePreset: values.stylePreset,
+      };
       const output = await promptToPrototype(input);
       setResults(output);
       toast({
         title: "Prototype Generated!",
-        description: "Your assets are ready.",
+        description: "Your assets are ready below.",
+        action: <CheckCircle className="text-green-500" />,
       });
     } catch (error) {
       console.error("Error generating prototype:", error);
@@ -124,50 +179,123 @@ export default function PromptToPrototypePage() {
 
   return (
     <div className="container mx-auto py-8">
-      <Card className="max-w-3xl mx-auto shadow-xl">
+      <Card className="max-w-6xl mx-auto shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="h-8 w-8 text-primary" />
             <CardTitle className="text-2xl">Prompt-to-Prototype Studio</CardTitle>
           </div>
           <CardDescription>
-            Enter a prompt to generate a mood board concept (image + 3x3 grid description), three logline variants, a shot list, and a proxy clip animatic description. Process takes up to 30 seconds.
+            Enter a prompt, optionally upload an image and select a style, to generate a mood board concept, loglines, a shot list, an animatic description, and a pitch summary. Process takes up to 30-45 seconds.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="prompt"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-lg">Your Creative Prompt</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="e.g., A lone astronaut discovers a mysterious signal on a desolate Mars colony..."
-                        className="min-h-[100px] resize-none"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Assets...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Prototype Package
-                  </>
-                )}
-              </Button>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-5 gap-6">
+              {/* Input Panel */}
+              <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
+                <FormField
+                  control={form.control}
+                  name="prompt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg">Your Creative Prompt</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="e.g., A lone astronaut discovers a mysterious signal on a desolate Mars colony..."
+                          className="min-h-[120px] resize-none bg-background"
+                          {...field}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="imageDataUri"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5" />Upload Image (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          id="imageUpload"
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleImageUpload} 
+                          className="bg-background"
+                          disabled={isLoading} 
+                        />
+                      </FormControl>
+                      {form.watch("imageFileName") && (
+                        <div className="mt-2 text-sm text-muted-foreground flex items-center justify-between p-2 border rounded-md bg-background">
+                          <span>{form.watch("imageFileName")}</span>
+                          <Button type="button" variant="ghost" size="icon" onClick={removeImage} disabled={isLoading} className="h-6 w-6">
+                            <XCircle className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                      <FormDescription>An image can help guide the visual style.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="stylePreset"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg">Select Style Preset (Optional)</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                        <FormControl>
+                          <SelectTrigger className="bg-background">
+                            <SelectValue placeholder="Choose a style..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {stylePresets.map(preset => (
+                            <SelectItem key={preset.value} value={preset.value}>{preset.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>The style preset influences tone and visuals.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Assets...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Prototype Package
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Output Panel Placeholder - content shown below form if results exist */}
+              <div className="md:col-span-3">
+                 {(isLoading || results) ? (
+                    <div className="text-center p-6">
+                        {isLoading && <p className="text-lg text-muted-foreground">Generating your creative assets, please wait...</p>}
+                        {!isLoading && results && <p className="text-lg text-green-600 font-semibold">Assets Generated Successfully!</p>}
+                    </div>
+                 ) : (
+                    <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
+                        <Palette size={48} className="text-muted-foreground mb-4" />
+                        <h3 className="text-xl font-semibold text-muted-foreground">Your generated assets will appear here.</h3>
+                        <p className="text-muted-foreground">Fill out the prompt and click "Generate".</p>
+                    </div>
+                 )}
+              </div>
             </form>
           </Form>
         </CardContent>
@@ -183,6 +311,7 @@ export default function PromptToPrototypePage() {
               icon={<Palette className="h-6 w-6 text-accent" />}
               isLoading={isLoading && (!results?.moodBoardImage || !results?.moodBoardCells)}
               hasContentAfterLoading={!!(results?.moodBoardImage || (results?.moodBoardCells && results.moodBoardCells.length > 0))}
+              noContentMessage="Mood board concept could not be generated."
               loadingHeight="h-96"
               className="md:col-span-2"
             >
@@ -206,13 +335,13 @@ export default function PromptToPrototypePage() {
                         </p>
                       )}
                     </>
-                  ) : (results && !isLoading && <p className="text-sm text-muted-foreground mb-2">No representative image generated.</p>)}
+                  ) : (results && !isLoading && <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
                 </div>
                 
                 <div>
                   <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Cell Descriptions:</h4>
                   {results?.moodBoardCells && results.moodBoardCells.length === 9 ? (
-                    <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-background shadow-inner">
+                    <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
                       {results.moodBoardCells.map((cellDescription, index) => (
                         <div 
                           key={index} 
@@ -224,7 +353,7 @@ export default function PromptToPrototypePage() {
                         </div>
                       ))}
                     </div>
-                  ) : (results && !isLoading && <p className="text-sm text-muted-foreground">No grid cell descriptions available.</p>)}
+                  ) : (results && !isLoading && <p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
                 </div>
               </div>
             </ResultCard>
@@ -234,6 +363,7 @@ export default function PromptToPrototypePage() {
               icon={<FileText className="h-6 w-6 text-accent" />}
               isLoading={isLoading && !results?.loglines}
               hasContentAfterLoading={!!(results?.loglines && results.loglines.length > 0)}
+              noContentMessage="No loglines were generated."
               loadingHeight="h-40"
             >
               {results?.loglines && results.loglines.length > 0 && (
@@ -253,6 +383,7 @@ export default function PromptToPrototypePage() {
               icon={<ListChecks className="h-6 w-6 text-accent" />}
               isLoading={isLoading && !results?.shotList}
               hasContentAfterLoading={parsedShotList.length > 0}
+              noContentMessage="No shot list was generated."
               loadingHeight="h-60"
             >
               {parsedShotList.length > 0 && (
@@ -286,13 +417,29 @@ export default function PromptToPrototypePage() {
               icon={<Video className="h-6 w-6 text-accent" />}
               isLoading={isLoading && !results?.proxyClipAnimaticDescription}
               hasContentAfterLoading={!!results?.proxyClipAnimaticDescription}
+              noContentMessage="No animatic description was generated."
               loadingHeight="h-40"
-              className="md:col-span-2"
+              className="md:col-span-1" 
             >
                 {results?.proxyClipAnimaticDescription && (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 border rounded-md bg-muted/50 shadow-sm">{results.proxyClipAnimaticDescription}</p>
                 )}
             </ResultCard>
+
+            <ResultCard
+              title="Pitch Summary"
+              icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
+              isLoading={isLoading && !results?.pitchSummary}
+              hasContentAfterLoading={!!results?.pitchSummary}
+              noContentMessage="No pitch summary was generated."
+              loadingHeight="h-40"
+              className="md:col-span-1"
+            >
+                {results?.pitchSummary && (
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 border rounded-md bg-muted/50 shadow-sm">{results.pitchSummary}</p>
+                )}
+            </ResultCard>
+
           </div>
           {results && !isLoading && (
             <p className="mt-8 text-xs text-muted-foreground text-center">
@@ -304,4 +451,3 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
-
