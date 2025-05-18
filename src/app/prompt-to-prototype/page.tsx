@@ -325,24 +325,26 @@ export default function PromptToPrototypePage() {
                      <ResultCard
                         title="Mood Board Concept"
                         icon={<Palette className="h-6 w-6 text-accent" />}
-                        isLoading={true} // Always true when global isLoading is true
-                        loadingHeight="h-[calc(100%-2rem)]" // Try to fill available height
+                        isLoading={true}
+                        loadingHeight="h-[calc(100%-2rem)]"
                         className="h-full"
                       >
-                        {/* Children will be skeletons due to isLoading=true in ResultCard */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><Skeleton className="h-48 w-full"/></div><div><Skeleton className="h-48 w-full"/></div></div>
+                        <div className="flex flex-col gap-6">
+                          <div><Skeleton className="h-48 w-full"/></div>
+                          <div><Skeleton className="h-48 w-full"/></div>
+                        </div>
                       </ResultCard>
-                  ) : results ? (
+                  ) : results && mounted ? ( // Ensure mounted before showing results
                      <ResultCard
                         title="Mood Board Concept"
                         icon={<Palette className="h-6 w-6 text-accent" />}
-                        isLoading={false} // Not loading anymore
+                        isLoading={false}
                         hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
                         noContentMessage="Mood board concept could not be generated."
-                        loadingHeight="h-96"
+                        loadingHeight="h-96" // Default loading height for ResultCard
                         className="h-full"
                       >
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="flex flex-col gap-6">
                           <div>
                             <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
                             {results.moodBoardImage ? (
@@ -384,7 +386,7 @@ export default function PromptToPrototypePage() {
                           </div>
                         </div>
                       </ResultCard>
-                  ) : (
+                  ) : ( // Initial state before any generation or if not mounted
                     <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
                         <Palette size={48} className="text-muted-foreground mb-4" />
                         <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
@@ -398,8 +400,8 @@ export default function PromptToPrototypePage() {
         </CardContent>
       </Card>
 
-      {/* Other Generated Assets -  Only shown if results exist and not loading */}
-      {(results && !isLoading) && (
+      {/* Other Generated Assets - Only shown if results exist, not loading, and mounted */}
+      {(results && !isLoading && mounted) && (
         <div className="mt-12">
           <h2 className="text-2xl font-semibold mb-6 text-center text-foreground">Other Generated Assets</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -408,7 +410,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={false} // isLoading (global) is false here
+              isLoading={false}
               hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
               noContentMessage="No loglines were generated."
               loadingHeight="h-40"
@@ -429,7 +431,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
-              isLoading={false} // isLoading (global) is false here
+              isLoading={false}
               hasContentAfterLoading={parsedShotList.length > 0}
               noContentMessage="No shot list was generated."
               loadingHeight="h-60"
@@ -464,7 +466,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
-              isLoading={false} // isLoading (global) is false here
+              isLoading={false}
               hasContentAfterLoading={!!results.proxyClipAnimaticDescription}
               noContentMessage="No animatic description was generated."
               loadingHeight="h-40"
@@ -479,7 +481,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Pitch Summary"
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
-              isLoading={false} // isLoading (global) is false here
+              isLoading={false}
               hasContentAfterLoading={!!results.pitchSummary}
               noContentMessage="No pitch summary was generated."
               loadingHeight="h-40"
@@ -499,3 +501,5 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
+    
