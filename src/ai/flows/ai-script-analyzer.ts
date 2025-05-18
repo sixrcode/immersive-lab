@@ -28,7 +28,7 @@ const AnalyzeScriptOutputSchema = z.object({
     ),
   suggestions: z.array(
     z.object({
-      section: z.string().describe('The *exact, verbatim text* of the script segment being addressed. This text MUST be an exact quote from the original script to ensure the "Apply Suggestion" feature works correctly. Do not paraphrase or summarize this section.'),
+      section: z.string().describe('The *exact, verbatim text* of the script segment being addressed. This text MUST be an exact quote from the original script to ensure the "Apply Suggestion" feature works correctly. Do not paraphrase or summarize this section. Do NOT add your own surrounding quotation marks to this field unless those quotation marks are part of the original script segment itself.'),
       issue: z.string().describe('The issue identified in the section.'),
       improvement: z.string().describe('A suggestion for improving the section.'),
     })
@@ -54,7 +54,7 @@ Script:
 Identify any sections that are unclear, off-tone, or inconsistent, and suggest specific improvements.
 
 For each suggestion, provide:
-- 'section': The *exact, verbatim text* of the script segment you are addressing. This text is CRITICAL for the 'Apply Suggestion' feature and MUST be an exact quote from the original script. Do NOT paraphrase or summarize this section. If the problematic text is common, try to make your quoted 'section' distinctive enough if possible.
+- 'section': The *exact, verbatim text* of the script segment you are addressing. This text is CRITICAL for the 'Apply Suggestion' feature and MUST be an exact quote from the original script. Do NOT paraphrase or summarize this section. Do NOT add your own surrounding quotation marks to this 'section' field unless those quotation marks are part of the original script segment itself. If the problematic text is common, try to make your quoted 'section' distinctive enough if possible.
 - 'issue': A clear description of the issue identified in that section.
 - 'improvement': A specific suggestion for how to improve that section.
 
@@ -74,3 +74,4 @@ const analyzeScriptFlow = ai.defineFlow(
     return output!;
   }
 );
+
