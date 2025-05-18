@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle } from "lucide-react";
+import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy } from "lucide-react";
 import NextImage from "next/image";
 import { useState, type ReactNode, useMemo, ChangeEvent, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -39,6 +39,8 @@ interface ResultCardProps {
   noContentMessage?: string;
   loadingHeight?: string;
   className?: string;
+  contentClassName?: string;
+  headerActions?: ReactNode;
 }
 
 const PLACEHOLDER_IMAGE_URL_TEXT = "Image+Gen+Failed";
@@ -51,20 +53,25 @@ function ResultCard({
   hasContentAfterLoading = true, 
   noContentMessage = "No content was generated for this section.",
   loadingHeight = "h-32", 
-  className 
+  className,
+  contentClassName,
+  headerActions
 }: ResultCardProps) {
   return (
     <Card className={cn("shadow-lg flex flex-col", className)}>
-      <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-        {icon}
-        <CardTitle className="text-lg font-medium">{title}</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pb-2">
+        <div className="flex items-center gap-3">
+          {icon}
+          <CardTitle className="text-lg font-medium">{title}</CardTitle>
+        </div>
+        {headerActions && <div className="ml-auto">{headerActions}</div>}
       </CardHeader>
-      <CardContent className="flex-grow">
+      <CardContent className={cn("flex-grow", contentClassName)}>
         {isLoading ? (
           <Skeleton className={cn("w-full", loadingHeight)} />
         ) : !hasContentAfterLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground p-3 text-center">{noContentMessage}</p>
+          <div className="flex items-center justify-center h-full text-center">
+            <p className="text-sm text-muted-foreground p-3">{noContentMessage}</p>
           </div>
         ) : (
           children
@@ -94,8 +101,16 @@ const stylePresets = [
   { value: "Nature Documentary", label: "Nature Documentary" },
   { value: "Wes Anderson Quirk", label: "Wes Anderson Quirk" },
   { value: "Studio Ghibli Charm", label: "Studio Ghibli Charm" },
+  { value: "Dark Academia", label: "Dark Academia" },
+  { value: "Solarpunk Utopia", label: "Solarpunk Utopia" },
+  { value: "Cosmic Horror", label: "Cosmic Horror" },
 ];
 
+const moodBoardCellLabels: string[] = [
+    "Top-Left", "Top-Center", "Top-Right",
+    "Middle-Left", "Middle-Center", "Middle-Right",
+    "Bottom-Left", "Bottom-Center", "Bottom-Right"
+];
 
 export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -135,6 +150,32 @@ export default function PromptToPrototypePage() {
     const fileInput = document.getElementById('imageUpload') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = "";
+    }
+  };
+
+  const handleCopyToClipboard = async (textToCopy: string | undefined, itemName: string) => {
+    if (!textToCopy) {
+      toast({
+        title: "Nothing to Copy",
+        description: `The ${itemName} content is empty.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      toast({
+        title: `${itemName} Copied!`,
+        description: `The ${itemName.toLowerCase()} has been copied to your clipboard.`,
+        action: <CheckCircle className="text-green-500" />,
+      });
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      toast({
+        title: "Copy Failed",
+        description: `Could not copy the ${itemName.toLowerCase()}. Please try again.`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -179,10 +220,10 @@ export default function PromptToPrototypePage() {
       .map(line => {
         const parts = line.split(',');
         return {
-          number: parts[0]?.trim() || "",
-          lens: parts[1]?.trim() || "",
-          move: parts[2]?.trim() || "",
-          framing: parts.slice(3).join(',').trim() || "",
+          number: parts[0]?.trim() || "N/A",
+          lens: parts[1]?.trim() || "N/A",
+          move: parts[2]?.trim() || "N/A",
+          framing: parts.slice(3).join(',').trim() || "N/A",
         };
       });
   }, [results?.shotList]);
@@ -288,13 +329,14 @@ export default function PromptToPrototypePage() {
                     title="Mood Board Concept"
                     icon={<Palette className="h-6 w-6 text-accent" />}
                     isLoading={true}
-                    loadingHeight="h-[calc(100%-2rem)]" 
+                    loadingHeight="min-h-[400px] md:min-h-[calc(100%-2rem)]" 
                     className="h-full"
+                    contentClassName="flex flex-col"
                   >
                     {/* Skeleton for Mood Board during loading */}
-                    <div className="flex flex-col gap-6">
-                      <div><Skeleton className="aspect-video w-full"/></div>
-                      <div>
+                    <div className="flex flex-col gap-6 flex-grow">
+                      <Skeleton className="aspect-video w-full"/>
+                      <div className="flex-grow">
                         <div className="grid grid-cols-3 gap-2.5">
                           {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
                         </div>
@@ -308,10 +350,11 @@ export default function PromptToPrototypePage() {
                     isLoading={false}
                     hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
                     noContentMessage="Mood board concept could not be generated."
-                    loadingHeight="h-96" // Arbitrary, actual height will vary
+                    loadingHeight="h-96"
                     className="h-full"
+                    contentClassName="flex flex-col"
                   >
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-6 flex-grow">
                       <div>
                         <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
                         {results.moodBoardImage ? (
@@ -334,7 +377,7 @@ export default function PromptToPrototypePage() {
                         ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
                       </div>
                       
-                      <div>
+                      <div className="flex-grow">
                         <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Themes & Descriptions:</h4>
                         {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
                           <>
@@ -362,7 +405,7 @@ export default function PromptToPrototypePage() {
                   </ResultCard>
               ) : ( 
                 // Initial placeholder state before any generation
-                <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
+                <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px] md:min-h-full">
                     <Palette size={48} className="text-muted-foreground mb-4" />
                     <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
                     <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
@@ -395,7 +438,7 @@ export default function PromptToPrototypePage() {
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-12 w-full mt-4" />
               </div>
-              <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
+              <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px]">
                 <Skeleton className="h-12 w-12 mb-4 rounded-full" />
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-1/2" />
@@ -431,7 +474,7 @@ export default function PromptToPrototypePage() {
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-12 w-full mt-4" />
               </div>
-              <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
+              <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px]">
                 <Skeleton className="h-12 w-12 mb-4 rounded-full" />
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-1/2" />
@@ -527,6 +570,18 @@ export default function PromptToPrototypePage() {
               noContentMessage="No pitch summary was generated for this prototype."
               loadingHeight="h-40"
               className="md:col-span-1"
+              headerActions={
+                results && results.pitchSummary && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
+                    aria-label="Copy pitch summary to clipboard"
+                  >
+                    <Copy className="h-4 w-4 mr-1" /> Copy
+                  </Button>
+                )
+              }
             >
                 {results.pitchSummary && (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 border rounded-md bg-muted/50 shadow-sm">{results.pitchSummary}</p>
