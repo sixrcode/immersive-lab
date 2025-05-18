@@ -1,10 +1,10 @@
 
 "use client";
 
-import { KanbanCardType, KanbanColumnType } from "@/lib/types";
+import type { KanbanCardType, KanbanColumnType } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea, ScrollBar }_from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PlusCircle, MoreHorizontal, Kanban as KanbanIcon, Film, Lightbulb, Edit2, CheckCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
