@@ -49,6 +49,7 @@ const PromptToPrototypeOutputSchema = z.object({
   shotListMarkdownString: z.string().describe('The shot list formatted as a Markdown string, suitable for file handoff.'),
   proxyClipAnimaticDescription: z.string().describe('A detailed textual description for a 4-second proxy clip animatic. This should outline key visuals, pacing, and transitions to help visualize the animatic, as if describing a sequence of still frames or very simple animations.'),
   pitchSummary: z.string().describe('A concise and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, tone, and potential appeal, drawing from the prompt and other generated assets.'),
+  allTextAssetsJsonString: z.string().describe('A JSON string containing all textual assets: loglines, moodBoardCells, shotList, proxyClipAnimaticDescription, and pitchSummary.'),
 });
 
 export type PromptToPrototypeOutput = z.infer<typeof PromptToPrototypeOutputSchema>;
@@ -72,7 +73,7 @@ const THEME_LIST = [
 const prompt = ai.definePrompt({
   name: 'promptToPrototypePrompt',
   input: {schema: PromptToPrototypeInputSchema},
-  output: {schema: PromptToPrototypeOutputSchema},
+  output: {schema: PromptToPrototypeOutputSchema.omit({ allTextAssetsJsonString: true })}, // AI doesn't generate allTextAssetsJsonString
   prompt: `You are a creative assistant helping to generate initial assets for a project based on a user's prompt, an optional image, and an optional style preset. Your goal is to deliver a comprehensive prototype package.
   {{#if stylePreset}}
   The user has selected the style preset: "{{stylePreset}}". This style should be consistently reflected across ALL generated textual assets where applicable, influencing aspects like tone, artistic direction, descriptive language, and specific suggestions. This includes loglines, mood board cell content, shot lists, animatic descriptions, and the pitch summary.
@@ -136,12 +137,16 @@ const promptToPrototypeFlow = ai.defineFlow(
   },
   async (input: PromptToPrototypeInput): Promise<PromptToPrototypeOutput> => {
     // Generate textual components first
-    const {output: textOutput} = await prompt(input);
+    const {output: textOutputPartial} = await prompt(input);
 
-    if (!textOutput) {
+    if (!textOutputPartial) {
       throw new Error("Failed to generate textual components for the prototype.");
     }
     
+    // Cast to a mutable type that includes all fields, including allTextAssetsJsonString
+    const textOutput = textOutputPartial as PromptToPrototypeOutput;
+
+
     // Ensure moodBoardCells have titles if AI didn't provide them (as a fallback)
     if (textOutput.moodBoardCells && textOutput.moodBoardCells.length === 9) {
         textOutput.moodBoardCells.forEach((cell, index) => {
@@ -155,7 +160,6 @@ const promptToPrototypeFlow = ai.defineFlow(
     textOutput.loglinesJsonString = JSON.stringify(textOutput.loglines || [], null, 2);
     textOutput.moodBoardCellsJsonString = JSON.stringify(textOutput.moodBoardCells || [], null, 2);
     textOutput.shotListMarkdownString = textOutput.shotList || "";
-
 
     // Generate a single representative mood board image using Gemini
     let imageGenPromptText = `Generate a single piece of concept art or a visual summary that captures the overall essence, style, and atmosphere for a project based on: '${input.prompt}'.`;
@@ -194,6 +198,16 @@ const promptToPrototypeFlow = ai.defineFlow(
     } else {
         textOutput.moodBoardImage = media.url;
     }
+    
+    // Assemble allTextAssetsJsonString
+    const allTextAssets = {
+        loglines: textOutput.loglines,
+        moodBoardCells: textOutput.moodBoardCells,
+        shotList: textOutput.shotList,
+        proxyClipAnimaticDescription: textOutput.proxyClipAnimaticDescription,
+        pitchSummary: textOutput.pitchSummary,
+    };
+    textOutput.allTextAssetsJsonString = JSON.stringify(allTextAssets, null, 2);
     
     return textOutput;
   }

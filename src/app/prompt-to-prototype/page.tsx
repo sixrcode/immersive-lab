@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download, ThumbsUp, ThumbsDown, Share2, Eye, Printer } from "lucide-react";
+import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download, ThumbsUp, ThumbsDown, Share2, Eye, Printer, FileJson } from "lucide-react";
 import NextImage from "next/image";
 import { useState, type ReactNode, useMemo, ChangeEvent, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -223,6 +223,33 @@ export default function PromptToPrototypePage() {
     }
   };
 
+  const handleDownloadAllTextAssets = () => {
+    if (results?.allTextAssetsJsonString) {
+      const currentPrompt = form.getValues("prompt");
+      const filenameSuffix = sanitizePromptForFilename(currentPrompt);
+      const blob = new Blob([results.allTextAssetsJsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ISL_Prototype_Package_Text_Assets_${filenameSuffix}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({
+        title: "Text Assets Download Started",
+        description: "Your bundled text assets JSON file is downloading.",
+      });
+    } else {
+      toast({
+        title: "Download Failed",
+        description: "No text assets available to download.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
   const handleImageAction = (action: 'thumbsUp' | 'thumbsDown' | 'share') => {
     // Placeholder actions
     switch (action) {
@@ -418,8 +445,8 @@ export default function PromptToPrototypePage() {
                     loadingHeight="min-h-[400px] md:min-h-[calc(100%-2rem)]" 
                     className="h-full"
                     contentClassName="flex flex-col"
-                     headerActions={
-                       <>
+                    headerActions={
+                      <>
                         <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
                             <Download className="h-4 w-4" />
                         </Button>
@@ -611,17 +638,32 @@ export default function PromptToPrototypePage() {
               Enter a prompt, optionally upload an image and select a style, to generate a mood board concept, loglines, a shot list, an animatic description, and a pitch summary. Process takes up to 30-45 seconds.
             </CardDescription>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handlePrint}
-            className="ml-auto no-print"
-            aria-label="Print or Save as PDF"
-            disabled={!results && !isLoading}
-          >
-            <Printer className="mr-2 h-4 w-4" />
-            Print / Save as PDF
-          </Button>
+          <div className="flex items-center gap-2 ml-auto no-print">
+            {results?.allTextAssetsJsonString && (
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadAllTextAssets}
+                    aria-label="Download all text assets as JSON"
+                    disabled={isLoading || !results}
+                >
+                    <FileJson className="mr-2 h-4 w-4" />
+                    Download All Text Assets
+                </Button>
+            )}
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handlePrint}
+                aria-label="Print or Save as PDF"
+                disabled={isLoading || !results}
+            >
+                <Printer className="mr-2 h-4 w-4" />
+                Print / Save as PDF
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {mounted ? renderFormAndMoodboard() : (
@@ -720,7 +762,6 @@ export default function PromptToPrototypePage() {
                       size="sm"
                       onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
                       aria-label="Copy loglines JSON to clipboard"
-                      disabled={!results.loglinesJsonString}
                   >
                       <Copy className="h-4 w-4" />
                   </Button>
@@ -754,7 +795,6 @@ export default function PromptToPrototypePage() {
                         size="sm"
                         onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
                         aria-label="Copy shotlist markdown to clipboard"
-                        disabled={!results.shotListMarkdownString}
                     >
                         <Copy className="h-4 w-4" />
                     </Button>
@@ -803,7 +843,6 @@ export default function PromptToPrototypePage() {
                     size="sm"
                     onClick={() => handleCopyToClipboard(results.proxyClipAnimaticDescription, "Animatic Description")}
                     aria-label="Copy animatic description to clipboard"
-                    disabled={!results.proxyClipAnimaticDescription}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -831,7 +870,6 @@ export default function PromptToPrototypePage() {
                     size="sm"
                     onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
                     aria-label="Copy pitch summary to clipboard"
-                    disabled={!results.pitchSummary}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -853,10 +891,3 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
-
-
-    
-
-    
-
-    
