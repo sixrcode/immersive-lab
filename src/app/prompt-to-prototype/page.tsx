@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle } from "lucide-react";
 import NextImage from "next/image";
-import { useState, type ReactNode, useMemo, ChangeEvent } from "react";
+import { useState, type ReactNode, useMemo, ChangeEvent, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,7 +61,7 @@ function ResultCard({
       </CardHeader>
       <CardContent className="flex-grow">
         {isLoading ? (
-          <Skeleton className={`w-full ${loadingHeight}`} />
+          <Skeleton className={cn("w-full", loadingHeight)} />
         ) : !hasContentAfterLoading ? (
           <p className="text-sm text-muted-foreground p-3 text-center">{noContentMessage}</p>
         ) : (
@@ -87,12 +87,20 @@ const stylePresets = [
   { value: "Gritty Noir", label: "Gritty Noir" },
   { value: "Epic Fantasy", label: "Epic Fantasy" },
   { value: "Whimsical Animation", label: "Whimsical Animation" },
+  { value: "Cyberpunk Dystopian", label: "Cyberpunk Dystopian" },
+  { value: "Retro 80s VHS", label: "Retro 80s VHS" },
+  { value: "Nature Documentary", label: "Nature Documentary" },
 ];
 
 export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<PromptToPrototypeOutput | null>(null);
+  const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -119,7 +127,6 @@ export default function PromptToPrototypePage() {
   const removeImage = () => {
     form.setValue("imageDataUri", undefined);
     form.setValue("imageFileName", undefined);
-    // Reset the file input visually
     const fileInput = document.getElementById('imageUpload') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = "";
@@ -176,6 +183,37 @@ export default function PromptToPrototypePage() {
   }, [results?.shotList]);
 
   const isPlaceholderImage = results?.moodBoardImage?.includes(PLACEHOLDER_IMAGE_URL_TEXT);
+
+  if (!mounted) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="max-w-6xl mx-auto shadow-xl">
+          <CardHeader>
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-4 w-1/2 mt-2" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-5 gap-6">
+              <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-10 w-1/3 mt-4" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-1/3 mt-4" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-12 w-full mt-4" />
+              </div>
+              <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
+                <Skeleton className="h-12 w-12 mb-4 rounded-full" />
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -281,92 +319,101 @@ export default function PromptToPrototypePage() {
                 </Button>
               </div>
 
-              {/* Output Panel Placeholder - content shown below form if results exist */}
+              {/* Output Panel (Mood Board) */}
               <div className="md:col-span-3">
-                 {(isLoading || results) ? (
-                    <div className="text-center p-6">
-                        {isLoading && <p className="text-lg text-muted-foreground">Generating your creative assets, please wait...</p>}
-                        {!isLoading && results && <p className="text-lg text-green-600 font-semibold">Assets Generated Successfully!</p>}
-                    </div>
-                 ) : (
+                { isLoading ? (
+                     <ResultCard
+                        title="Mood Board Concept"
+                        icon={<Palette className="h-6 w-6 text-accent" />}
+                        isLoading={true} // Always true when global isLoading is true
+                        loadingHeight="h-[calc(100%-2rem)]" // Try to fill available height
+                        className="h-full"
+                      >
+                        {/* Children will be skeletons due to isLoading=true in ResultCard */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><Skeleton className="h-48 w-full"/></div><div><Skeleton className="h-48 w-full"/></div></div>
+                      </ResultCard>
+                  ) : results ? (
+                     <ResultCard
+                        title="Mood Board Concept"
+                        icon={<Palette className="h-6 w-6 text-accent" />}
+                        isLoading={false} // Not loading anymore
+                        hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
+                        noContentMessage="Mood board concept could not be generated."
+                        loadingHeight="h-96"
+                        className="h-full"
+                      >
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div>
+                            <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
+                            {results.moodBoardImage ? (
+                              <>
+                                <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
+                                  <NextImage 
+                                      src={results.moodBoardImage} 
+                                      alt="Generated Mood Board Representation" 
+                                      layout="fill"
+                                      objectFit="cover"
+                                      data-ai-hint="mood board concept"
+                                  />
+                                </div>
+                                {isPlaceholderImage && (
+                                  <p className="text-xs text-muted-foreground text-center">
+                                    Representative image generation failed or is unavailable. Using a placeholder.
+                                  </p>
+                                )}
+                              </>
+                            ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Cell Descriptions:</h4>
+                            {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
+                              <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
+                                {results.moodBoardCells.map((cellDescription, index) => (
+                                  <div 
+                                    key={index} 
+                                    className="border p-3 rounded text-xs text-muted-foreground bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[110px] max-h-[160px] shadow-sm hover:shadow-md transition-shadow"
+                                    aria-label={`Mood board cell ${index + 1} description`}
+                                  >
+                                    <span className="font-semibold text-foreground/90 mb-1.5 text-[0.8rem]">Cell {index + 1}</span>
+                                    <p className="whitespace-pre-wrap leading-relaxed text-[0.75rem]">{cellDescription}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (<p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
+                          </div>
+                        </div>
+                      </ResultCard>
+                  ) : (
                     <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
                         <Palette size={48} className="text-muted-foreground mb-4" />
-                        <h3 className="text-xl font-semibold text-muted-foreground">Your generated assets will appear here.</h3>
-                        <p className="text-muted-foreground">Fill out the prompt and click "Generate".</p>
+                        <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
+                        <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
                     </div>
-                 )}
+                  )
+                }
               </div>
             </form>
           </Form>
         </CardContent>
       </Card>
 
-      {(isLoading || results) && (
+      {/* Other Generated Assets -  Only shown if results exist and not loading */}
+      {(results && !isLoading) && (
         <div className="mt-12">
-          <h2 className="text-2xl font-semibold mb-6 text-center text-foreground">Generated Assets</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-center text-foreground">Other Generated Assets</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            <ResultCard
-              title="Mood Board Concept"
-              icon={<Palette className="h-6 w-6 text-accent" />}
-              isLoading={isLoading && (!results?.moodBoardImage || !results?.moodBoardCells)}
-              hasContentAfterLoading={!!(results?.moodBoardImage || (results?.moodBoardCells && results.moodBoardCells.length > 0))}
-              noContentMessage="Mood board concept could not be generated."
-              loadingHeight="h-96"
-              className="md:col-span-2"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
-                  {results?.moodBoardImage ? (
-                    <>
-                      <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
-                        <NextImage 
-                            src={results.moodBoardImage} 
-                            alt="Generated Mood Board Representation" 
-                            layout="fill"
-                            objectFit="cover"
-                            data-ai-hint="mood board concept"
-                        />
-                      </div>
-                      {isPlaceholderImage && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          Representative image generation failed or is unavailable. Using a placeholder.
-                        </p>
-                      )}
-                    </>
-                  ) : (results && !isLoading && <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Cell Descriptions:</h4>
-                  {results?.moodBoardCells && results.moodBoardCells.length === 9 ? (
-                    <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
-                      {results.moodBoardCells.map((cellDescription, index) => (
-                        <div 
-                          key={index} 
-                          className="border p-3 rounded text-xs text-muted-foreground bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[110px] max-h-[160px] shadow-sm hover:shadow-md transition-shadow"
-                          aria-label={`Mood board cell ${index + 1} description`}
-                        >
-                          <span className="font-semibold text-foreground/90 mb-1.5 text-[0.8rem]">Cell {index + 1}</span>
-                          <p className="whitespace-pre-wrap leading-relaxed text-[0.75rem]">{cellDescription}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (results && !isLoading && <p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
-                </div>
-              </div>
-            </ResultCard>
-
+            {/* Loglines Card */}
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={isLoading && !results?.loglines}
-              hasContentAfterLoading={!!(results?.loglines && results.loglines.length > 0)}
+              isLoading={false} // isLoading (global) is false here
+              hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
               noContentMessage="No loglines were generated."
               loadingHeight="h-40"
             >
-              {results?.loglines && results.loglines.length > 0 && (
+              {results.loglines && results.loglines.length > 0 && (
                 <div className="space-y-3">
                   {results.loglines.map((logline, index) => (
                     <div key={index} className="p-3 border rounded-md bg-muted/50 shadow-sm">
@@ -378,10 +425,11 @@ export default function PromptToPrototypePage() {
               )}
             </ResultCard>
 
+            {/* Shot List Card */}
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
-              isLoading={isLoading && !results?.shotList}
+              isLoading={false} // isLoading (global) is false here
               hasContentAfterLoading={parsedShotList.length > 0}
               noContentMessage="No shot list was generated."
               loadingHeight="h-60"
@@ -412,40 +460,40 @@ export default function PromptToPrototypePage() {
               )}
             </ResultCard>
 
+            {/* Proxy Clip Animatic Description Card */}
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
-              isLoading={isLoading && !results?.proxyClipAnimaticDescription}
-              hasContentAfterLoading={!!results?.proxyClipAnimaticDescription}
+              isLoading={false} // isLoading (global) is false here
+              hasContentAfterLoading={!!results.proxyClipAnimaticDescription}
               noContentMessage="No animatic description was generated."
               loadingHeight="h-40"
               className="md:col-span-1" 
             >
-                {results?.proxyClipAnimaticDescription && (
+                {results.proxyClipAnimaticDescription && (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 border rounded-md bg-muted/50 shadow-sm">{results.proxyClipAnimaticDescription}</p>
                 )}
             </ResultCard>
 
+            {/* Pitch Summary Card */}
             <ResultCard
               title="Pitch Summary"
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
-              isLoading={isLoading && !results?.pitchSummary}
-              hasContentAfterLoading={!!results?.pitchSummary}
+              isLoading={false} // isLoading (global) is false here
+              hasContentAfterLoading={!!results.pitchSummary}
               noContentMessage="No pitch summary was generated."
               loadingHeight="h-40"
               className="md:col-span-1"
             >
-                {results?.pitchSummary && (
+                {results.pitchSummary && (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 border rounded-md bg-muted/50 shadow-sm">{results.pitchSummary}</p>
                 )}
             </ResultCard>
 
           </div>
-          {results && !isLoading && (
-            <p className="mt-8 text-xs text-muted-foreground text-center">
-              AI Output Transparency: Assets generated by AI. Review and refine as needed. Use the 3x3 mood board descriptions to guide further visual development.
-            </p>
-          )}
+          <p className="mt-8 text-xs text-muted-foreground text-center">
+            AI Output Transparency: Assets generated by AI. Review and refine as needed. Use the 3x3 mood board descriptions to guide further visual development.
+          </p>
         </div>
       )}
     </div>
