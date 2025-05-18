@@ -43,7 +43,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <header className="py-8 bg-gradient-to-r from-primary/10 via-background to-background rounded-lg shadow-lg p-8">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">Welcome to CineVision Studio</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">Welcome to the Immersive Storytelling Lab</h1>
         <p className="mt-2 text-lg text-muted-foreground">
           Your AI-powered co-pilot for cinematic expression. Let&apos;s create something amazing.
         </p>
@@ -91,16 +91,16 @@ export default function DashboardPage() {
           <CardContent className="space-y-4 text-muted-foreground">
             <div className="mb-4">
               <Image
-                src="/sixr-logo.png" // Ensure this path is correct (e.g., /public/sixr-logo.png)
+                src="/sixr-logo.png" 
                 alt="SIXR Logo"
-                width={150} // Adjust to your logo's actual width
-                height={75}  // Adjust to your logo's actual height
+                width={150} 
+                height={75}  
                 data-ai-hint="SIXR logo" 
               />
             </div>
             <p>
               SIXR, a 501(c)3 organization, is dedicated to bringing emerging technology education to marginalized communities.
-              The Immersive Storytelling Lab (ISL), hosted at CineVision Studio, is inspired by the legacy of Mervyn Winston Adams Seldon (1932–2023),
+              Immersive Storytelling Lab (ISL) is inspired by the legacy of Mervyn Winston Adams Seldon (1932–2023),
               an artist and educator committed to making art accessible.
             </p>
             <p>

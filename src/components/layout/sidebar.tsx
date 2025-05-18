@@ -36,7 +36,7 @@ export function AppSidebar() {
         <Link href="/" className="flex items-center gap-2">
           <Drama className="h-8 w-8 text-primary" />
           <h1 className="text-xl font-semibold group-data-[collapsible=icon]:hidden">
-            CineVision Studio
+            Immersive Storytelling Lab
           </h1>
         </Link>
       </SidebarHeader>

@@ -59,7 +59,7 @@ export default function CollaborationPage() {
             </li>
           </ul>
           <p className="mt-8 text-center text-foreground font-medium">
-            We&apos;re excited to bring these powerful tools to CineVision Studio to help you create amazing stories together!
+            We&apos;re excited to bring these powerful tools to the Immersive Storytelling Lab to help you create amazing stories together!
           </p>
         </CardContent>
       </Card>

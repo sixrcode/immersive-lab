@@ -12,7 +12,7 @@ const geistSans = GeistSans;
 const geistMono = GeistMono;
 
 export const metadata: Metadata = {
-  title: 'CineVision Studio',
+  title: 'Immersive Storytelling Lab',
   description: 'AI-powered co-pilot for cinematic expression by SIXR Immersive Storytelling Lab.',
 };
 
