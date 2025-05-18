@@ -66,15 +66,15 @@ function ResultCard({
   headerActions
 }: ResultCardProps) {
   return (
-    <Card className={cn("shadow-lg flex flex-col", className)}>
-      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pb-2">
+    <Card className={cn("shadow-lg flex flex-col print-card", className)}>
+      <CardHeader className={cn("flex flex-row items-center justify-between gap-3 space-y-0 pb-2 print-card-header", headerActions ? "pr-2" : "")}>
         <div className="flex items-center gap-3">
           {icon}
           <CardTitle className="text-lg font-medium">{title}</CardTitle>
         </div>
-        {headerActions && <div className="ml-auto flex items-center gap-2">{headerActions}</div>}
+        {headerActions && <div className="ml-auto flex items-center gap-1 no-print">{headerActions}</div>}
       </CardHeader>
-      <CardContent className={cn("flex-grow", contentClassName)}>
+      <CardContent className={cn("flex-grow print-card-content", contentClassName)}>
         {isLoading ? (
           <Skeleton className={cn("w-full", loadingHeight)} />
         ) : !hasContentAfterLoading ? (
@@ -297,17 +297,17 @@ export default function PromptToPrototypePage() {
 
   const imageActionButtons = (isDialog: boolean = false) => (
     <>
-      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-green-400", isDialog && "text-foreground hover:text-green-500")} onClick={() => handleImageAction('thumbsUp')}>
-        <ThumbsUp className="h-5 w-5" /> <span className="sr-only">Thumbs Up</span>
+      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-green-400 no-print", isDialog && "text-foreground hover:text-green-500")} onClick={() => handleImageAction('thumbsUp')} aria-label="Thumbs up image">
+        <ThumbsUp className="h-5 w-5" />
       </Button>
-      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-red-400", isDialog && "text-foreground hover:text-red-500")} onClick={() => handleImageAction('thumbsDown')}>
-        <ThumbsDown className="h-5 w-5" /> <span className="sr-only">Thumbs Down</span>
+      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-red-400 no-print", isDialog && "text-foreground hover:text-red-500")} onClick={() => handleImageAction('thumbsDown')} aria-label="Thumbs down image">
+        <ThumbsDown className="h-5 w-5" />
       </Button>
-      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-blue-400", isDialog && "text-foreground hover:text-blue-500")} onClick={handleDownloadImage} disabled={!results?.moodBoardImage || isPlaceholderImage}>
-        <Download className="h-5 w-5" /> <span className="sr-only">Download Image</span>
+      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-blue-400 no-print", isDialog && "text-foreground hover:text-blue-500")} onClick={handleDownloadImage} disabled={!results?.moodBoardImage || isPlaceholderImage} aria-label="Download image">
+        <Download className="h-5 w-5" />
       </Button>
-      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-purple-400", isDialog && "text-foreground hover:text-purple-500")} onClick={() => handleImageAction('share')}>
-        <Share2 className="h-5 w-5" /> <span className="sr-only">Share Image</span>
+      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-purple-400 no-print", isDialog && "text-foreground hover:text-purple-500")} onClick={() => handleImageAction('share')} aria-label="Share image">
+        <Share2 className="h-5 w-5" />
       </Button>
     </>
   );
@@ -316,7 +316,7 @@ export default function PromptToPrototypePage() {
      <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-5 gap-6">
           {/* Input Panel */}
-          <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
+          <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg no-print">
             <FormField
               control={form.control}
               name="prompt"
@@ -355,7 +355,7 @@ export default function PromptToPrototypePage() {
                   {form.watch("imageFileName") && (
                     <div className="mt-2 text-sm text-muted-foreground flex items-center justify-between p-2 border rounded-md bg-background">
                       <span className="truncate max-w-[calc(100%-2rem)]">{form.watch("imageFileName")}</span>
-                      <Button type="button" variant="ghost" size="icon" onClick={removeImage} disabled={isLoading} className="h-6 w-6 flex-shrink-0">
+                      <Button type="button" variant="ghost" size="icon" onClick={removeImage} disabled={isLoading} className="h-6 w-6 flex-shrink-0" aria-label="Remove uploaded image">
                         <XCircle className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -478,7 +478,7 @@ export default function PromptToPrototypePage() {
                           {results.moodBoardImage ? (
                             <>
                             <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
-                              <DialogTrigger asChild>
+                              <DialogTrigger asChild className="no-print">
                                 <div className="group relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md cursor-pointer">
                                   <NextImage 
                                       src={results.moodBoardImage} 
@@ -486,14 +486,15 @@ export default function PromptToPrototypePage() {
                                       layout="fill"
                                       objectFit="cover"
                                       data-ai-hint="mood board concept"
+                                      className="print-image"
                                   />
-                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
+                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 no-print">
                                     {imageActionButtons()}
                                     <Eye className="absolute bottom-2 right-2 h-5 w-5 text-white opacity-70 group-hover:opacity-100" />
                                   </div>
                                 </div>
                               </DialogTrigger>
-                              <DialogContent className="max-w-3xl p-0">
+                              <DialogContent className="max-w-3xl p-0 no-print">
                                 <DialogHeader className="p-4 pr-14">
                                   <DialogTitle>Mood Board Image</DialogTitle>
                                 </DialogHeader>
@@ -523,15 +524,15 @@ export default function PromptToPrototypePage() {
                           ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
                         </div>
                         
-                        <div>
+                        <div className="print-moodboard-grid-container">
                           <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed Thematic Descriptions:</h4>
                           {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
                             <>
-                              <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
                                 {results.moodBoardCells.map((cell, index) => (
                                   <div 
                                     key={index} 
-                                    className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5"
+                                    className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5 print-overflow-visible"
                                     aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
                                   >
                                     <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
@@ -541,7 +542,7 @@ export default function PromptToPrototypePage() {
                                   </div>
                                 ))}
                               </div>
-                               <p className="mt-3 text-xs text-muted-foreground text-center">
+                               <p className="mt-3 text-xs text-muted-foreground text-center no-print">
                                 Use these thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
                               </p>
                             </>
@@ -567,8 +568,8 @@ export default function PromptToPrototypePage() {
 
   if (!mounted) {
      return (
-      <div className="container mx-auto py-8">
-        <Card className="max-w-6xl mx-auto shadow-xl">
+      <div className="container mx-auto py-8" id="promptToPrototypePage">
+        <Card className="max-w-6xl mx-auto shadow-xl no-print">
           <CardHeader>
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-1/2 mt-2" />
@@ -593,8 +594,8 @@ export default function PromptToPrototypePage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <Card className="max-w-6xl mx-auto shadow-xl">
+    <div className="container mx-auto py-8" id="promptToPrototypePage">
+      <Card className="max-w-6xl mx-auto shadow-xl no-print">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="h-8 w-8 text-primary" />
@@ -622,11 +623,70 @@ export default function PromptToPrototypePage() {
         </CardContent>
       </Card>
 
+      {/* This section is for displaying all results together, especially for print */}
       {(results && !isLoading && mounted) && (
         <div className="mt-12">
-          <h2 className="text-2xl font-semibold mb-6 text-center text-foreground">Other Generated Assets</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-center text-foreground no-print">Other Generated Assets</h2>
+          
+          {/* Re-render Mood Board Concept for print if it was in the form card */}
+           <div className="hidden md:block print-only-moodboard-section"> {/* Shown on print if moodboard was in right panel, hidden on screen. */}
+            <ResultCard
+                title="Mood Board Concept"
+                icon={<Palette className="h-6 w-6 text-accent" />}
+                isLoading={false}
+                hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
+                noContentMessage="Mood board concept could not be generated."
+                className="h-full mb-6 print-card" 
+                contentClassName="flex flex-col"
+              >
+                <div className="flex flex-col gap-6 flex-grow">
+                    <div className="flex flex-col gap-4">
+                    <div>
+                        <h4 className="font-semibold text-sm text-foreground mb-2">Representative Mood Board Image:</h4>
+                        {results.moodBoardImage && (
+                        <NextImage 
+                            src={results.moodBoardImage} 
+                            alt="Generated Mood Board Representation" 
+                            width={600} 
+                            height={400}
+                            objectFit="contain"
+                            data-ai-hint="mood board concept"
+                            className="print-image rounded-md border shadow-md"
+                        />
+                        )}
+                        {isPlaceholderImage && (
+                        <p className="text-xs text-muted-foreground text-center">
+                            Representative image generation failed or is unavailable. Using a placeholder.
+                        </p>
+                        )}
+                    </div>
+                    
+                    <div className="print-moodboard-grid-container">
+                        <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed Thematic Descriptions:</h4>
+                        {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
+                            {results.moodBoardCells.map((cell, index) => (
+                            <div 
+                                key={`print-cell-${index}`} 
+                                className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm print-overflow-visible"
+                                aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
+                            >
+                                <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
+                                <div className="text-[0.75rem] text-muted-foreground space-y-1">
+                                <p>{cell.description}</p>
+                                </div>
+                            </div>
+                            ))}
+                        </div>
+                        ) : (<p className="text-sm text-muted-foreground">No thematic descriptions were generated.</p>)}
+                    </div>
+                    </div>
+                </div>
+            </ResultCard>
+          </div>
+
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
@@ -684,8 +744,8 @@ export default function PromptToPrototypePage() {
               }
             >
               {parsedShotList.length > 0 && (
-                <div className="max-h-96 overflow-y-auto border rounded-md shadow-inner">
-                  <Table>
+                <div className="max-h-96 overflow-y-auto border rounded-md shadow-inner print-overflow-visible">
+                  <Table className="print-table">
                     <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                       <TableRow>
                         <TableHead className="w-[15%] px-3 py-2 text-xs">Shot #</TableHead>
@@ -766,7 +826,7 @@ export default function PromptToPrototypePage() {
             </ResultCard>
 
           </div>
-          <p className="mt-8 text-xs text-muted-foreground text-center">
+          <p className="mt-8 text-xs text-muted-foreground text-center no-print">
             AI Output Transparency: Assets generated by AI. Review and refine as needed. Use the thematic descriptions to guide further visual development.
             To get a consolidated view of all generated assets for printing or saving as a PDF, please use your browser's print functionality (Ctrl+P or Cmd+P).
           </p>
@@ -775,3 +835,6 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
+
+    

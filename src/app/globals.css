@@ -109,3 +109,170 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Print specific styles */
+@media print {
+  body {
+    font-size: 10pt !important; /* Smaller font for print */
+    color: #000000 !important; /* Black text */
+    background-color: #ffffff !important; /* White background */
+    -webkit-print-color-adjust: exact !important; /* Ensure colors print in Chrome/Safari */
+    print-color-adjust: exact !important; /* Standard */
+  }
+
+  /* Hide elements not relevant for printing */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset layout for main page containers */
+  /* Targets the main grid holding form and moodboard, and the "Other Generated Assets" grid */
+  #promptToPrototypePage .max-w-6xl > .grid,
+  #promptToPrototypePage > div.mt-12 > .grid {
+    display: block !important; /* Stack grid items */
+  }
+
+  /* Targets direct children of the above grid systems to ensure they stack */
+  #promptToPrototypePage .max-w-6xl > .grid > div,
+  #promptToPrototypePage > div.mt-12 > .grid > div {
+    display: block !important;
+    width: 100% !important;
+    grid-column: auto !important; /* Reset grid column span */
+    float: none !important;
+    margin-bottom: 1.5rem !important; /* Space between stacked cards */
+  }
+  
+  /* Simplify card styling for print */
+  .print-card {
+    border: 1px solid #cccccc !important;
+    box-shadow: none !important;
+    background-color: #ffffff !important;
+    page-break-inside: avoid !important;
+    margin-top: 0 !important;
+    padding: 0.5rem !important; /* Reduce padding for print cards */
+  }
+  
+  .print-card .print-card-header {
+    padding-bottom: 0.5rem !important;
+  }
+  .print-card .print-card-content {
+    padding-top: 0.5rem !important;
+  }
+
+  .print-card .text-lg.font-medium, /* CardTitle from ResultCard */
+  .print-card .font-semibold.text-sm.mb-2.text-foreground, /* Headings for moodboard themes */
+  .print-card .text-2xl /* CardTitle in main card header (Studio title) */
+  {
+    color: #000000 !important;
+    font-size: 1.1em !important; /* Slightly larger for titles */
+  }
+  
+  .print-card p, 
+  .print-card span, 
+  .print-card div:not(.grid):not(.flex), /* Avoid interfering with structural divs */
+  .print-card blockquote,
+  .print-card td,
+  .print-card th,
+  .print-card li {
+    color: #333333 !important; /* Darker gray for text content */
+    font-size: 0.95em !important;
+    line-height: 1.4 !important;
+  }
+  .print-card .text-muted-foreground {
+     color: #555555 !important;
+  }
+
+
+  /* Ensure images are reasonably sized for print */
+  .print-image {
+    max-width: 80% !important; /* Don't let image take full page width, center it */
+    height: auto !important;
+    object-fit: contain !important;
+    border: 1px solid #eeeeee !important; /* Light border for images */
+    margin: 0.5rem auto !important; /* Center image and add margin */
+    display: block !important;
+  }
+  
+  /* Table styles for print */
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 0.5rem !important;
+  }
+  .print-table th, .print-table td {
+    border: 1px solid #dddddd !important;
+    padding: 6px !important;
+    text-align: left !important;
+    font-size: 0.9em !important;
+  }
+  .print-table th {
+    background-color: #f9f9f9 !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+  }
+
+  /* Mood board specific grid cells */
+  .print-moodboard-grid-container {
+      margin-top: 0.5rem !important;
+  }
+  .print-moodboard-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* Maintain 3 columns */
+    gap: 0.5rem !important;
+  }
+  .print-moodboard-grid > div { /* Each cell */
+    border: 1px solid #eeeeee !important;
+    padding: 0.5rem !important;
+    page-break-inside: avoid !important;
+  }
+   .print-moodboard-grid .font-semibold { /* Cell title */
+    font-size: 1em !important;
+    margin-bottom: 0.25rem !important;
+    color: #000000 !important;
+   }
+   .print-moodboard-grid p { /* Cell description */
+    font-size: 0.85em !important;
+    line-height: 1.3 !important;
+   }
+
+
+  /* Ensure all content is visible, override potential overflow hidden */
+  .print-overflow-visible {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Hide app shell (header/sidebar) for print */
+  body > div#root > aside, /* Targets AppSidebar if #root is direct child of body */
+  body > div#root > div.flex.flex-col > header, /* Targets AppHeader if #root is direct child */
+  body > div:first-child > aside, /* Fallback for AppSidebar */
+  body > div:first-child > div.flex.flex-col > header /* Fallback for AppHeader */
+  {
+    display: none !important;
+  }
+  
+  /* Ensure main content takes full width */
+  main.flex-1 {
+    padding: 1rem !important; /* Add some padding for print */
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+    
+  h1.text-4xl, h2.text-2xl { /* Main page titles */
+      color: #000000 !important;
+  }
+  /* Additional rule to ensure the direct container of main also allows full width if needed */
+  body > div#root > div.flex.flex-col.flex-1 {
+      width: 100% !important;
+  }
+  /* General Card in page titles for print */
+  .max-w-6xl .text-2xl {
+      color: #000000 !important;
+  }
+  .max-w-6xl .text-muted-foreground {
+      color: #555555 !important;
+  }
+}
+
+    
