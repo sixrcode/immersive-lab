@@ -89,6 +89,15 @@ export default function DashboardPage() {
             <CardTitle className="text-2xl">About SIXR & Mervyn Seldon</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
+            <div className="mb-4">
+              <Image
+                src="/sixr-logo.png" // Ensure this path is correct (e.g., /public/sixr-logo.png)
+                alt="SIXR Logo"
+                width={150} // Adjust to your logo's actual width
+                height={75}  // Adjust to your logo's actual height
+                data-ai-hint="SIXR logo" 
+              />
+            </div>
             <p>
               SIXR, a 501(c)3 organization, is dedicated to bringing emerging technology education to marginalized communities.
               The Immersive Storytelling Lab (ISL), hosted at CineVision Studio, is inspired by the legacy of Mervyn Winston Adams Seldon (1932–2023),
