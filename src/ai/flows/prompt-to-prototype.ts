@@ -49,7 +49,7 @@ const PromptToPrototypeOutputSchema = z.object({
   shotListMarkdownString: z.string().describe('The shot list formatted as a Markdown string, suitable for file handoff.'),
   proxyClipAnimaticDescription: z.string().describe('A detailed textual description for a 4-second proxy clip animatic. This should outline key visuals, pacing, and transitions to help visualize the animatic, as if describing a sequence of still frames or very simple animations.'),
   pitchSummary: z.string().describe('A concise and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, tone, and potential appeal, drawing from the prompt and other generated assets.'),
-  allTextAssetsJsonString: z.string().describe('A JSON string containing all textual assets: loglines, moodBoardCells, shotList, proxyClipAnimaticDescription, and pitchSummary.'),
+  allTextAssetsJsonString: z.string().describe('A JSON string containing the user inputs (prompt, stylePreset, imageProvided flag) and all generated textual assets (loglines, moodBoardCells, shotList, proxyClipAnimaticDescription, and pitchSummary).'),
 });
 
 export type PromptToPrototypeOutput = z.infer<typeof PromptToPrototypeOutputSchema>;
@@ -73,7 +73,7 @@ const THEME_LIST = [
 const prompt = ai.definePrompt({
   name: 'promptToPrototypePrompt',
   input: {schema: PromptToPrototypeInputSchema},
-  output: {schema: PromptToPrototypeOutputSchema.omit({ allTextAssetsJsonString: true })}, // AI doesn't generate allTextAssetsJsonString
+  output: {schema: PromptToPrototypeOutputSchema.omit({ allTextAssetsJsonString: true, loglinesJsonString: true, moodBoardCellsJsonString: true, shotListMarkdownString: true })}, // AI doesn't generate these JSON/MD string fields directly
   prompt: `You are a creative assistant helping to generate initial assets for a project based on a user's prompt, an optional image, and an optional style preset. Your goal is to deliver a comprehensive prototype package.
   {{#if stylePreset}}
   The user has selected the style preset: "{{stylePreset}}". This style should be consistently reflected across ALL generated textual assets where applicable, influencing aspects like tone, artistic direction, descriptive language, and specific suggestions. This includes loglines, mood board cell content, shot lists, animatic descriptions, and the pitch summary.
@@ -89,7 +89,6 @@ const prompt = ai.definePrompt({
 
   1.  **Loglines**: Provide three distinct logline variants for the project. Each logline should target a different tone (e.g., whimsical, gritty, dramatic, comedic, thrilling, mysterious). {{#if stylePreset}}The tone of these loglines should be influenced by the "{{stylePreset}}" preset.{{/if}}
       For each logline, output an object with 'tone' (string) and 'text' (string) properties.
-      Also, provide a 'loglinesJsonString' field which is a JSON string representation of this array of loglines.
 
   2.  **Mood Board 3x3 Grid Cell Content**: Generate an array of 9 objects for the 'moodBoardCells' field. Each object must represent one cell in a 3x3 grid and correspond to a specific theme.
       The themes, in order for the 9 cells (top-left to bottom-right, row by row), are:
@@ -113,18 +112,16 @@ const prompt = ai.definePrompt({
       {{#if imageDataUri}}
       If a user image was provided, it should heavily inspire these descriptions, particularly for palette, texture, composition, and initial character/environment ideas. Explicitly draw from it where appropriate.
       {{/if}}
-      Also, provide a 'moodBoardCellsJsonString' field which is a JSON string representation of this array of mood board cell objects.
 
   3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes. {{#if stylePreset}}Adapt suggestions if the "{{stylePreset}}" style preset is specified.{{/if}}
       Output this as a single multi-line string for the 'shotList' field, with each shot on a new line, and values separated by commas (e.g., "1,35mm,Slow Push-in,Close up on character's eyes revealing fear.").
       **Do not include a header row in the shot list output.**
-      Also, provide this same string content in the 'shotListMarkdownString' field.
 
   4.  **Proxy Clip Animatic Description**: Provide a detailed textual description for a 4-second proxy clip animatic. This ultra-low-res moving animatic should preview pacing and key moments. Describe the sequence of visuals, any simple motion, and how it conveys the core idea or feeling of the prompt. {{#if stylePreset}}Let the "{{stylePreset}}" style preset influence the description.{{/if}} Imagine you're describing 3-5 key still frames that would make up this animatic.
 
   5.  **Pitch Summary**: Generate a concise (1-2 paragraphs) and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, dominant tone ({{#if stylePreset}}influenced by the "{{stylePreset}}" preset{{else}}reflecting the main prompt{{/if}}), and potential appeal, drawing from the main prompt and other generated assets.
 
-  Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells' and the provision of 'loglinesJsonString', 'moodBoardCellsJsonString', and 'shotListMarkdownString'.
+  Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells'.
   The representative 'moodBoardImage' (a single image) will be generated separately by the application after this text generation step and added to the final output.
   `,
 });
@@ -201,11 +198,18 @@ const promptToPrototypeFlow = ai.defineFlow(
     
     // Assemble allTextAssetsJsonString
     const allTextAssets = {
+      userInput: {
+        prompt: input.prompt,
+        stylePreset: input.stylePreset || null, // Use null if undefined for consistent JSON
+        imageProvided: !!input.imageDataUri,
+      },
+      generatedAssets: {
         loglines: textOutput.loglines,
         moodBoardCells: textOutput.moodBoardCells,
         shotList: textOutput.shotList,
         proxyClipAnimaticDescription: textOutput.proxyClipAnimaticDescription,
         pitchSummary: textOutput.pitchSummary,
+      }
     };
     textOutput.allTextAssetsJsonString = JSON.stringify(allTextAssets, null, 2);
     
