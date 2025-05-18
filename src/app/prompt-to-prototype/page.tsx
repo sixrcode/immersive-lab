@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy } from "lucide-react";
+import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download } from "lucide-react";
 import NextImage from "next/image";
 import { useState, type ReactNode, useMemo, ChangeEvent, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -106,7 +106,7 @@ const stylePresets = [
   { value: "Cosmic Horror", label: "Cosmic Horror" },
 ];
 
-const moodBoardCellLabels: string[] = [
+const moodBoardPositionalLabels: string[] = [
     "Top-Left", "Top-Center", "Top-Right",
     "Middle-Left", "Middle-Center", "Middle-Right",
     "Bottom-Left", "Bottom-Center", "Bottom-Right"
@@ -343,19 +343,19 @@ export default function PromptToPrototypePage() {
                       </div>
                     </div>
                   </ResultCard>
-              ) : results ? (
+              ) : results && mounted ? ( // Only render results if mounted and available
                  <ResultCard
                     title="Mood Board Concept"
                     icon={<Palette className="h-6 w-6 text-accent" />}
                     isLoading={false}
                     hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
                     noContentMessage="Mood board concept could not be generated."
-                    loadingHeight="h-96"
+                    loadingHeight="h-96" // This might not be needed if hasContentAfterLoading handles it
                     className="h-full"
                     contentClassName="flex flex-col"
                   >
                     <div className="flex flex-col gap-6 flex-grow">
-                      <div>
+                       <div>
                         <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
                         {results.moodBoardImage ? (
                           <>
@@ -386,9 +386,9 @@ export default function PromptToPrototypePage() {
                                 <div 
                                   key={index} 
                                   className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5"
-                                  aria-label={`Mood board cell: ${cell.title}`}
+                                  aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
                                 >
-                                  <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || `Theme ${index + 1}`}</span>
+                                  <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
                                   <div className="text-[0.75rem] text-muted-foreground space-y-1">
                                     <p>{cell.description}</p>
                                   </div>
@@ -404,12 +404,14 @@ export default function PromptToPrototypePage() {
                     </div>
                   </ResultCard>
               ) : ( 
-                // Initial placeholder state before any generation
-                <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px] md:min-h-full">
-                    <Palette size={48} className="text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
-                    <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
-                </div>
+                // Initial placeholder state before any generation if mounted
+                mounted && (
+                  <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px] md:min-h-full">
+                      <Palette size={48} className="text-muted-foreground mb-4" />
+                      <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
+                      <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
+                  </div>
+                )
               )
             }
           </div>
@@ -494,7 +496,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={isLoading}
+              isLoading={isLoading} // Should be false here
               hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
               noContentMessage="No loglines were generated for this prototype."
               loadingHeight="h-40"
@@ -507,6 +509,19 @@ export default function PromptToPrototypePage() {
                       <p className="text-sm text-muted-foreground">{logline.text}</p>
                     </div>
                   ))}
+                   <div className="mt-3 pt-3 border-t">
+                    <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">loglines.json</code></h5>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
+                        aria-label="Copy loglines JSON to clipboard"
+                        className="text-xs"
+                        disabled={!results.loglinesJsonString}
+                    >
+                        <Copy className="h-3 w-3 mr-1.5" /> Copy JSON Content
+                    </Button>
+                   </div>
                 </div>
               )}
             </ResultCard>
@@ -515,12 +530,13 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
-              isLoading={isLoading}
+              isLoading={isLoading} // Should be false here
               hasContentAfterLoading={parsedShotList.length > 0}
               noContentMessage="No shot list was generated for this prototype."
               loadingHeight="h-60"
             >
               {parsedShotList.length > 0 && (
+                <>
                 <div className="max-h-96 overflow-y-auto border rounded-md shadow-inner">
                   <Table>
                     <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
@@ -543,6 +559,20 @@ export default function PromptToPrototypePage() {
                     </TableBody>
                   </Table>
                 </div>
+                <div className="mt-3 pt-3 border-t">
+                    <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">shotlist.md</code></h5>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
+                        aria-label="Copy shotlist markdown to clipboard"
+                        className="text-xs"
+                        disabled={!results.shotListMarkdownString}
+                    >
+                        <Copy className="h-3 w-3 mr-1.5" /> Copy Markdown Content
+                    </Button>
+                </div>
+                </>
               )}
             </ResultCard>
 
@@ -550,7 +580,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
-              isLoading={isLoading}
+              isLoading={isLoading} // Should be false here
               hasContentAfterLoading={!!results.proxyClipAnimaticDescription}
               noContentMessage="No animatic description was generated for this prototype."
               loadingHeight="h-40"
@@ -565,7 +595,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Pitch Summary"
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
-              isLoading={isLoading}
+              isLoading={isLoading} // Should be false here
               hasContentAfterLoading={!!results.pitchSummary}
               noContentMessage="No pitch summary was generated for this prototype."
               loadingHeight="h-40"

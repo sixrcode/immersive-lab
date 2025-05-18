@@ -17,22 +17,25 @@ const PromptToPrototypeInputSchema = z.object({
   imageDataUri: z.string().optional().describe(
     "An optional image provided by the user, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
-  stylePreset: z.string().optional().describe('An optional style preset selected by the user (e.g., "A24 Cinematic", "Afrofuturist Urban").'),
+  stylePreset: z.string().optional().describe('An optional style preset selected by the user (e.g., "A24 Cinematic", "Afrofuturist Urban"). This style should be consistently reflected in loglines, mood board cell content, shot lists, animatic descriptions, and the pitch summary.'),
 });
 export type PromptToPrototypeInput = z.infer<typeof PromptToPrototypeInputSchema>;
 
 const MoodBoardCellSchema = z.object({
-  title: z.string().describe("The specific theme/category for this mood board cell (e.g., 'Key Character Focus', 'Environment Details')."),
+  title: z.string().describe("The specific theme/category for this mood board cell (e.g., 'Key Character Focus', 'Environment Details'). This title MUST be one of the 9 predefined themes."),
   description: z.string().describe(
     "A detailed textual description for this specific cell, related to its assigned theme. This should elaborate on the visual and conceptual elements relevant to the theme."
   )
 });
 
-const PromptToPrototypeOutputSchema = z.object({
-  loglines: z.array(z.object({
+const LoglineSchema = z.object({
     tone: z.string().describe("The tone of the logline (e.g., whimsical, gritty, dramatic)."),
     text: z.string().describe("The logline text."),
-  })).describe('Three logline variants targeting distinct tones.'),
+  });
+
+const PromptToPrototypeOutputSchema = z.object({
+  loglines: z.array(LoglineSchema).describe('Three logline variants targeting distinct tones.'),
+  loglinesJsonString: z.string().describe('The loglines formatted as a JSON string, suitable for file handoff.'),
   moodBoardCells: z.array(MoodBoardCellSchema)
     .length(9)
     .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid. Each object represents a specific theme and its textual description, ordered from top-left to bottom-right, row by row. The themes are: 1. Key Character Focus, 2. Environment Details, 3. Color Palette & Texture, 4. Specific Props or Symbols, 5. Emotional Tone / Lighting, 6. Cinematography Hints, 7. Visuals: Patterns & Swatches, 8. Text: Words & Typography, 9. Concept & Overall Theme."),
@@ -42,6 +45,7 @@ const PromptToPrototypeOutputSchema = z.object({
       "A single representative image for the mood board concept, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
   shotList: z.string().describe('A numbered shot-list (6-10 shots) with suggested lenses, camera moves, and framing notes. Presented as a multi-line string, with each shot on a new line and values separated by commas (Shot #,Lens,Camera Move,Framing Notes). Do not include a header row.'),
+  shotListMarkdownString: z.string().describe('The shot list formatted as a Markdown string, suitable for file handoff.'),
   proxyClipAnimaticDescription: z.string().describe('A detailed textual description for a 4-second proxy clip animatic. This should outline key visuals, pacing, and transitions to help visualize the animatic, as if describing a sequence of still frames or very simple animations.'),
   pitchSummary: z.string().describe('A concise and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, tone, and potential appeal, drawing from the prompt and other generated assets.'),
 });
@@ -69,20 +73,21 @@ const prompt = ai.definePrompt({
   input: {schema: PromptToPrototypeInputSchema},
   output: {schema: PromptToPrototypeOutputSchema},
   prompt: `You are a creative assistant helping to generate initial assets for a project based on a user's prompt, an optional image, and an optional style preset. Your goal is to deliver a comprehensive prototype package.
+  {{#if stylePreset}}
+  The user has selected the style preset: "{{stylePreset}}". This style should be consistently reflected across ALL generated textual assets where applicable, influencing aspects like tone, artistic direction, descriptive language, and specific suggestions. This includes loglines, mood board cell content, shot lists, animatic descriptions, and the pitch summary.
+  {{/if}}
 
   User Inputs:
   - Prompt: {{{prompt}}}
   {{#if imageDataUri}}
   - User Provided Image: {{media url=imageDataUri}} (This image should serve as a primary visual inspiration for the mood board cell descriptions and the overall visual tone. Refer to its elements or style when describing the mood board cells.)
   {{/if}}
-  {{#if stylePreset}}
-  - Style Preset: "{{stylePreset}}" (Apply this selected style across ALL generated textual assets where applicable, influencing aspects like tone, artistic direction, descriptive language, and specific suggestions. This should be consistently reflected in loglines, mood board cell content, shot lists, animatic descriptions, and the pitch summary.)
-  {{/if}}
 
   Generate the following assets, adhering strictly to the output schema provided:
 
   1.  **Loglines**: Provide three distinct logline variants for the project. Each logline should target a different tone (e.g., whimsical, gritty, dramatic, comedic, thrilling, mysterious). {{#if stylePreset}}The tone of these loglines should be influenced by the "{{stylePreset}}" preset.{{/if}}
       For each logline, output an object with 'tone' (string) and 'text' (string) properties.
+      Also, provide a 'loglinesJsonString' field which is a JSON string representation of this array of loglines.
 
   2.  **Mood Board 3x3 Grid Cell Content**: Generate an array of 9 objects for the 'moodBoardCells' field. Each object must represent one cell in a 3x3 grid and correspond to a specific theme.
       The themes, in order for the 9 cells (top-left to bottom-right, row by row), are:
@@ -108,14 +113,15 @@ const prompt = ai.definePrompt({
       {{/if}}
 
   3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes. {{#if stylePreset}}Adapt suggestions if the "{{stylePreset}}" style preset is specified.{{/if}}
-      Output this as a single multi-line string, with each shot on a new line, and values separated by commas (e.g., "1,35mm,Slow Push-in,Close up on character's eyes revealing fear.").
+      Output this as a single multi-line string for the 'shotList' field, with each shot on a new line, and values separated by commas (e.g., "1,35mm,Slow Push-in,Close up on character's eyes revealing fear.").
       **Do not include a header row in the shot list output.**
+      Also, provide this same string content in the 'shotListMarkdownString' field.
 
   4.  **Proxy Clip Animatic Description**: Provide a detailed textual description for a 4-second proxy clip animatic. This ultra-low-res moving animatic should preview pacing and key moments. Describe the sequence of visuals, any simple motion, and how it conveys the core idea or feeling of the prompt. {{#if stylePreset}}Let the "{{stylePreset}}" style preset influence the description.{{/if}} Imagine you're describing 3-5 key still frames that would make up this animatic.
 
   5.  **Pitch Summary**: Generate a concise (1-2 paragraphs) and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, dominant tone ({{#if stylePreset}}influenced by the "{{stylePreset}}" preset{{else}}reflecting the main prompt{{/if}}), and potential appeal, drawing from the main prompt and other generated assets.
 
-  Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells'.
+  Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells' and the provision of 'loglinesJsonString' and 'shotListMarkdownString'.
   The representative 'moodBoardImage' (a single image) will be generated separately by the application after this text generation step and added to the final output.
   `,
 });
@@ -126,7 +132,7 @@ const promptToPrototypeFlow = ai.defineFlow(
     inputSchema: PromptToPrototypeInputSchema,
     outputSchema: PromptToPrototypeOutputSchema,
   },
-  async (input: PromptToPrototypeInput) => {
+  async (input: PromptToPrototypeInput): Promise<PromptToPrototypeOutput> => {
     // Generate textual components first
     const {output: textOutput} = await prompt(input);
 
@@ -142,6 +148,10 @@ const promptToPrototypeFlow = ai.defineFlow(
             }
         });
     }
+
+    // Populate the JSON and Markdown string fields
+    textOutput.loglinesJsonString = JSON.stringify(textOutput.loglines || [], null, 2);
+    textOutput.shotListMarkdownString = textOutput.shotList || "";
 
 
     // Generate a single representative mood board image using Gemini
@@ -159,7 +169,7 @@ const promptToPrototypeFlow = ai.defineFlow(
         prompt: [{text: imageGenPromptText}],
         config: {
             responseModalities: ['TEXT', 'IMAGE'],
-            safetySettings: [
+             safetySettings: [
               { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
               { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
               { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
