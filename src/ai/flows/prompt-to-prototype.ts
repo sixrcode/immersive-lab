@@ -28,7 +28,7 @@ const MoodBoardCellSchema = z.object({
   )
 });
 
-export const PromptToPrototypeOutputSchema = z.object({
+const PromptToPrototypeOutputSchema = z.object({
   loglines: z.array(z.object({
     tone: z.string().describe("The tone of the logline (e.g., whimsical, gritty, dramatic)."),
     text: z.string().describe("The logline text."),
