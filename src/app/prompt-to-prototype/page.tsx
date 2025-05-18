@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download } from "lucide-react";
+import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download, ThumbsUp, ThumbsDown, Share2, Eye } from "lucide-react";
 import NextImage from "next/image";
 import { useState, type ReactNode, useMemo, ChangeEvent, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -19,6 +19,7 @@ import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
@@ -135,6 +136,7 @@ export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<PromptToPrototypeOutput | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -221,6 +223,28 @@ export default function PromptToPrototypePage() {
     }
   };
 
+  const handleImageAction = (action: 'thumbsUp' | 'thumbsDown' | 'share') => {
+    // Placeholder actions
+    switch (action) {
+      case 'thumbsUp':
+        toast({ title: "Feedback Submitted (Placeholder)", description: "Thanks for the thumbs up!" });
+        break;
+      case 'thumbsDown':
+        toast({ title: "Feedback Submitted (Placeholder)", description: "Thanks for the feedback!" });
+        break;
+      case 'share':
+        // In a real app, this would trigger a share dialog or copy a shareable link
+        if (results?.moodBoardImage && !isPlaceholderImage) {
+            navigator.clipboard.writeText(results.moodBoardImage)
+            .then(() => toast({ title: "Image URL Copied (Placeholder)", description: "Image URL copied to clipboard."}))
+            .catch(() => toast({ title: "Share Failed", description: "Could not copy image URL.", variant: "destructive" }));
+        } else {
+            toast({ title: "Share Failed", description: "No image to share.", variant: "destructive" });
+        }
+        break;
+    }
+  };
+
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
     setResults(null);
@@ -271,6 +295,23 @@ export default function PromptToPrototypePage() {
   }, [results?.shotList]);
 
   const isPlaceholderImage = results?.moodBoardImage?.includes(PLACEHOLDER_IMAGE_URL_TEXT);
+
+  const imageActionButtons = (isDialog: boolean = false) => (
+    <>
+      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-green-400", isDialog && "text-foreground hover:text-green-500")} onClick={() => handleImageAction('thumbsUp')}>
+        <ThumbsUp className="h-5 w-5" /> <span className="sr-only">Thumbs Up</span>
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-red-400", isDialog && "text-foreground hover:text-red-500")} onClick={() => handleImageAction('thumbsDown')}>
+        <ThumbsDown className="h-5 w-5" /> <span className="sr-only">Thumbs Down</span>
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-blue-400", isDialog && "text-foreground hover:text-blue-500")} onClick={handleDownloadImage} disabled={!results?.moodBoardImage || isPlaceholderImage}>
+        <Download className="h-5 w-5" /> <span className="sr-only">Download Image</span>
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-purple-400", isDialog && "text-foreground hover:text-purple-500")} onClick={() => handleImageAction('share')}>
+        <Share2 className="h-5 w-5" /> <span className="sr-only">Share Image</span>
+      </Button>
+    </>
+  );
 
   const renderFormAndMoodboard = () => (
      <Form {...form}>
@@ -374,6 +415,16 @@ export default function PromptToPrototypePage() {
                     loadingHeight="min-h-[400px] md:min-h-[calc(100%-2rem)]" 
                     className="h-full"
                     contentClassName="flex flex-col"
+                     headerActions={
+                       <>
+                        <Button type="button" variant="outline" size="sm" disabled className="text-xs">
+                            <Download className="h-3 w-3 mr-1.5" /> Download Image
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" disabled className="text-xs">
+                           <Copy className="h-3 w-3 mr-1.5" /> Copy Themes JSON
+                        </Button>
+                       </>
+                    }
                   >
                     <div className="flex flex-col gap-6 flex-grow">
                       <Skeleton className="aspect-video w-full"/>
@@ -394,13 +445,7 @@ export default function PromptToPrototypePage() {
                     className="h-full"
                     contentClassName="flex flex-col"
                     headerActions={
-                      <>
-                        {results.moodBoardImage && !isPlaceholderImage && (
-                          <Button type="button" variant="outline" size="sm" onClick={handleDownloadImage} className="text-xs">
-                            <Download className="h-3 w-3 mr-1.5" /> Download Image
-                          </Button>
-                        )}
-                        {results.moodBoardCellsJsonString && (
+                       results.moodBoardCellsJsonString && (
                            <Button
                               type="button"
                               variant="outline"
@@ -411,8 +456,7 @@ export default function PromptToPrototypePage() {
                             >
                               <Copy className="h-3 w-3 mr-1.5" /> Copy Themes JSON
                             </Button>
-                        )}
-                      </>
+                        )
                     }
                   >
                     <div className="flex flex-col gap-6 flex-grow">
@@ -421,15 +465,43 @@ export default function PromptToPrototypePage() {
                           <h4 className="font-semibold text-sm text-foreground mb-2">Representative Mood Board Image:</h4>
                           {results.moodBoardImage ? (
                             <>
-                              <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
-                                <NextImage 
-                                    src={results.moodBoardImage} 
-                                    alt="Generated Mood Board Representation" 
-                                    layout="fill"
-                                    objectFit="cover"
-                                    data-ai-hint="mood board concept"
-                                />
-                              </div>
+                            <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+                              <DialogTrigger asChild>
+                                <div className="group relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md cursor-pointer">
+                                  <NextImage 
+                                      src={results.moodBoardImage} 
+                                      alt="Generated Mood Board Representation" 
+                                      layout="fill"
+                                      objectFit="cover"
+                                      data-ai-hint="mood board concept"
+                                  />
+                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
+                                    {imageActionButtons()}
+                                    <Eye className="absolute bottom-2 right-2 h-5 w-5 text-white opacity-70 group-hover:opacity-100" />
+                                  </div>
+                                </div>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl p-0">
+                                <DialogHeader className="p-4 pr-14">
+                                  <DialogTitle>Mood Board Image</DialogTitle>
+                                </DialogHeader>
+                                <div className="relative aspect-video">
+                                   <NextImage 
+                                      src={results.moodBoardImage} 
+                                      alt="Generated Mood Board Representation - Full Size" 
+                                      layout="fill"
+                                      objectFit="contain"
+                                  />
+                                </div>
+                                 <div className="absolute top-4 right-14 flex items-center gap-1">
+                                    {imageActionButtons(true)}
+                                </div>
+                                <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                                  <XCircle className="h-5 w-5" />
+                                  <span className="sr-only">Close</span>
+                                </DialogClose>
+                              </DialogContent>
+                            </Dialog>
                               {isPlaceholderImage && (
                                 <p className="text-xs text-muted-foreground text-center">
                                   Representative image generation failed or is unavailable. Using a placeholder.
@@ -691,3 +763,5 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
+    
