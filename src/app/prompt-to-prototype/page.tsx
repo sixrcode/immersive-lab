@@ -53,14 +53,14 @@ const moodBoardPositionalLabels: string[] = [
 ];
 
 
-function ResultCard({ 
-  title, 
-  icon, 
-  children, 
-  isLoading, 
-  hasContentAfterLoading = true, 
+function ResultCard({
+  title,
+  icon,
+  children,
+  isLoading,
+  hasContentAfterLoading = true,
   noContentMessage = "No content was generated for this section.",
-  loadingHeight = "h-32", 
+  loadingHeight = "h-32",
   className,
   contentClassName,
   headerActions
@@ -119,15 +119,15 @@ const sanitizePromptForFilename = (prompt: string | undefined, maxLength: number
   const slug = prompt
     .trim()
     .toLowerCase()
-    .split(' ') 
-    .slice(0, 5) 
-    .join('_') 
-    .replace(/[^\w_.-]/g, '') 
-    .replace(/__+/g, '_') 
+    .split(' ')
+    .slice(0, 5)
+    .join('_')
+    .replace(/[^\w_.-]/g, '')
+    .replace(/__+/g, '_')
     .slice(0, maxLength);
-  
+
   const cleanedSlug = slug.replace(/[_.-]+$/, '');
-  
+
   return cleanedSlug || 'prompt_extract';
 };
 
@@ -274,7 +274,7 @@ export default function PromptToPrototypePage() {
     setIsLoading(true);
     setResults(null);
     try {
-      const input: PromptToPrototypeInput = { 
+      const input: PromptToPrototypeInput = {
         prompt: values.prompt,
         imageDataUri: values.imageDataUri,
         stylePreset: values.stylePreset,
@@ -307,7 +307,7 @@ export default function PromptToPrototypePage() {
     return results.shotList
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line) 
+      .filter(line => line)
       .map(line => {
         const parts = line.split(',');
         return {
@@ -342,261 +342,6 @@ export default function PromptToPrototypePage() {
     window.print();
   };
 
-  const renderFormAndMoodboard = () => (
-     <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-5 gap-6">
-          {/* Input Panel */}
-          <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg no-print">
-            <FormField
-              control={form.control}
-              name="prompt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-lg">Your Creative Prompt</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g., A lone astronaut discovers a mysterious signal on a desolate Mars colony..."
-                      className="min-h-[120px] resize-none bg-background"
-                      {...field}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="imageDataUri"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5" />Upload Image (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="imageUpload"
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleImageUpload} 
-                      className="bg-background"
-                      disabled={isLoading} 
-                    />
-                  </FormControl>
-                  {form.watch("imageFileName") && (
-                    <div className="mt-2 text-sm text-muted-foreground flex items-center justify-between p-2 border rounded-md bg-background">
-                      <span className="truncate max-w-[calc(100%-2rem)]">{form.watch("imageFileName")}</span>
-                      <Button type="button" variant="ghost" size="icon" onClick={removeImage} disabled={isLoading} className="h-6 w-6 flex-shrink-0" aria-label="Remove uploaded image">
-                        <XCircle className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  )}
-                  <FormDescription>An image can help guide the visual style.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="stylePreset"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-lg">Select Style Preset (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                    <FormControl>
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="Choose a style..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {stylePresets.map(preset => (
-                        <SelectItem key={preset.value} value={preset.value}>{preset.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>The style preset influences tone and visuals.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading || !mounted}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Assets...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Prototype Package
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Output Panel (Mood Board) */}
-          <div className="md:col-span-3">
-            { isLoading ? (
-                 <ResultCard
-                    title="Mood Board Concept"
-                    icon={<Palette className="h-6 w-6 text-accent" />}
-                    isLoading={true}
-                    loadingHeight="min-h-[400px] md:min-h-[calc(100%-2rem)]" 
-                    className="h-full"
-                    contentClassName="flex flex-col"
-                    headerActions={
-                      <>
-                        <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
-                            <Download className="h-4 w-4" />
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
-                           <Copy className="h-4 w-4" />
-                        </Button>
-                       </>
-                    }
-                  >
-                    <div className="flex flex-col gap-6 flex-grow">
-                      <Skeleton className="aspect-video w-full"/>
-                      <div className="flex-grow">
-                        <h4 className="font-semibold text-sm mb-2 text-foreground"><Skeleton className="h-4 w-1/2"/></h4>
-                        <div className="grid grid-cols-3 gap-2.5">
-                          {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
-                        </div>
-                      </div>
-                    </div>
-                  </ResultCard>
-              ) : results && mounted ? ( 
-                 <ResultCard
-                    title="Mood Board Concept"
-                    icon={<Palette className="h-6 w-6 text-accent" />}
-                    isLoading={false}
-                    hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
-                    noContentMessage="Mood board concept could not be generated."
-                    className="h-full print-card" 
-                    contentClassName="flex flex-col"
-                    headerActions={
-                       <>
-                        {results.moodBoardImage && !isPlaceholderImage && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={handleDownloadImage}
-                              aria-label="Download mood board image"
-                              disabled={!results.moodBoardImage || isPlaceholderImage}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {results.moodBoardCellsJsonString && (
-                           <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
-                              aria-label="Copy mood board themes JSON to clipboard"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          )}
-                       </>
-                    }
-                  >
-                    <div className="flex flex-col gap-6 flex-grow">
-                       <div className="flex flex-col gap-4">
-                        <div>
-                          <h4 className="font-semibold text-sm text-foreground mb-2">Representative Mood Board Image:</h4>
-                          {results.moodBoardImage ? (
-                            <>
-                            <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
-                              <DialogTrigger asChild className="no-print">
-                                <div className="group relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md cursor-pointer">
-                                  <NextImage 
-                                      src={results.moodBoardImage} 
-                                      alt="Generated Mood Board Representation" 
-                                      layout="fill"
-                                      objectFit="cover"
-                                      data-ai-hint="mood board concept"
-                                      className="print-image" 
-                                  />
-                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 no-print">
-                                    {imageActionButtons()}
-                                    <Eye className="absolute bottom-2 right-2 h-5 w-5 text-white opacity-70 group-hover:opacity-100" />
-                                  </div>
-                                </div>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-3xl p-0 no-print">
-                                <DialogHeader className="p-4 pr-14">
-                                  <DialogTitle>Mood Board Image</DialogTitle>
-                                </DialogHeader>
-                                <div className="relative aspect-video">
-                                   <NextImage 
-                                      src={results.moodBoardImage} 
-                                      alt="Generated Mood Board Representation - Full Size" 
-                                      layout="fill"
-                                      objectFit="contain"
-                                  />
-                                </div>
-                                 <div className="absolute top-4 right-14 flex items-center gap-1">
-                                    {imageActionButtons(true)}
-                                </div>
-                                <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                                  <XCircle className="h-5 w-5" />
-                                  <span className="sr-only">Close</span>
-                                </DialogClose>
-                              </DialogContent>
-                            </Dialog>
-                              {isPlaceholderImage && (
-                                <p className="text-xs text-muted-foreground text-center">
-                                  Representative image generation failed or is unavailable. Using a placeholder.
-                                </p>
-                              )}
-                            </>
-                          ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
-                        </div>
-                        
-                        <div className="print-moodboard-grid-container">
-                          <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed Thematic Descriptions:</h4>
-                          {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
-                            <>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
-                                {results.moodBoardCells.map((cell, index) => (
-                                  <div 
-                                    key={index} 
-                                    className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5 print-overflow-visible"
-                                    aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
-                                  >
-                                    <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
-                                    <div className="text-[0.75rem] text-muted-foreground space-y-1">
-                                      <p>{cell.description}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                               <p className="mt-3 text-xs text-muted-foreground text-center no-print">
-                                Use these thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
-                              </p>
-                            </>
-                          ) : (<p className="text-sm text-muted-foreground">No thematic descriptions were generated.</p>)}
-                        </div>
-                      </div>
-                    </div>
-                  </ResultCard>
-              ) : ( 
-                mounted && (
-                  <div className="flex flex-col items-center justify-center p-6 border border-dashed rounded-lg bg-muted/20 min-h-[300px]">
-                      <Palette size={48} className="text-muted-foreground mb-4" />
-                      <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
-                      <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
-                  </div>
-                )
-              )
-            }
-          </div>
-        </form>
-      </Form>
-  );
-
   if (!mounted) {
      return (
       <div className="container mx-auto py-8" id="promptToPrototypePage">
@@ -612,16 +357,42 @@ export default function PromptToPrototypePage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-5 gap-6">
-              <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
+            <div className="flex flex-col gap-6">
+              <div className="space-y-6 p-6 bg-muted/30 rounded-lg">
                 <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-32 w-full" />
                 <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-12 w-full mt-4" />
               </div>
-              <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px]">
-                <Skeleton className="h-12 w-12 mb-4 rounded-full" />
-                <Skeleton className="h-6 w-3/4 mb-2" /> <Skeleton className="h-4 w-1/2" />
+              <div>
+                <ResultCard
+                    title="Mood Board Concept"
+                    icon={<Palette className="h-6 w-6 text-accent" />}
+                    isLoading={true}
+                    loadingHeight="min-h-[400px]"
+                    className="print-card"
+                    contentClassName="flex flex-col"
+                    headerActions={
+                      <>
+                        <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
+                            <Download className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
+                           <Copy className="h-4 w-4" />
+                        </Button>
+                       </>
+                    }
+                  >
+                    <div className="flex flex-col gap-6 flex-grow">
+                      <Skeleton className="aspect-video w-full print-image"/>
+                      <div className="flex-grow print-moodboard-grid-container">
+                        <h4 className="font-semibold text-sm mb-2 text-foreground"><Skeleton className="h-4 w-1/2"/></h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
+                          {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+                        </div>
+                      </div>
+                    </div>
+                  </ResultCard>
               </div>
             </div>
           </CardContent>
@@ -669,17 +440,307 @@ export default function PromptToPrototypePage() {
           </div>
         </CardHeader>
         <CardContent>
-          {mounted ? renderFormAndMoodboard() : (
-             <div className="grid md:grid-cols-5 gap-6">
-              <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
+          {mounted ? (
+             <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+                {/* Input Panel */}
+                <div className="space-y-6 p-6 bg-muted/30 rounded-lg no-print">
+                  <FormField
+                    control={form.control}
+                    name="prompt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-lg">Your Creative Prompt</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="e.g., A lone astronaut discovers a mysterious signal on a desolate Mars colony..."
+                            className="min-h-[120px] resize-none bg-background"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="imageDataUri"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5" />Upload Image (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="imageUpload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="bg-background"
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        {form.watch("imageFileName") && (
+                          <div className="mt-2 text-sm text-muted-foreground flex items-center justify-between p-2 border rounded-md bg-background">
+                            <span className="truncate max-w-[calc(100%-2rem)]">{form.watch("imageFileName")}</span>
+                            <Button type="button" variant="ghost" size="icon" onClick={removeImage} disabled={isLoading} className="h-6 w-6 flex-shrink-0" aria-label="Remove uploaded image">
+                              <XCircle className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        )}
+                        <FormDescription>An image can help guide the visual style.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="stylePreset"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-lg">Select Style Preset (Optional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                          <FormControl>
+                            <SelectTrigger className="bg-background">
+                              <SelectValue placeholder="Choose a style..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {stylePresets.map(preset => (
+                              <SelectItem key={preset.value} value={preset.value}>{preset.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>The style preset influences tone and visuals.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={isLoading || !mounted}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating Assets...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate Prototype Package
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Output Panel (Mood Board) */}
+                <div>
+                  { isLoading ? (
+                       <ResultCard
+                          title="Mood Board Concept"
+                          icon={<Palette className="h-6 w-6 text-accent" />}
+                          isLoading={true}
+                          loadingHeight="min-h-[400px]"
+                          className="print-card"
+                          contentClassName="flex flex-col"
+                           headerActions={
+                             <>
+                              <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
+                                  <Download className="h-4 w-4" />
+                              </Button>
+                              <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
+                                 <Copy className="h-4 w-4" />
+                              </Button>
+                             </>
+                          }
+                        >
+                          <div className="flex flex-col gap-6 flex-grow">
+                            <Skeleton className="aspect-video w-full print-image"/>
+                            <div className="flex-grow print-moodboard-grid-container">
+                              <h4 className="font-semibold text-sm mb-2 text-foreground"><Skeleton className="h-4 w-1/2"/></h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
+                                {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+                              </div>
+                            </div>
+                          </div>
+                        </ResultCard>
+                    ) : results ? (
+                       <ResultCard
+                          title="Mood Board Concept"
+                          icon={<Palette className="h-6 w-6 text-accent" />}
+                          isLoading={false}
+                          hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
+                          noContentMessage="Mood board concept could not be generated."
+                          className="print-card"
+                          contentClassName="flex flex-col"
+                          headerActions={
+                             <>
+                              {results.moodBoardImage && !isPlaceholderImage && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDownloadImage}
+                                    aria-label="Download mood board image"
+                                    disabled={!results.moodBoardImage || isPlaceholderImage}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {results.moodBoardCellsJsonString && (
+                                 <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
+                                    aria-label="Copy mood board themes JSON to clipboard"
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                )}
+                             </>
+                          }
+                        >
+                          <div className="flex flex-col gap-6 flex-grow">
+                             <div className="flex flex-col gap-4">
+                              <div>
+                                <h4 className="font-semibold text-sm text-foreground mb-2">Representative Mood Board Image:</h4>
+                                {results.moodBoardImage ? (
+                                  <>
+                                  <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+                                    <DialogTrigger asChild className="no-print">
+                                      <div className="group relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md cursor-pointer">
+                                        <NextImage
+                                            src={results.moodBoardImage}
+                                            alt="Generated Mood Board Representation"
+                                            layout="fill"
+                                            objectFit="cover"
+                                            data-ai-hint="mood board concept"
+                                            className="print-image"
+                                        />
+                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 no-print">
+                                          {imageActionButtons()}
+                                          <Eye className="absolute bottom-2 right-2 h-5 w-5 text-white opacity-70 group-hover:opacity-100" />
+                                        </div>
+                                      </div>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-3xl p-0 no-print">
+                                      <DialogHeader className="p-4 pr-14">
+                                        <DialogTitle>Mood Board Image</DialogTitle>
+                                      </DialogHeader>
+                                      <div className="relative aspect-video">
+                                         <NextImage
+                                            src={results.moodBoardImage}
+                                            alt="Generated Mood Board Representation - Full Size"
+                                            layout="fill"
+                                            objectFit="contain"
+                                        />
+                                      </div>
+                                       <div className="absolute top-4 right-14 flex items-center gap-1">
+                                          {imageActionButtons(true)}
+                                      </div>
+                                      <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                                        <XCircle className="h-5 w-5" />
+                                        <span className="sr-only">Close</span>
+                                      </DialogClose>
+                                    </DialogContent>
+                                  </Dialog>
+                                  {/* This image is for print only, to ensure it's part of the linear flow */}
+                                  <div className="hidden print-block">
+                                     <NextImage
+                                          src={results.moodBoardImage}
+                                          alt="Generated Mood Board Representation"
+                                          width={500} 
+                                          height={281} 
+                                          objectFit="contain"
+                                          className="print-image"
+                                      />
+                                  </div>
+
+                                    {isPlaceholderImage && (
+                                      <p className="text-xs text-muted-foreground text-center">
+                                        Representative image generation failed or is unavailable. Using a placeholder.
+                                      </p>
+                                    )}
+                                  </>
+                                ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
+                              </div>
+
+                              <div className="print-moodboard-grid-container">
+                                <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed Thematic Descriptions:</h4>
+                                {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
+                                  <>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
+                                      {results.moodBoardCells.map((cell, index) => (
+                                        <div
+                                          key={index}
+                                          className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5 print-overflow-visible"
+                                          aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
+                                        >
+                                          <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
+                                          <div className="text-[0.75rem] text-muted-foreground space-y-1">
+                                            <p>{cell.description}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                     <p className="mt-3 text-xs text-muted-foreground text-center no-print">
+                                      Use these thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
+                                    </p>
+                                  </>
+                                ) : (<p className="text-sm text-muted-foreground">No thematic descriptions were generated.</p>)}
+                              </div>
+                            </div>
+                          </div>
+                        </ResultCard>
+                    ) : (
+                      mounted && (
+                        <div className="flex flex-col items-center justify-center p-6 border border-dashed rounded-lg bg-muted/20 min-h-[300px]">
+                            <Palette size={48} className="text-muted-foreground mb-4" />
+                            <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
+                            <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
+                        </div>
+                      )
+                    )}
+                </div>
+              </form>
+            </Form>
+          ) : (
+             <div className="flex flex-col gap-6">
+              <div className="space-y-6 p-6 bg-muted/30 rounded-lg no-print">
                  <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-32 w-full" />
                 <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-12 w-full mt-4" />
               </div>
-              <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px]">
-                <Skeleton className="h-12 w-12 mb-4 rounded-full" />
-                <Skeleton className="h-6 w-3/4 mb-2" /> <Skeleton className="h-4 w-1/2" />
+              <div>
+                 <ResultCard
+                    title="Mood Board Concept"
+                    icon={<Palette className="h-6 w-6 text-accent" />}
+                    isLoading={true}
+                    loadingHeight="min-h-[400px]"
+                    className="print-card"
+                    contentClassName="flex flex-col"
+                    headerActions={
+                      <>
+                        <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
+                            <Download className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
+                           <Copy className="h-4 w-4" />
+                        </Button>
+                       </>
+                    }
+                  >
+                    <div className="flex flex-col gap-6 flex-grow">
+                      <Skeleton className="aspect-video w-full print-image"/>
+                      <div className="flex-grow print-moodboard-grid-container">
+                        <h4 className="font-semibold text-sm mb-2 text-foreground"><Skeleton className="h-4 w-1/2"/></h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
+                          {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+                        </div>
+                      </div>
+                    </div>
+                  </ResultCard>
               </div>
             </div>
           )}
@@ -689,12 +750,12 @@ export default function PromptToPrototypePage() {
       {(results && !isLoading && mounted) && (
         <div className="mt-12">
           <h2 className="text-2xl font-semibold mb-6 text-center text-foreground no-print">Other Generated Assets</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} 
+              isLoading={isLoading}
               hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
               noContentMessage="No loglines were generated for this prototype."
               loadingHeight="h-40"
@@ -727,7 +788,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} 
+              isLoading={isLoading}
               hasContentAfterLoading={parsedShotList.length > 0}
               noContentMessage="No shot list was generated for this prototype."
               loadingHeight="h-60"
@@ -774,11 +835,11 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} 
+              isLoading={isLoading}
               hasContentAfterLoading={!!results.proxyClipAnimaticDescription}
               noContentMessage="No animatic description was generated for this prototype."
               loadingHeight="h-40"
-              className="md:col-span-1" 
+              className="md:col-span-1"
               headerActions={
                 results.proxyClipAnimaticDescription && (
                   <Button
@@ -801,7 +862,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Pitch Summary"
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} 
+              isLoading={isLoading}
               hasContentAfterLoading={!!results.pitchSummary}
               noContentMessage="No pitch summary was generated for this prototype."
               loadingHeight="h-40"
@@ -836,3 +897,4 @@ export default function PromptToPrototypePage() {
   );
 }
 
+    
