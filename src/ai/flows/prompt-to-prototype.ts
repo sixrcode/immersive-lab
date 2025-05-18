@@ -76,12 +76,12 @@ const prompt = ai.definePrompt({
   - User Provided Image: {{media url=imageDataUri}} (This image should serve as a primary visual inspiration for the mood board cell descriptions and the overall visual tone. Refer to its elements or style when describing the mood board cells.)
   {{/if}}
   {{#if stylePreset}}
-  - Style Preset: "{{stylePreset}}" (Apply this selected style to the mood board cell descriptions, the tone of the loglines, the shot list suggestions, and the style of the proxy clip animatic description.)
+  - Style Preset: "{{stylePreset}}" (Apply this selected style across ALL generated textual assets where applicable, influencing aspects like tone, artistic direction, descriptive language, and specific suggestions. This should be consistently reflected in loglines, mood board cell content, shot lists, animatic descriptions, and the pitch summary.)
   {{/if}}
 
   Generate the following assets, adhering strictly to the output schema provided:
 
-  1.  **Loglines**: Provide three distinct logline variants for the project. Each logline should target a different tone (e.g., whimsical, gritty, dramatic, comedic, thrilling, mysterious). If a style preset is provided, let it influence the tone.
+  1.  **Loglines**: Provide three distinct logline variants for the project. Each logline should target a different tone (e.g., whimsical, gritty, dramatic, comedic, thrilling, mysterious). {{#if stylePreset}}The tone of these loglines should be influenced by the "{{stylePreset}}" preset.{{/if}}
       For each logline, output an object with 'tone' (string) and 'text' (string) properties.
 
   2.  **Mood Board 3x3 Grid Cell Content**: Generate an array of 9 objects for the 'moodBoardCells' field. Each object must represent one cell in a 3x3 grid and correspond to a specific theme.
@@ -107,13 +107,13 @@ const prompt = ai.definePrompt({
       If a user image was provided, it should heavily inspire these descriptions, particularly for palette, texture, composition, and initial character/environment ideas. Explicitly draw from it where appropriate.
       {{/if}}
 
-  3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes. Adapt suggestions if a style preset is specified.
+  3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes. {{#if stylePreset}}Adapt suggestions if the "{{stylePreset}}" style preset is specified.{{/if}}
       Output this as a single multi-line string, with each shot on a new line, and values separated by commas (e.g., "1,35mm,Slow Push-in,Close up on character's eyes revealing fear.").
       **Do not include a header row in the shot list output.**
 
-  4.  **Proxy Clip Animatic Description**: Provide a detailed textual description for a 4-second proxy clip animatic. This ultra-low-res moving animatic should preview pacing and key moments. Describe the sequence of visuals, any simple motion, and how it conveys the core idea or feeling of the prompt. If a style preset is provided, let it influence the description. Imagine you're describing 3-5 key still frames that would make up this animatic.
+  4.  **Proxy Clip Animatic Description**: Provide a detailed textual description for a 4-second proxy clip animatic. This ultra-low-res moving animatic should preview pacing and key moments. Describe the sequence of visuals, any simple motion, and how it conveys the core idea or feeling of the prompt. {{#if stylePreset}}Let the "{{stylePreset}}" style preset influence the description.{{/if}} Imagine you're describing 3-5 key still frames that would make up this animatic.
 
-  5.  **Pitch Summary**: Generate a concise (1-2 paragraphs) and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, dominant tone (influenced by style preset if any), and potential appeal, drawing from the main prompt and other generated assets.
+  5.  **Pitch Summary**: Generate a concise (1-2 paragraphs) and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, dominant tone ({{#if stylePreset}}influenced by the "{{stylePreset}}" preset{{else}}reflecting the main prompt{{/if}}), and potential appeal, drawing from the main prompt and other generated assets.
 
   Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells'.
   The representative 'moodBoardImage' (a single image) will be generated separately by the application after this text generation step and added to the final output.
