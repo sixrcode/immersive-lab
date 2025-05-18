@@ -22,13 +22,15 @@ const PromptToPrototypeOutputSchema = z.object({
     tone: z.string().describe("The tone of the logline (e.g., whimsical, gritty, dramatic)."),
     text: z.string().describe("The logline text."),
   })).describe('Three logline variants targeting distinct tones.'),
-  moodBoardDescription: z.string().describe('A textual description of a 3x3 grid of images for the mood board, detailing palette, atmosphere, and key props for each of the 9 cells. This description should be detailed enough to guide manual creation or further AI generation of the individual grid images.'),
+  moodBoardCells: z.array(
+    z.string().describe("A detailed textual description for one cell of the 3x3 mood board, covering its specific visuals, palette, atmosphere, and key props/elements. Aim for 2-4 sentences per cell.")
+  ).length(9).describe("An array of 9 textual descriptions, one for each cell of a 3x3 mood board grid, ordered from top-left to bottom-right, row by row."),
   moodBoardImage: z
     .string()
     .describe(
       "A single representative image for the mood board concept, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  shotList: z.string().describe('A numbered shot-list (6-10 shots) with suggested lenses, camera moves, and framing notes. Presented as a multi-line string, with each shot on a new line and values separated by commas (Shot #,Lens,Camera Move,Framing Notes).'),
+  shotList: z.string().describe('A numbered shot-list (6-10 shots) with suggested lenses, camera moves, and framing notes. Presented as a multi-line string, with each shot on a new line and values separated by commas (Shot #,Lens,Camera Move,Framing Notes). Do not include a header row.'),
   proxyClipAnimaticDescription: z.string().describe('A detailed textual description for a 4-second proxy clip animatic. This should outline key visuals, pacing, and transitions to help visualize the animatic, as if describing a sequence of still frames or very simple animations.'),
 });
 
@@ -54,7 +56,12 @@ const prompt = ai.definePrompt({
   1.  **Loglines**: Provide three distinct logline variants for the project. Each logline should target a different tone (e.g., whimsical, gritty, dramatic, comedic, thrilling, mysterious).
       Output schema for each logline: { tone: string, text: string }
 
-  2.  **Mood Board Description**: Describe a 3x3 grid of images that would visually represent the project's aesthetic. For each of the 9 cells in the grid, detail the envisioned content, including palette, atmosphere, and key props or visual elements. This description should be comprehensive.
+  2.  **Mood Board 3x3 Grid Cell Descriptions**: Generate an array of 9 detailed textual descriptions, one for each cell of a 3x3 mood board grid. The order should be row by row, starting from top-left (cell 1) to bottom-right (cell 9). For each cell, provide a description (approximately 2-4 sentences) that clearly outlines:
+      *   **Visuals**: The key imagery or scene depicted.
+      *   **Palette**: The dominant colors and overall color scheme.
+      *   **Atmosphere**: The mood or feeling the cell should evoke (e.g., mysterious, vibrant, calm, tense).
+      *   **Key Props/Elements**: Specific objects, characters, or significant visual details.
+      The output for this entire item must be a JSON array of 9 strings. Each string in the array corresponds to one cell's description.
 
   3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes.
       Output each shot on a new line, with values separated by a comma (e.g., Shot #,Lens,Camera Move,Framing Notes).
@@ -87,10 +94,10 @@ const promptToPrototypeFlow = ai.defineFlow(
     const imagePromptText = `Generate a single piece of concept art or a visual summary that captures the overall essence, style, and atmosphere for a project based on: '${input.prompt}'. This image should serve as a central, representative piece for a mood board concept, evoking a "style collage" or "visual keynote" feel. Focus on compelling composition and artistic representation of the theme.`;
     
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-exp', // Ensure this model is appropriate and available
+      model: 'googleai/gemini-2.0-flash-exp', 
       prompt: [{text: imagePromptText}],
       config: {
-        responseModalities: ['TEXT', 'IMAGE'], // Important: Must include TEXT even if only IMAGE is primary.
+        responseModalities: ['TEXT', 'IMAGE'], 
       },
     });
 
