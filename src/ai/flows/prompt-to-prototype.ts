@@ -73,12 +73,30 @@ const prompt = ai.definePrompt({
       For each logline, output an object with 'tone' (string) and 'text' (string) properties.
 
   2.  **Mood Board 3x3 Grid Cell Content**: Generate an array of 9 objects for the 'moodBoardCells' field. Each object represents one cell in a 3x3 grid, ordered row by row (top-left to bottom-right).
-      For each of the 9 cells, the object MUST contain the following string properties:
-      *   'visuals': A concise description (1-2 sentences) of the key imagery or scene depicted in this cell.
-      *   'palette': The dominant colors and overall color scheme for this cell (e.g., 'Warm earth tones, deep blues, a splash of crimson').
-      *   'atmosphere': The mood or feeling this cell should evoke (e.g., 'Mysterious and melancholic', 'Joyful and vibrant').
-      *   'keyProps': Specific objects, characters, or significant visual details central to this cell (e.g., 'A worn leather-bound book', 'A futuristic cityscape at dusk').
-      If a user image is provided, it's a key inspiration for these details. If a style preset is provided, apply it to the descriptions.
+      Your goal for these 9 cells is to create a diverse and comprehensive textual guide for a visual mood board that covers a range of important visual and thematic elements derived from the user's core prompt. Try to make each cell distinct. Consider including descriptions across the 9 cells that touch upon:
+      *   A primary character: their look, expression, or a key costume detail.
+      *   A key setting or environment: highlighting its specific atmosphere, time of day, or notable features.
+      *   A close-up or focus on an important prop or symbolic object.
+      *   An example of the intended core color palette and dominant textures.
+      *   A representation of a key emotional beat, overall tone, or a specific mood for a scene.
+      *   A suggestion for lighting style (e.g., chiaroscuro, soft daylight, neon glow).
+      *   A hint at camera work, framing, or a common cinematographic style (e.g., shallow depth of field, wide establishing shot).
+      *   An abstract visual concept or symbolism relevant to the core theme.
+      *   A contrasting visual element or a less obvious idea that still supports the main prompt.
+
+      For each of the 9 cells, the object MUST contain the following string properties. These should be directly inspired by and expand upon the user's main prompt:
+      *   'visuals': (1-2 sentences) Describe the key imagery or scene this specific cell represents, aiming for visual richness.
+      *   'palette': Detail the dominant colors and overall color scheme for THIS CELL (e.g., 'Deep blues and cool grays with a single point of neon pink for contrast', 'Monochromatic sepia tones with high contrast').
+      *   'atmosphere': Articulate the specific mood or feeling THIS CELL should evoke (e.g., 'Tense and suspenseful with a sense of claustrophobia', 'Nostalgic and warm, slightly melancholic', 'Chaotic, energetic, and overwhelming').
+      *   'keyProps': List specific objects, characters, or significant visual details central to THIS CELL'S particular focus (e.g., 'Rain-streaked window obscuring a face', 'A single, wilting flower on polished metal', 'Eyes wide, reflecting distant city lights').
+
+      Ensure the descriptions for each cell are distinct and collectively contribute to a holistic and inspiring visual brief.
+      {{#if stylePreset}}
+      Remember to apply the "{{stylePreset}}" style preset to influence the artistic direction, color choices, and overall feel of these descriptions.
+      {{/if}}
+      {{#if imageDataUri}}
+      If a user image was provided (see User Inputs section), it should heavily inspire these descriptions, particularly for palette, texture, composition, and initial character/environment ideas. Explicitly draw from it where appropriate.
+      {{/if}}
 
   3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes. Adapt suggestions if a style preset is specified.
       Output this as a single multi-line string, with each shot on a new line, and values separated by commas (e.g., "1,35mm,Slow Push-in,Close up on character's eyes revealing fear.").

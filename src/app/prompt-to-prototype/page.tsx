@@ -63,7 +63,9 @@ function ResultCard({
         {isLoading ? (
           <Skeleton className={cn("w-full", loadingHeight)} />
         ) : !hasContentAfterLoading ? (
-          <p className="text-sm text-muted-foreground p-3 text-center">{noContentMessage}</p>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-sm text-muted-foreground p-3 text-center">{noContentMessage}</p>
+          </div>
         ) : (
           children
         )}
@@ -178,7 +180,7 @@ export default function PromptToPrototypePage() {
     return results.shotList
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line) // Ensure no empty lines from bad splits
+      .filter(line => line) 
       .map(line => {
         const parts = line.split(',');
         return {
@@ -192,7 +194,198 @@ export default function PromptToPrototypePage() {
 
   const isPlaceholderImage = results?.moodBoardImage?.includes(PLACEHOLDER_IMAGE_URL_TEXT);
 
+  const renderForm = () => (
+     <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-5 gap-6">
+          {/* Input Panel */}
+          <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
+            <FormField
+              control={form.control}
+              name="prompt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg">Your Creative Prompt</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="e.g., A lone astronaut discovers a mysterious signal on a desolate Mars colony..."
+                      className="min-h-[120px] resize-none bg-background"
+                      {...field}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="imageDataUri"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5" />Upload Image (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="imageUpload"
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                      className="bg-background"
+                      disabled={isLoading} 
+                    />
+                  </FormControl>
+                  {form.watch("imageFileName") && (
+                    <div className="mt-2 text-sm text-muted-foreground flex items-center justify-between p-2 border rounded-md bg-background">
+                      <span className="truncate max-w-[calc(100%-2rem)]">{form.watch("imageFileName")}</span>
+                      <Button type="button" variant="ghost" size="icon" onClick={removeImage} disabled={isLoading} className="h-6 w-6 flex-shrink-0">
+                        <XCircle className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  )}
+                  <FormDescription>An image can help guide the visual style.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="stylePreset"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg">Select Style Preset (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                    <FormControl>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="Choose a style..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {stylePresets.map(preset => (
+                        <SelectItem key={preset.value} value={preset.value}>{preset.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>The style preset influences tone and visuals.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Assets...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Prototype Package
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Output Panel (Mood Board) */}
+          <div className="md:col-span-3">
+            { isLoading ? (
+                 <ResultCard
+                    title="Mood Board Concept"
+                    icon={<Palette className="h-6 w-6 text-accent" />}
+                    isLoading={true}
+                    loadingHeight="h-[calc(100%-2rem)]" 
+                    className="h-full"
+                  >
+                    {/* Skeleton for Mood Board during loading */}
+                    <div className="flex flex-col gap-6">
+                      <div><Skeleton className="aspect-video w-full"/></div>
+                      <div>
+                        <div className="grid grid-cols-3 gap-2.5">
+                          {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+                        </div>
+                      </div>
+                    </div>
+                  </ResultCard>
+              ) : results ? (
+                 <ResultCard
+                    title="Mood Board Concept"
+                    icon={<Palette className="h-6 w-6 text-accent" />}
+                    isLoading={false}
+                    hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
+                    noContentMessage="Mood board concept could not be generated."
+                    loadingHeight="h-96" // Arbitrary, actual height will vary
+                    className="h-full"
+                  >
+                    <div className="flex flex-col gap-6">
+                      <div>
+                        <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
+                        {results.moodBoardImage ? (
+                          <>
+                            <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
+                              <NextImage 
+                                  src={results.moodBoardImage} 
+                                  alt="Generated Mood Board Representation" 
+                                  layout="fill"
+                                  objectFit="cover"
+                                  data-ai-hint="mood board concept"
+                              />
+                            </div>
+                            {isPlaceholderImage && (
+                              <p className="text-xs text-muted-foreground text-center">
+                                Representative image generation failed or is unavailable. Using a placeholder.
+                              </p>
+                            )}
+                          </>
+                        ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Cell Descriptions:</h4>
+                        {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
+                          <>
+                            <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
+                              {results.moodBoardCells.map((cell, index) => (
+                                <div 
+                                  key={index} 
+                                  className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5"
+                                  aria-label={`Mood board cell: ${moodBoardCellLabels[index]}`}
+                                >
+                                  <span className="font-semibold text-foreground/90 text-[0.8rem] block">{moodBoardCellLabels[index]}</span>
+                                  <div className="text-[0.75rem] text-muted-foreground space-y-1">
+                                    <p><strong className="text-foreground/75">Visuals:</strong> {cell.visuals}</p>
+                                    <p><strong className="text-foreground/75">Palette:</strong> {cell.palette}</p>
+                                    <p><strong className="text-foreground/75">Atmosphere:</strong> {cell.atmosphere}</p>
+                                    <p><strong className="text-foreground/75">Key Props:</strong> {cell.keyProps}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="mt-3 text-xs text-muted-foreground text-center">
+                              Use these 9 cell descriptions as a detailed guide to manually create or source images for your visual mood board.
+                              Focus on capturing the specified visuals, palette, atmosphere, and key props for each cell to build a rich visual tapestry for your concept.
+                            </p>
+                          </>
+                        ) : (<p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
+                      </div>
+                    </div>
+                  </ResultCard>
+              ) : ( 
+                // Initial placeholder state before any generation
+                <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
+                    <Palette size={48} className="text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
+                    <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
+                </div>
+              )
+            }
+          </div>
+        </form>
+      </Form>
+  );
+
+
   if (!mounted) {
+    // Skeleton for the entire form area if not mounted
     return (
       <div className="container mx-auto py-8">
         <Card className="max-w-6xl mx-auto shadow-xl">
@@ -236,184 +429,7 @@ export default function PromptToPrototypePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-5 gap-6">
-              {/* Input Panel */}
-              <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
-                <FormField
-                  control={form.control}
-                  name="prompt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg">Your Creative Prompt</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="e.g., A lone astronaut discovers a mysterious signal on a desolate Mars colony..."
-                          className="min-h-[120px] resize-none bg-background"
-                          {...field}
-                          disabled={isLoading}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="imageDataUri"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5" />Upload Image (Optional)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          id="imageUpload"
-                          type="file" 
-                          accept="image/*" 
-                          onChange={handleImageUpload} 
-                          className="bg-background"
-                          disabled={isLoading} 
-                        />
-                      </FormControl>
-                      {form.watch("imageFileName") && (
-                        <div className="mt-2 text-sm text-muted-foreground flex items-center justify-between p-2 border rounded-md bg-background">
-                          <span>{form.watch("imageFileName")}</span>
-                          <Button type="button" variant="ghost" size="icon" onClick={removeImage} disabled={isLoading} className="h-6 w-6">
-                            <XCircle className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      )}
-                      <FormDescription>An image can help guide the visual style.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="stylePreset"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg">Select Style Preset (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                        <FormControl>
-                          <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="Choose a style..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {stylePresets.map(preset => (
-                            <SelectItem key={preset.value} value={preset.value}>{preset.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>The style preset influences tone and visuals.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Assets...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Generate Prototype Package
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Output Panel (Mood Board) */}
-              <div className="md:col-span-3">
-                { isLoading ? (
-                     <ResultCard
-                        title="Mood Board Concept"
-                        icon={<Palette className="h-6 w-6 text-accent" />}
-                        isLoading={true}
-                        loadingHeight="h-[calc(100%-2rem)]" 
-                        className="h-full"
-                      >
-                        <div className="flex flex-col gap-6">
-                          <div><Skeleton className="h-48 w-full"/></div>
-                          <div>
-                            <div className="grid grid-cols-3 gap-2.5">
-                              {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
-                            </div>
-                          </div>
-                        </div>
-                      </ResultCard>
-                  ) : results && mounted ? (
-                     <ResultCard
-                        title="Mood Board Concept"
-                        icon={<Palette className="h-6 w-6 text-accent" />}
-                        isLoading={false}
-                        hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
-                        noContentMessage="Mood board concept could not be generated."
-                        loadingHeight="h-96" 
-                        className="h-full"
-                      >
-                        <div className="flex flex-col gap-6">
-                          <div>
-                            <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
-                            {results.moodBoardImage ? (
-                              <>
-                                <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
-                                  <NextImage 
-                                      src={results.moodBoardImage} 
-                                      alt="Generated Mood Board Representation" 
-                                      layout="fill"
-                                      objectFit="cover"
-                                      data-ai-hint="mood board concept"
-                                  />
-                                </div>
-                                {isPlaceholderImage && (
-                                  <p className="text-xs text-muted-foreground text-center">
-                                    Representative image generation failed or is unavailable. Using a placeholder.
-                                  </p>
-                                )}
-                              </>
-                            ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Cell Descriptions:</h4>
-                            {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
-                              <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
-                                {results.moodBoardCells.map((cell, index) => (
-                                  <div 
-                                    key={index} 
-                                    className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5"
-                                    aria-label={`Mood board cell: ${moodBoardCellLabels[index]}`}
-                                  >
-                                    <span className="font-semibold text-foreground/90 text-[0.8rem] block">{moodBoardCellLabels[index]}</span>
-                                    <div className="text-[0.75rem] text-muted-foreground space-y-1">
-                                      <p><strong className="text-foreground/75">Visuals:</strong> {cell.visuals}</p>
-                                      <p><strong className="text-foreground/75">Palette:</strong> {cell.palette}</p>
-                                      <p><strong className="text-foreground/75">Atmosphere:</strong> {cell.atmosphere}</p>
-                                      <p><strong className="text-foreground/75">Key Props:</strong> {cell.keyProps}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (<p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
-                          </div>
-                        </div>
-                      </ResultCard>
-                  ) : ( 
-                    <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
-                        <Palette size={48} className="text-muted-foreground mb-4" />
-                        <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
-                        <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
-                    </div>
-                  )
-                }
-              </div>
-            </form>
-          </Form>
+          {renderForm()}
         </CardContent>
       </Card>
 
@@ -427,7 +443,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={false} // Already handled by parent isLoading
+              isLoading={isLoading} // Pass isLoading here
               hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
               noContentMessage="No loglines were generated for this prototype."
               loadingHeight="h-40"
@@ -448,7 +464,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
-              isLoading={false}
+              isLoading={isLoading} // Pass isLoading here
               hasContentAfterLoading={parsedShotList.length > 0}
               noContentMessage="No shot list was generated for this prototype."
               loadingHeight="h-60"
@@ -483,7 +499,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
-              isLoading={false}
+              isLoading={isLoading} // Pass isLoading here
               hasContentAfterLoading={!!results.proxyClipAnimaticDescription}
               noContentMessage="No animatic description was generated for this prototype."
               loadingHeight="h-40"
@@ -498,7 +514,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Pitch Summary"
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
-              isLoading={false}
+              isLoading={isLoading} // Pass isLoading here
               hasContentAfterLoading={!!results.pitchSummary}
               noContentMessage="No pitch summary was generated for this prototype."
               loadingHeight="h-40"
@@ -518,7 +534,3 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
-
-    
-
-    
