@@ -8,8 +8,9 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PlusCircle, MoreHorizontal, Kanban as KanbanIcon, Film, Lightbulb, Edit2, CheckCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import React, { useState } from "react";
 
-const initialColumns: KanbanColumnType[] = [
+const initialColumnsData: KanbanColumnType[] = [
   {
     id: "pitch",
     title: "Pitch & Concept",
@@ -56,15 +57,26 @@ const columnIcons: Record<string, React.ElementType> = {
   pitch: Lightbulb,
   storyboard: Edit2,
   scriptwriting: Film,
-  "rough-cut": KanbanIcon, // using KanbanIcon as a placeholder
+  "rough-cut": KanbanIcon, 
   "final-polish": CheckCircle,
   distribution: Send,
 };
 
 
-function KanbanCard({ card }: { card: KanbanCardType }) {
+function KanbanCardComponent({ card, columnId }: { card: KanbanCardType; columnId: string }) {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData("cardId", card.id);
+    e.dataTransfer.setData("sourceColumnId", columnId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
   return (
-    <Card className="mb-3 shadow-md hover:shadow-lg transition-shadow duration-200 bg-card">
+    <Card 
+      className="mb-3 shadow-md hover:shadow-lg transition-shadow duration-200 bg-card cursor-grab"
+      draggable
+      onDragStart={handleDragStart}
+      id={`card-${card.id}`}
+    >
       {card.coverImage && (
         <div className="relative h-32 w-full">
           <Image 
@@ -94,10 +106,29 @@ function KanbanCard({ card }: { card: KanbanCardType }) {
   );
 }
 
-function KanbanColumn({ column }: { column: KanbanColumnType }) {
+function KanbanColumnComponent({ column, onDropCard }: { column: KanbanColumnType; onDropCard: (targetColumnId: string, cardId: string, sourceColumnId: string) => void }) {
   const IconComponent = columnIcons[column.id] || KanbanIcon;
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const cardId = e.dataTransfer.getData("cardId");
+    const sourceColumnId = e.dataTransfer.getData("sourceColumnId");
+    if (cardId && sourceColumnId && sourceColumnId !== column.id) {
+      onDropCard(column.id, cardId, sourceColumnId);
+    }
+  };
+
   return (
-    <div className="flex flex-col w-80 min-w-[320px] bg-muted/50 rounded-lg p-1">
+    <div 
+      className="flex flex-col w-80 min-w-[320px] bg-muted/50 rounded-lg p-1"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="flex justify-between items-center p-3 mb-2 sticky top-0 bg-muted/50 z-10 rounded-t-lg">
         <div className="flex items-center gap-2">
           <IconComponent className="h-5 w-5 text-primary" />
@@ -105,11 +136,11 @@ function KanbanColumn({ column }: { column: KanbanColumnType }) {
         </div>
         <Badge variant="secondary">{column.cards.length}</Badge>
       </div>
-      <ScrollArea className="flex-1 p-2"> {/* Changed: Removed h-[calc(100vh-20rem)] and relying on flex-1 */}
+      <ScrollArea className="flex-1 p-2">
         {column.cards.length > 0 ? (
-          column.cards.map((card) => <KanbanCard key={card.id} card={card} />)
+          column.cards.map((card) => <KanbanCardComponent key={card.id} card={card} columnId={column.id} />)
         ) : (
-          <div className="text-center text-sm text-muted-foreground py-4">No tasks yet.</div>
+          <div className="text-center text-sm text-muted-foreground py-4 min-h-[50px]">Drop cards here or add tasks.</div>
         )}
       </ScrollArea>
        <Button variant="ghost" className="mt-2 text-sm text-muted-foreground hover:text-foreground">
@@ -121,9 +152,35 @@ function KanbanColumn({ column }: { column: KanbanColumnType }) {
 
 
 export default function ProductionBoardPage() {
-  // In a real app, columns and cards would come from state/API
-  // Drag and drop functionality would be added here
-  // For now, it's a static display
+  const [columns, setColumns] = useState<KanbanColumnType[]>(initialColumnsData);
+
+  const handleDropCard = (targetColumnId: string, cardId: string, sourceColumnId: string) => {
+    setColumns(prevColumns => {
+      let cardToMove: KanbanCardType | undefined;
+      
+      // Find and remove card from source column
+      const newColumns = prevColumns.map(col => {
+        if (col.id === sourceColumnId) {
+          cardToMove = col.cards.find(c => c.id === cardId);
+          return { ...col, cards: col.cards.filter(c => c.id !== cardId) };
+        }
+        return col;
+      });
+
+      if (!cardToMove) return prevColumns; // Should not happen
+
+      // Add card to target column
+      return newColumns.map(col => {
+        if (col.id === targetColumnId) {
+          // Update card's stage property
+          const updatedCard = { ...cardToMove!, stage: targetColumnId };
+          return { ...col, cards: [...col.cards, updatedCard] };
+        }
+        return col;
+      });
+    });
+  };
+  
 
   return (
     <div className="flex flex-col h-full">
@@ -133,13 +190,13 @@ export default function ProductionBoardPage() {
           <h1 className="text-3xl font-bold text-foreground">Production Board</h1>
         </div>
         <p className="text-muted-foreground mt-1">
-          Visualize and manage your creative projects through each stage of production.
+          Visualize and manage your creative projects through each stage of production. Drag cards to move them between stages.
         </p>
       </header>
       <ScrollArea className="flex-1 w-full pb-4">
         <div className="flex gap-4 p-1">
-          {initialColumns.map((column) => (
-            <KanbanColumn key={column.id} column={column} />
+          {columns.map((column) => (
+            <KanbanColumnComponent key={column.id} column={column} onDropCard={handleDropCard} />
           ))}
            <div className="w-80 min-w-[320px] flex items-center justify-center">
             <Button variant="outline" className="w-full h-16 border-dashed">
@@ -152,4 +209,3 @@ export default function ProductionBoardPage() {
     </div>
   );
 }
-
