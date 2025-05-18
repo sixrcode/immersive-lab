@@ -27,7 +27,7 @@ const AnalyzeScriptOutputSchema = z.object({
     ),
   suggestions: z.array(
     z.object({
-      section: z.string().describe('The specific section of the script being addressed.'),
+      section: z.string().describe('The *exact, verbatim text* of the script segment being addressed. This text will be used for direct replacement if the user chooses to apply the suggestion.'),
       issue: z.string().describe('The issue identified in the section.'),
       improvement: z.string().describe('A suggestion for improving the section.'),
     })
@@ -47,12 +47,16 @@ const prompt = ai.definePrompt({
 
 Analyze the following script for clarity, tone, consistency, and overall quality.
 
-Identify any sections that are unclear, off-tone, or inconsistent, and suggest specific improvements.
-
 Script: {{{script}}}
 
-Ensure the output is a detailed analysis and a list of specific suggestions for improvement.
+Identify any sections that are unclear, off-tone, or inconsistent, and suggest specific improvements.
 
+For each suggestion, provide:
+- 'section': The *exact, verbatim text* of the script segment you are addressing. This text will be used for direct replacement, so it must be an exact quote from the original script.
+- 'issue': A clear description of the issue identified in that section.
+- 'improvement': A specific suggestion for how to improve that section.
+
+Ensure the overall output is a detailed analysis and a list of specific suggestions for improvement.
 Follow the schema documentation provided in the AnalyzeScriptOutputSchema for how to format your response.
 `,
 });
@@ -68,3 +72,4 @@ const analyzeScriptFlow = ai.defineFlow(
     return output!;
   }
 );
+
