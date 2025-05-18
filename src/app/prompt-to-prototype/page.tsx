@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download, ThumbsUp, ThumbsDown, Share2, Eye, Printer, FileJson } from "lucide-react";
+import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download, ThumbsUp, ThumbsDown, Share2, Eye, Printer, FileJson, MoreVertical } from "lucide-react";
 import NextImage from "next/image";
 import { useState, type ReactNode, useMemo, ChangeEvent, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -20,6 +20,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
@@ -323,18 +325,38 @@ export default function PromptToPrototypePage() {
 
   const imageActionButtons = (isDialog: boolean = false) => (
     <>
-      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-green-400 no-print", isDialog && "text-foreground hover:text-green-500")} onClick={() => handleImageAction('thumbsUp')} aria-label="Thumbs up image">
-        <ThumbsUp className="h-5 w-5" />
-      </Button>
-      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-red-400 no-print", isDialog && "text-foreground hover:text-red-500")} onClick={() => handleImageAction('thumbsDown')} aria-label="Thumbs down image">
-        <ThumbsDown className="h-5 w-5" />
-      </Button>
-      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-blue-400 no-print", isDialog && "text-foreground hover:text-blue-500")} onClick={handleDownloadImage} disabled={!results?.moodBoardImage || isPlaceholderImage} aria-label="Download image">
-        <Download className="h-5 w-5" />
-      </Button>
-      <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-purple-400 no-print", isDialog && "text-foreground hover:text-purple-500")} onClick={() => handleImageAction('share')} aria-label="Share image">
-        <Share2 className="h-5 w-5" />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-green-400 no-print", isDialog && "text-foreground hover:text-green-500")} onClick={() => handleImageAction('thumbsUp')} aria-label="Thumbs up image">
+            <ThumbsUp className="h-5 w-5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent><p>Thumbs Up</p></TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-red-400 no-print", isDialog && "text-foreground hover:text-red-500")} onClick={() => handleImageAction('thumbsDown')} aria-label="Thumbs down image">
+            <ThumbsDown className="h-5 w-5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent><p>Thumbs Down</p></TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-blue-400 no-print", isDialog && "text-foreground hover:text-blue-500")} onClick={handleDownloadImage} disabled={!results?.moodBoardImage || isPlaceholderImage} aria-label="Download image">
+            <Download className="h-5 w-5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent><p>Download Image</p></TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className={cn("text-white hover:text-purple-400 no-print", isDialog && "text-foreground hover:text-purple-500")} onClick={() => handleImageAction('share')} aria-label="Share image">
+            <Share2 className="h-5 w-5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent><p>Share Image (Copy Data URI)</p></TooltipContent>
+      </Tooltip>
     </>
   );
 
@@ -346,13 +368,12 @@ export default function PromptToPrototypePage() {
      return (
       <div className="container mx-auto py-8" id="promptToPrototypePage">
         <Card className="max-w-6xl mx-auto shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-4 w-1/2 mt-2" />
+              <Skeleton className="h-8 w-72" /> {/* Approx width of title */}
+              <Skeleton className="h-4 w-96 mt-2" /> {/* Approx width of description */}
             </div>
             <div className="flex items-center gap-2 ml-auto no-print">
-                <Skeleton className="h-8 w-8" />
                 <Skeleton className="h-8 w-8" />
             </div>
           </CardHeader>
@@ -364,8 +385,8 @@ export default function PromptToPrototypePage() {
                 <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-12 w-full mt-4" />
               </div>
-              <div>
-                <ResultCard
+              <div className="print-card"> {/* For print layout consistency */}
+                 <ResultCard
                     title="Mood Board Concept"
                     icon={<Palette className="h-6 w-6 text-accent" />}
                     isLoading={true}
@@ -373,14 +394,10 @@ export default function PromptToPrototypePage() {
                     className="print-card"
                     contentClassName="flex flex-col"
                     headerActions={
-                      <>
-                        <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
-                            <Download className="h-4 w-4" />
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
-                           <Copy className="h-4 w-4" />
-                        </Button>
-                       </>
+                      <div className="flex items-center gap-1">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
                     }
                   >
                     <div className="flex flex-col gap-6 flex-grow">
@@ -415,36 +432,35 @@ export default function PromptToPrototypePage() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2 ml-auto no-print">
-            {results?.allTextAssetsJsonString && (
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadAllTextAssets}
-                    aria-label="Download all text assets as JSON"
-                    disabled={isLoading || !results}
-                >
-                    <FileJson className="h-4 w-4" />
-                </Button>
-            )}
-            <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handlePrint}
-                aria-label="Print or Save as PDF"
-                disabled={isLoading || !results}
-            >
-                <Printer className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label="More options" disabled={isLoading || !results}>
+                      <MoreVertical className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent><p>More Options</p></TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={handleDownloadAllTextAssets} disabled={!results?.allTextAssetsJsonString}>
+                  <FileJson className="mr-2 h-4 w-4" />
+                  <span>Download All Text Assets</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handlePrint} disabled={!results}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  <span>Print / Save as PDF</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
         <CardContent>
-          {mounted ? (
-             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
                 {/* Input Panel */}
-                <div className="space-y-6 p-6 bg-muted/30 rounded-lg no-print">
+              <div className="space-y-6 p-6 bg-muted/30 rounded-lg no-print">
                   <FormField
                     control={form.control}
                     name="prompt"
@@ -530,10 +546,10 @@ export default function PromptToPrototypePage() {
                       </>
                     )}
                   </Button>
-                </div>
+              </div>
 
-                {/* Output Panel (Mood Board) */}
-                <div>
+              {/* Output Panel (Mood Board) */}
+              <div className="print-card">
                   { isLoading ? (
                        <ResultCard
                           title="Mood Board Concept"
@@ -543,14 +559,24 @@ export default function PromptToPrototypePage() {
                           className="print-card"
                           contentClassName="flex flex-col"
                            headerActions={
-                             <>
-                              <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
-                                  <Download className="h-4 w-4" />
-                              </Button>
-                              <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
-                                 <Copy className="h-4 w-4" />
-                              </Button>
-                             </>
+                             <div className="flex items-center gap-1">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
+                                        <Download className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Download Mood Board Image</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
+                                       <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Copy Mood Board Themes JSON</p></TooltipContent>
+                                </Tooltip>
+                             </div>
                           }
                         >
                           <div className="flex flex-col gap-6 flex-grow">
@@ -573,31 +599,43 @@ export default function PromptToPrototypePage() {
                           className="print-card"
                           contentClassName="flex flex-col"
                           headerActions={
-                             <>
+                             <div className="flex items-center gap-1">
                               {results.moodBoardImage && !isPlaceholderImage && (
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleDownloadImage}
-                                    aria-label="Download mood board image"
-                                    disabled={!results.moodBoardImage || isPlaceholderImage}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleDownloadImage}
+                                        aria-label="Download mood board image"
+                                        disabled={!results.moodBoardImage || isPlaceholderImage}
+                                        className="no-print"
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Download Mood Board Image</p></TooltipContent>
+                                  </Tooltip>
                                 )}
                                 {results.moodBoardCellsJsonString && (
-                                 <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
-                                    aria-label="Copy mood board themes JSON to clipboard"
-                                  >
-                                    <Copy className="h-4 w-4" />
-                                  </Button>
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
+                                        aria-label="Copy mood board themes JSON to clipboard"
+                                        className="no-print"
+                                      >
+                                        <Copy className="h-4 w-4" />
+                                      </Button>
+                                   </TooltipTrigger>
+                                   <TooltipContent><p>Copy Mood Board Themes JSON</p></TooltipContent>
+                                 </Tooltip>
                                 )}
-                             </>
+                             </div>
                           }
                         >
                           <div className="flex flex-col gap-6 flex-grow">
@@ -653,6 +691,7 @@ export default function PromptToPrototypePage() {
                                           height={281} 
                                           objectFit="contain"
                                           className="print-image"
+                                          data-ai-hint="mood board concept"
                                       />
                                   </div>
 
@@ -701,49 +740,9 @@ export default function PromptToPrototypePage() {
                         </div>
                       )
                     )}
-                </div>
-              </form>
-            </Form>
-          ) : (
-             <div className="flex flex-col gap-6">
-              <div className="space-y-6 p-6 bg-muted/30 rounded-lg no-print">
-                 <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-12 w-full mt-4" />
               </div>
-              <div>
-                 <ResultCard
-                    title="Mood Board Concept"
-                    icon={<Palette className="h-6 w-6 text-accent" />}
-                    isLoading={true}
-                    loadingHeight="min-h-[400px]"
-                    className="print-card"
-                    contentClassName="flex flex-col"
-                    headerActions={
-                      <>
-                        <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
-                            <Download className="h-4 w-4" />
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
-                           <Copy className="h-4 w-4" />
-                        </Button>
-                       </>
-                    }
-                  >
-                    <div className="flex flex-col gap-6 flex-grow">
-                      <Skeleton className="aspect-video w-full print-image"/>
-                      <div className="flex-grow print-moodboard-grid-container">
-                        <h4 className="font-semibold text-sm mb-2 text-foreground"><Skeleton className="h-4 w-1/2"/></h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
-                          {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
-                        </div>
-                      </div>
-                    </div>
-                  </ResultCard>
-              </div>
-            </div>
-          )}
+            </form>
+          </Form>
         </CardContent>
       </Card>
 
@@ -761,15 +760,21 @@ export default function PromptToPrototypePage() {
               loadingHeight="h-40"
               headerActions={
                 results.loglinesJsonString && (
-                  <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
-                      aria-label="Copy loglines JSON to clipboard"
-                  >
-                      <Copy className="h-4 w-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
+                          aria-label="Copy loglines JSON to clipboard"
+                          className="no-print"
+                      >
+                          <Copy className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Copy Loglines JSON</p></TooltipContent>
+                  </Tooltip>
                 )
               }
             >
@@ -794,15 +799,21 @@ export default function PromptToPrototypePage() {
               loadingHeight="h-60"
               headerActions={
                  results.shotListMarkdownString && (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
-                        aria-label="Copy shotlist markdown to clipboard"
-                    >
-                        <Copy className="h-4 w-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
+                            aria-label="Copy shotlist markdown to clipboard"
+                            className="no-print"
+                        >
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Copy Shotlist Markdown</p></TooltipContent>
+                    </Tooltip>
                   )
               }
             >
@@ -842,15 +853,21 @@ export default function PromptToPrototypePage() {
               className="md:col-span-1"
               headerActions={
                 results.proxyClipAnimaticDescription && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopyToClipboard(results.proxyClipAnimaticDescription, "Animatic Description")}
-                    aria-label="Copy animatic description to clipboard"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyToClipboard(results.proxyClipAnimaticDescription, "Animatic Description")}
+                        aria-label="Copy animatic description to clipboard"
+                        className="no-print"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Copy Animatic Description</p></TooltipContent>
+                  </Tooltip>
                 )
               }
             >
@@ -869,15 +886,21 @@ export default function PromptToPrototypePage() {
               className="md:col-span-1"
               headerActions={
                 results.pitchSummary && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
-                    aria-label="Copy pitch summary to clipboard"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
+                        aria-label="Copy pitch summary to clipboard"
+                        className="no-print"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Copy Pitch Summary</p></TooltipContent>
+                  </Tooltip>
                 )
               }
             >
