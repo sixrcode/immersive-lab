@@ -38,7 +38,7 @@ const PromptToPrototypeOutputSchema = z.object({
   loglinesJsonString: z.string().describe('The loglines formatted as a JSON string, suitable for file handoff.'),
   moodBoardCells: z.array(MoodBoardCellSchema)
     .length(9)
-    .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid. Each object represents a specific theme and its textual description, ordered from top-left to bottom-right, row by row. The themes are: 1. Key Character Focus, 2. Environment Details, 3. Color Palette & Texture, 4. Specific Props or Symbols, 5. Emotional Tone / Lighting, 6. Cinematography Hints, 7. Visuals: Patterns & Swatches, 8. Text: Words & Typography, 9. Concept & Overall Theme."),
+    .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid. Each object represents a specific theme and its textual description, ordered from top-left to bottom-right, row by row. The themes are: 1. Key Character Focus, 2. Environment Details, 3. Color Palette & Texture, 4. Specific Props or Symbols, 5. Tone & Lighting, 6. Cinematography Hints, 7. Patterns & Swatches, 8. Text: Words & Typography, 9. Concept & Overall Theme."),
   moodBoardCellsJsonString: z.string().describe('The mood board cells (themes and descriptions) formatted as a JSON string, suitable for file handoff.'),
   moodBoardImage: z
     .string()
@@ -63,9 +63,9 @@ const THEME_LIST = [
   "Environment Details",
   "Color Palette & Texture",
   "Specific Props or Symbols",
-  "Emotional Tone / Lighting",
+  "Tone & Lighting",
   "Cinematography Hints",
-  "Visuals: Patterns & Swatches",
+  "Patterns & Swatches",
   "Text: Words & Typography",
   "Concept & Overall Theme"
 ];
@@ -96,9 +96,9 @@ const prompt = ai.definePrompt({
       2.  **Environment Details**: Detail the key setting, its atmosphere, time of day, notable features, or specific location elements from the user's prompt.
       3.  **Color Palette & Texture**: Specify the dominant colors, secondary colors, accent colors, and key textures that define the visual style, inspired by the user's prompt.
       4.  **Specific Props or Symbols**: List and describe any important objects, props, or symbolic elements crucial to the story or theme from the user's prompt.
-      5.  **Emotional Tone / Lighting**: Articulate the primary emotional mood (e.g., suspenseful, joyful, melancholic) and suggest lighting styles (e.g., chiaroscuro, soft daylight, neon glow) to achieve it, reflecting the user's prompt.
+      5.  **Tone & Lighting**: Articulate the primary emotional mood (e.g., suspenseful, joyful, melancholic) and suggest lighting styles (e.g., chiaroscuro, soft daylight, neon glow) to achieve it, reflecting the user's prompt. (Formerly "Emotional Tone / Lighting")
       6.  **Cinematography Hints**: Suggest camera angles, framing (e.g., close-up, wide shot), or common camera movements that would enhance the storytelling of the user's prompt.
-      7.  **Visuals: Patterns & Swatches**: Describe any recurring patterns, motifs, or provide examples of visual swatches (textual description) that could be used, based on the user's prompt.
+      7.  **Patterns & Swatches**: Describe any recurring patterns, motifs, or provide examples of visual swatches (textual description) that could be used, based on the user's prompt. (Formerly "Visuals: Patterns & Swatches")
       8.  **Text: Words & Typography**: Suggest any key words, phrases, or typographic styles (e.g., font choices, text treatments) relevant to the project, as derived from the user's prompt.
       9.  **Concept & Overall Theme**: Provide a concise summary of the core concept or overarching theme that the mood board aims to visually represent, based on the user's prompt.
 
