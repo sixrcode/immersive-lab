@@ -10,13 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Sparkles, FileText, ListChecks, Video, Image as ImageIcon, Palette } from "lucide-react";
-import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const formSchema = z.object({
   prompt: z.string().min(10, "Prompt must be at least 10 characters long."),
@@ -29,7 +28,7 @@ interface ResultCardProps {
   icon: ReactNode;
   children: ReactNode;
   isLoading: boolean;
-  loadingHeight?: string; // e.g., "h-64" or "h-20"
+  loadingHeight?: string;
 }
 
 function ResultCard({ title, icon, children, isLoading, loadingHeight = "h-32" }: ResultCardProps) {
@@ -50,6 +49,12 @@ function ResultCard({ title, icon, children, isLoading, loadingHeight = "h-32" }
   );
 }
 
+interface Shot {
+  number: string;
+  lens: string;
+  move: string;
+  framing: string;
+}
 
 export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -90,6 +95,23 @@ export default function PromptToPrototypePage() {
     }
   }
 
+  const parsedShotList: Shot[] = useMemo(() => {
+    if (!results?.shotList) return [];
+    return results.shotList
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line)
+      .map(line => {
+        const parts = line.split(',');
+        return {
+          number: parts[0]?.trim() || "",
+          lens: parts[1]?.trim() || "",
+          move: parts[2]?.trim() || "",
+          framing: parts.slice(3).join(',').trim() || "", // Join remaining parts for framing notes
+        };
+      });
+  }, [results?.shotList]);
+
   return (
     <div className="container mx-auto py-8">
       <Card className="max-w-3xl mx-auto shadow-xl">
@@ -99,7 +121,7 @@ export default function PromptToPrototypePage() {
             <CardTitle className="text-2xl">Prompt-to-Prototype Studio</CardTitle>
           </div>
           <CardDescription>
-            Enter a prompt to generate a mood board concept (image + 3x3 grid description), three logline variants, a shot list, and a proxy clip animatic description.
+            Enter a prompt to generate a mood board concept (image + 3x3 grid description), three logline variants, a shot list, and a proxy clip animatic description. Process takes up to 30 seconds.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -127,7 +149,7 @@ export default function PromptToPrototypePage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating (takes up to 30s)...
+                    Generating Assets...
                   </>
                 ) : (
                   <>
@@ -146,12 +168,13 @@ export default function PromptToPrototypePage() {
           <h2 className="text-2xl font-semibold mb-6 text-center text-foreground">Generated Assets</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ResultCard
-              title="Mood Board Concept"
+              title="Mood Board"
               icon={<Palette className="h-6 w-6 text-accent" />}
               isLoading={isLoading && (!results?.moodBoardImage && !results?.moodBoardDescription)}
               loadingHeight="h-80"
             >
               <>
+                <h4 className="font-semibold text-sm mb-1 text-foreground">Representative Mood Board Image:</h4>
                 {results?.moodBoardImage ? (
                   <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-4">
                     <img 
@@ -163,7 +186,7 @@ export default function PromptToPrototypePage() {
                   </div>
                 ) : (!isLoading && <p className="text-sm text-muted-foreground mb-2">No representative image generated.</p>)}
                 
-                <h4 className="font-semibold text-sm mb-1 text-foreground">3x3 Grid Description:</h4>
+                <h4 className="font-semibold text-sm mb-1 text-foreground">Detailed 3x3 Grid Concept / Guide:</h4>
                 {results?.moodBoardDescription ? (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{results.moodBoardDescription}</p>
                 ) : (!isLoading && <p className="text-sm text-muted-foreground">No grid description available.</p>)}
@@ -194,11 +217,30 @@ export default function PromptToPrototypePage() {
               isLoading={isLoading && !results?.shotList}
               loadingHeight="h-60"
             >
-                {results?.shotList ? (
-                    <pre className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded-md overflow-x-auto">
-                        <code>{results.shotList}</code>
-                    </pre>
-                ) : (!isLoading && <p className="text-sm text-muted-foreground">No shot list generated.</p>)}
+              {parsedShotList.length > 0 ? (
+                <div className="max-h-80 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[15%]">Shot #</TableHead>
+                        <TableHead className="w-[25%]">Lens</TableHead>
+                        <TableHead className="w-[30%]">Camera Move</TableHead>
+                        <TableHead className="w-[30%]">Framing Notes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {parsedShotList.map((shot, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{shot.number}</TableCell>
+                          <TableCell>{shot.lens}</TableCell>
+                          <TableCell>{shot.move}</TableCell>
+                          <TableCell>{shot.framing}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (!isLoading && <p className="text-sm text-muted-foreground">No shot list generated.</p>)}
             </ResultCard>
 
             <ResultCard
@@ -209,7 +251,7 @@ export default function PromptToPrototypePage() {
             >
                 {results?.proxyClipAnimaticDescription ? (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{results.proxyClipAnimaticDescription}</p>
-                ) : (!isLoading && <p className="text-sm text-muted-foreground">No animatic description generated.</p>)}
+                ) : (!isLoading && <p className="text-sm text-muted-foreground">No animatic description available.</p>)}
             </ResultCard>
           </div>
           {results && !isLoading && (

@@ -28,7 +28,7 @@ const PromptToPrototypeOutputSchema = z.object({
     .describe(
       "A single representative image for the mood board concept, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  shotList: z.string().describe('A numbered shot-list (6-10 shots) with suggested lenses, camera moves, and framing notes. Present as a multi-line string, ideally in a CSV-like format: "Shot #,Lens,Camera Move,Framing Notes".'),
+  shotList: z.string().describe('A numbered shot-list (6-10 shots) with suggested lenses, camera moves, and framing notes. Presented as a multi-line string, with each shot on a new line and values separated by commas (Shot #,Lens,Camera Move,Framing Notes).'),
   proxyClipAnimaticDescription: z.string().describe('A detailed textual description for a 4-second proxy clip animatic. This should outline key visuals, pacing, and transitions to help visualize the animatic, as if describing a sequence of still frames or very simple animations.'),
 });
 
@@ -56,11 +56,11 @@ const prompt = ai.definePrompt({
 
   2.  **Mood Board Description**: Describe a 3x3 grid of images that would visually represent the project's aesthetic. For each of the 9 cells in the grid, detail the envisioned content, including palette, atmosphere, and key props or visual elements. This description should be comprehensive.
 
-  3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, suggest lenses, camera moves, and framing notes.
-      Format this as a multi-line string. Each line should represent a shot and follow a CSV-like structure: "Shot #,Lens,Camera Move,Framing Notes".
-      Example:
-      "1,35mm,Slow Push-in,Close up on character's eyes revealing fear."
-      "2,24mm,Static Wide,Establishing shot of the desolate landscape."
+  3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes.
+      Output each shot on a new line, with values separated by a comma (e.g., Shot #,Lens,Camera Move,Framing Notes).
+      **Do not include a header row in the shot list output.**
+      Example of a single line:
+      1,35mm,Slow Push-in,Close up on character's eyes revealing fear.
 
   4.  **Proxy Clip Animatic Description**: Provide a detailed textual description for a 4-second proxy clip animatic. This ultra-low-res moving animatic should preview pacing and key moments. Describe the sequence of visuals, any simple motion, and how it conveys the core idea or feeling of the prompt. Imagine you're describing 3-5 key still frames that would make up this animatic.
 
@@ -84,11 +84,10 @@ const promptToPrototypeFlow = ai.defineFlow(
     }
 
     // Generate a single representative mood board image using Gemini
-    // The prompt for the image can be the user's original prompt, or derived from the moodBoardDescription
-    const imagePromptText = `Generate a single image that captures the overall essence and style described for a project based on: ${input.prompt}. This image should serve as a central piece for a larger mood board concept.`;
+    const imagePromptText = `Generate a single piece of concept art or a visual summary that captures the overall essence, style, and atmosphere for a project based on: '${input.prompt}'. This image should serve as a central, representative piece for a mood board concept, evoking a "style collage" or "visual keynote" feel. Focus on compelling composition and artistic representation of the theme.`;
     
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-exp',
+      model: 'googleai/gemini-2.0-flash-exp', // Ensure this model is appropriate and available
       prompt: [{text: imagePromptText}],
       config: {
         responseModalities: ['TEXT', 'IMAGE'], // Important: Must include TEXT even if only IMAGE is primary.
@@ -96,9 +95,8 @@ const promptToPrototypeFlow = ai.defineFlow(
     });
 
     if (!media || !media.url) {
-        // Fallback or error handling if image generation fails
-        console.warn("Mood board image generation failed or returned no URL. Using placeholder or empty string.");
-        textOutput.moodBoardImage = "https://placehold.co/600x400.png?text=Image+Generation+Failed"; // Or handle as an error
+        console.warn("Mood board image generation failed or returned no URL. Using placeholder.");
+        textOutput.moodBoardImage = "https://placehold.co/600x400.png?text=Image+Gen+Failed";
     } else {
         textOutput.moodBoardImage = media.url;
     }
