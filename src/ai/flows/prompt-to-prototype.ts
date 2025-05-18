@@ -22,10 +22,18 @@ const PromptToPrototypeInputSchema = z.object({
 export type PromptToPrototypeInput = z.infer<typeof PromptToPrototypeInputSchema>;
 
 const MoodBoardCellSchema = z.object({
-  visuals: z.string().describe("A concise description of the key imagery or scene depicted in this cell. (1-2 sentences)"),
-  palette: z.string().describe("The dominant colors and overall color scheme for this cell. (e.g., 'Warm earth tones with a splash of crimson')"),
-  atmosphere: z.string().describe("The mood or feeling this cell should evoke. (e.g., 'Mysterious and melancholic', 'Bright and energetic')"),
-  keyProps: z.string().describe("Specific objects, characters, or significant visual details central to this cell. (e.g., 'A lone figure, a glowing artifact')")
+  visuals: z.string().describe(
+    "Key imagery for this cell. This could describe: a key character focus (look, expression), specific environment details (setting, time of day), or hints at cinematography (framing, angle) for this particular cell. (1-2 sentences)"
+  ),
+  palette: z.string().describe(
+    "Dominant colors, textures, and overall color scheme for this cell. This is where you provide specific color palette & texture examples."
+  ),
+  atmosphere: z.string().describe(
+    "The mood, emotional tone, or feeling this cell should evoke. Should include lighting style suggestions (e.g., chiaroscuro, soft daylight, neon glow)."
+  ),
+  keyProps: z.string().describe(
+    "Specific objects, secondary characters (if not the main visual focus), symbolic elements, or other significant visual details central to this cell. This can also include specific props or symbols."
+  )
 });
 
 const PromptToPrototypeOutputSchema = z.object({
@@ -35,7 +43,7 @@ const PromptToPrototypeOutputSchema = z.object({
   })).describe('Three logline variants targeting distinct tones.'),
   moodBoardCells: z.array(MoodBoardCellSchema)
     .length(9)
-    .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid, ordered from top-left to bottom-right, row by row. Each object details the cell's visuals, palette, atmosphere, and key props."),
+    .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid, ordered from top-left to bottom-right, row by row. Each object details the cell's content according to its properties."),
   moodBoardImage: z
     .string()
     .describe(
@@ -85,10 +93,10 @@ const prompt = ai.definePrompt({
       *   A contrasting visual element or a less obvious idea that still supports the main prompt.
 
       For each of the 9 cells, the object MUST contain the following string properties. These should be directly inspired by and expand upon the user's main prompt:
-      *   'visuals': (1-2 sentences) Describe the key imagery or scene this specific cell represents, aiming for visual richness.
-      *   'palette': Detail the dominant colors and overall color scheme for THIS CELL (e.g., 'Deep blues and cool grays with a single point of neon pink for contrast', 'Monochromatic sepia tones with high contrast').
-      *   'atmosphere': Articulate the specific mood or feeling THIS CELL should evoke (e.g., 'Tense and suspenseful with a sense of claustrophobia', 'Nostalgic and warm, slightly melancholic', 'Chaotic, energetic, and overwhelming').
-      *   'keyProps': List specific objects, characters, or significant visual details central to THIS CELL'S particular focus (e.g., 'Rain-streaked window obscuring a face', 'A single, wilting flower on polished metal', 'Eyes wide, reflecting distant city lights').
+      *   'visuals': (1-2 sentences) Describe the key imagery or scene this specific cell represents. This could describe: a **key character focus** (look, expression), specific **environment details** (setting, time of day), or **hints at cinematography** (framing, angle) for this particular cell. Aim for visual richness.
+      *   'palette': Detail the dominant colors, textures, and overall color scheme for THIS CELL (e.g., 'Deep blues and cool grays with a single point of neon pink for contrast', 'Monochromatic sepia tones with high contrast'). This is where you provide specific **color palette & texture examples**.
+      *   'atmosphere': Articulate the specific mood, **emotional tone**, or feeling THIS CELL should evoke (e.g., 'Tense and suspenseful', 'Nostalgic and warm'). Include **lighting style suggestions** here (e.g., chiaroscuro, soft daylight, neon glow).
+      *   'keyProps': List **specific objects, secondary characters** (if not already the main focus in 'visuals'), **symbolic elements, or other significant visual details** central to THIS CELL'S particular focus. This can also include **specific props or symbols** (e.g., 'Rain-streaked window', 'A single wilting flower', 'Eyes wide reflecting city lights').
 
       Ensure the descriptions for each cell are distinct and collectively contribute to a holistic and inspiring visual brief.
       {{#if stylePreset}}
