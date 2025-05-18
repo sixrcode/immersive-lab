@@ -9,6 +9,7 @@ import { PlusCircle, MoreHorizontal, Kanban as KanbanIcon, Film, Lightbulb, Edit
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import React, { useState } from "react";
+import { cn } from "@/lib/utils";
 
 const initialColumnsData: KanbanColumnType[] = [
   {
@@ -62,6 +63,15 @@ const columnIcons: Record<string, React.ElementType> = {
   distribution: Send,
 };
 
+const stageColorClasses: Record<string, { header: string; body: string; iconText: string }> = {
+  pitch: { header: 'bg-sky-200 dark:bg-sky-700/80', body: 'bg-sky-100 dark:bg-sky-900/50', iconText: 'text-sky-700 dark:text-sky-300' },
+  storyboard: { header: 'bg-teal-200 dark:bg-teal-700/80', body: 'bg-teal-100 dark:bg-teal-900/50', iconText: 'text-teal-700 dark:text-teal-300' },
+  scriptwriting: { header: 'bg-indigo-200 dark:bg-indigo-700/80', body: 'bg-indigo-100 dark:bg-indigo-900/50', iconText: 'text-indigo-700 dark:text-indigo-300' },
+  'rough-cut': { header: 'bg-amber-200 dark:bg-amber-700/80', body: 'bg-amber-100 dark:bg-amber-900/50', iconText: 'text-amber-700 dark:text-amber-300' },
+  'final-polish': { header: 'bg-lime-200 dark:bg-lime-700/80', body: 'bg-lime-100 dark:bg-lime-900/50', iconText: 'text-lime-700 dark:text-lime-300' },
+  distribution: { header: 'bg-rose-200 dark:bg-rose-700/80', body: 'bg-rose-100 dark:bg-rose-900/50', iconText: 'text-rose-700 dark:text-rose-300' },
+};
+
 
 function KanbanCardComponent({ card, columnId }: { card: KanbanCardType; columnId: string }) {
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
@@ -106,11 +116,17 @@ function KanbanCardComponent({ card, columnId }: { card: KanbanCardType; columnI
   );
 }
 
-function KanbanColumnComponent({ column, onDropCard }: { column: KanbanColumnType; onDropCard: (targetColumnId: string, cardId: string, sourceColumnId: string) => void }) {
+interface KanbanColumnComponentProps {
+  column: KanbanColumnType;
+  onDropCard: (targetColumnId: string, cardId: string, sourceColumnId: string) => void;
+  colorClasses: { header: string; body: string; iconText: string };
+}
+
+function KanbanColumnComponent({ column, onDropCard, colorClasses }: KanbanColumnComponentProps) {
   const IconComponent = columnIcons[column.id] || KanbanIcon;
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); // Necessary to allow dropping
+    e.preventDefault(); 
     e.dataTransfer.dropEffect = "move";
   };
 
@@ -125,16 +141,19 @@ function KanbanColumnComponent({ column, onDropCard }: { column: KanbanColumnTyp
 
   return (
     <div 
-      className="flex flex-col w-80 min-w-[320px] bg-muted/50 rounded-lg p-1"
+      className={cn("flex flex-col w-80 min-w-[320px] rounded-lg p-1 shadow-sm", colorClasses.body)}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div className="flex justify-between items-center p-3 mb-2 sticky top-0 bg-muted/50 z-10 rounded-t-lg">
+      <div className={cn(
+        "flex justify-between items-center p-3 mb-2 sticky top-0 z-10 rounded-t-lg shadow-sm",
+        colorClasses.header
+      )}>
         <div className="flex items-center gap-2">
-          <IconComponent className="h-5 w-5 text-primary" />
+          <IconComponent className={cn("h-5 w-5", colorClasses.iconText)} />
           <h3 className="font-semibold text-md text-foreground">{column.title}</h3>
         </div>
-        <Badge variant="secondary">{column.cards.length}</Badge>
+        <Badge variant="secondary" className="bg-background/50 text-foreground">{column.cards.length}</Badge>
       </div>
       <ScrollArea className="flex-1 p-2">
         {column.cards.length > 0 ? (
@@ -158,7 +177,6 @@ export default function ProductionBoardPage() {
     setColumns(prevColumns => {
       let cardToMove: KanbanCardType | undefined;
       
-      // Find and remove card from source column
       const newColumns = prevColumns.map(col => {
         if (col.id === sourceColumnId) {
           cardToMove = col.cards.find(c => c.id === cardId);
@@ -167,12 +185,10 @@ export default function ProductionBoardPage() {
         return col;
       });
 
-      if (!cardToMove) return prevColumns; // Should not happen
+      if (!cardToMove) return prevColumns; 
 
-      // Add card to target column
       return newColumns.map(col => {
         if (col.id === targetColumnId) {
-          // Update card's stage property
           const updatedCard = { ...cardToMove!, stage: targetColumnId };
           return { ...col, cards: [...col.cards, updatedCard] };
         }
@@ -196,10 +212,15 @@ export default function ProductionBoardPage() {
       <ScrollArea className="flex-1 w-full pb-4">
         <div className="flex gap-4 p-1">
           {columns.map((column) => (
-            <KanbanColumnComponent key={column.id} column={column} onDropCard={handleDropCard} />
+            <KanbanColumnComponent 
+              key={column.id} 
+              column={column} 
+              onDropCard={handleDropCard}
+              colorClasses={stageColorClasses[column.id] || { header: 'bg-muted/60 dark:bg-muted/30', body: 'bg-muted/30 dark:bg-muted/20', iconText: 'text-primary' }}
+            />
           ))}
-           <div className="w-80 min-w-[320px] flex items-center justify-center">
-            <Button variant="outline" className="w-full h-16 border-dashed">
+           <div className="w-80 min-w-[320px] flex items-center justify-center p-1">
+            <Button variant="outline" className="w-full h-16 border-dashed bg-muted/20 hover:bg-muted/40">
               <PlusCircle className="mr-2 h-5 w-5" /> Add New Stage
             </Button>
           </div>
@@ -209,3 +230,4 @@ export default function ProductionBoardPage() {
     </div>
   );
 }
+
