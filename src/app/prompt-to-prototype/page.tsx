@@ -206,7 +206,7 @@ export default function PromptToPrototypePage() {
       const filenameSuffix = sanitizePromptForFilename(currentPrompt);
       const link = document.createElement('a');
       link.href = results.moodBoardImage;
-      link.download = `moodboard_image_${filenameSuffix}.png`;
+      link.download = `ISL_Moodboard_${filenameSuffix}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -418,7 +418,7 @@ export default function PromptToPrototypePage() {
                     loadingHeight="min-h-[400px] md:min-h-[calc(100%-2rem)]" 
                     className="h-full"
                     contentClassName="flex flex-col"
-                    headerActions={
+                     headerActions={
                        <>
                         <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
                             <Download className="h-4 w-4" />
@@ -432,6 +432,7 @@ export default function PromptToPrototypePage() {
                     <div className="flex flex-col gap-6 flex-grow">
                       <Skeleton className="aspect-video w-full"/>
                       <div className="flex-grow">
+                        <h4 className="font-semibold text-sm mb-2 text-foreground"><Skeleton className="h-4 w-1/2"/></h4>
                         <div className="grid grid-cols-3 gap-2.5">
                           {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
                         </div>
@@ -853,6 +854,8 @@ export default function PromptToPrototypePage() {
   );
 }
 
+
+    
 
     
 
