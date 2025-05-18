@@ -472,7 +472,7 @@ export default function PromptToPrototypePage() {
                     isLoading={false}
                     hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
                     noContentMessage="Mood board concept could not be generated."
-                    className="h-full print-card" // Ensure this primary card is also print-styled
+                    className="h-full print-card" 
                     contentClassName="flex flex-col"
                     headerActions={
                        <>
@@ -517,7 +517,7 @@ export default function PromptToPrototypePage() {
                                       layout="fill"
                                       objectFit="cover"
                                       data-ai-hint="mood board concept"
-                                      className="print-image" // Class for print styling
+                                      className="print-image" 
                                   />
                                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 no-print">
                                     {imageActionButtons()}
@@ -584,7 +584,7 @@ export default function PromptToPrototypePage() {
                   </ResultCard>
               ) : ( 
                 mounted && (
-                  <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px] md:min-h-full">
+                  <div className="flex flex-col items-center justify-center p-6 border border-dashed rounded-lg bg-muted/20 min-h-[300px]">
                       <Palette size={48} className="text-muted-foreground mb-4" />
                       <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
                       <p className="text-muted-foreground">Define your prompt and click "Generate".</p>
@@ -606,7 +606,7 @@ export default function PromptToPrototypePage() {
               <Skeleton className="h-8 w-3/4" />
               <Skeleton className="h-4 w-1/2 mt-2" />
             </div>
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 ml-auto no-print">
                 <Skeleton className="h-8 w-8" />
                 <Skeleton className="h-8 w-8" />
             </div>
