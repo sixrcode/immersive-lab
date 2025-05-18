@@ -134,7 +134,7 @@ export default function ScriptAnalyzerPage() {
                 name="script"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mb-2">
                       <FormLabel className="text-lg">Your Script</FormLabel>
                       <Button 
                         type="button" 
@@ -216,15 +216,26 @@ export default function ScriptAnalyzerPage() {
                       <AccordionTrigger className="text-left hover:bg-muted/20 px-2 rounded-t-md">
                         <span className="font-medium">Suggestion for: "{suggestion.section && suggestion.section.length > 50 ? suggestion.section.substring(0, 50) + '...' : (suggestion.section || 'Unnamed Section')}"</span>
                       </AccordionTrigger>
-                      <AccordionContent className="space-y-3 p-4 bg-muted/30 rounded-b-md border-t-0 border">
+                      <AccordionContent className="space-y-4 p-4 bg-muted/30 rounded-b-md border-t-0 border">
                         <div>
-                          <h4 className="font-semibold text-sm text-foreground">Issue Identified:</h4>
+                          <h4 className="font-semibold text-sm text-foreground mb-1">Issue Identified:</h4>
                           <p className="text-sm text-muted-foreground">{suggestion.issue}</p>
                         </div>
-                        <Separator />
+                        
+                        {suggestion.section && (
+                          <div>
+                            <h4 className="font-semibold text-sm text-foreground mb-1">Original Section:</h4>
+                            <blockquote className="text-sm text-muted-foreground whitespace-pre-wrap bg-destructive/10 border-l-4 border-destructive p-3 rounded-md">
+                              {suggestion.section}
+                            </blockquote>
+                          </div>
+                        )}
+                        
                         <div>
-                          <h4 className="font-semibold text-sm text-foreground">Suggested Improvement:</h4>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{suggestion.improvement}</p>
+                          <h4 className="font-semibold text-sm text-foreground mb-1">Suggested Improvement:</h4>
+                           <blockquote className="text-sm text-muted-foreground whitespace-pre-wrap bg-primary/10 border-l-4 border-primary p-3 rounded-md">
+                            {suggestion.improvement}
+                          </blockquote>
                         </div>
                         <Button
                           size="sm"
