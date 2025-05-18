@@ -45,6 +45,13 @@ interface ResultCardProps {
 
 const PLACEHOLDER_IMAGE_URL_TEXT = "Image+Gen+Failed";
 
+const moodBoardPositionalLabels: string[] = [
+    "Top-Left", "Top-Center", "Top-Right",
+    "Middle-Left", "Middle-Center", "Middle-Right",
+    "Bottom-Left", "Bottom-Center", "Bottom-Right"
+];
+
+
 function ResultCard({ 
   title, 
   icon, 
@@ -106,11 +113,6 @@ const stylePresets = [
   { value: "Cosmic Horror", label: "Cosmic Horror" },
 ];
 
-const moodBoardPositionalLabels: string[] = [
-    "Top-Left", "Top-Center", "Top-Right",
-    "Middle-Left", "Middle-Center", "Middle-Right",
-    "Bottom-Left", "Bottom-Center", "Bottom-Right"
-];
 
 export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -251,7 +253,7 @@ export default function PromptToPrototypePage() {
 
   const isPlaceholderImage = results?.moodBoardImage?.includes(PLACEHOLDER_IMAGE_URL_TEXT);
 
-  const renderForm = () => (
+  const renderFormAndMoodboard = () => (
      <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid md:grid-cols-5 gap-6">
           {/* Input Panel */}
@@ -354,7 +356,6 @@ export default function PromptToPrototypePage() {
                     className="h-full"
                     contentClassName="flex flex-col"
                   >
-                    {/* Skeleton for Mood Board during loading */}
                     <div className="flex flex-col gap-6 flex-grow">
                       <Skeleton className="aspect-video w-full"/>
                       <div className="flex-grow">
@@ -375,71 +376,74 @@ export default function PromptToPrototypePage() {
                     contentClassName="flex flex-col"
                   >
                     <div className="flex flex-col gap-6 flex-grow">
-                       <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold text-sm text-foreground">Representative Mood Board Image:</h4>
-                          {results.moodBoardImage && !isPlaceholderImage && (
-                            <Button variant="outline" size="sm" onClick={handleDownloadImage} className="text-xs">
-                              <Download className="h-3 w-3 mr-1.5" /> Download Image
-                            </Button>
-                          )}
-                        </div>
-                        {results.moodBoardImage ? (
-                          <>
-                            <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
-                              <NextImage 
-                                  src={results.moodBoardImage} 
-                                  alt="Generated Mood Board Representation" 
-                                  layout="fill"
-                                  objectFit="cover"
-                                  data-ai-hint="mood board concept"
-                              />
-                            </div>
-                            {isPlaceholderImage && (
-                              <p className="text-xs text-muted-foreground text-center">
-                                Representative image generation failed or is unavailable. Using a placeholder.
-                              </p>
-                            )}
-                          </>
-                        ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
-                      </div>
-                      
-                      <div className="flex-grow">
-                        <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Themes & Descriptions:</h4>
-                        {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
-                          <>
-                            <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
-                              {results.moodBoardCells.map((cell, index) => (
-                                <div 
-                                  key={index} 
-                                  className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5"
-                                  aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
-                                >
-                                  <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
-                                  <div className="text-[0.75rem] text-muted-foreground space-y-1">
-                                    <p>{cell.description}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="mt-3 pt-3 border-t">
-                              <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">moodboard_themes.json</code></h5>
-                              <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
-                                  aria-label="Copy mood board themes JSON to clipboard"
-                                  className="text-xs"
-                                  disabled={!results.moodBoardCellsJsonString}
-                              >
-                                  <Copy className="h-3 w-3 mr-1.5" /> Copy JSON Content
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <h4 className="font-semibold text-sm text-foreground">Representative Mood Board Image:</h4>
+                            {results.moodBoardImage && !isPlaceholderImage && (
+                              <Button type="button" variant="outline" size="sm" onClick={handleDownloadImage} className="text-xs">
+                                <Download className="h-3 w-3 mr-1.5" /> Download Image
                               </Button>
-                            </div>
-                            <p className="mt-3 text-xs text-muted-foreground text-center">
-                              Use these 9 thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
-                            </p>
-                          </>
-                        ) : (<p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
+                            )}
+                          </div>
+                          {results.moodBoardImage ? (
+                            <>
+                              <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
+                                <NextImage 
+                                    src={results.moodBoardImage} 
+                                    alt="Generated Mood Board Representation" 
+                                    layout="fill"
+                                    objectFit="cover"
+                                    data-ai-hint="mood board concept"
+                                />
+                              </div>
+                              {isPlaceholderImage && (
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Representative image generation failed or is unavailable. Using a placeholder.
+                                </p>
+                              )}
+                            </>
+                          ) : ( <p className="text-sm text-muted-foreground mb-2">No representative image was generated.</p>)}
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Themes & Descriptions:</h4>
+                          {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
+                            <>
+                              <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
+                                {results.moodBoardCells.map((cell, index) => (
+                                  <div 
+                                    key={index} 
+                                    className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5"
+                                    aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
+                                  >
+                                    <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
+                                    <div className="text-[0.75rem] text-muted-foreground space-y-1">
+                                      <p>{cell.description}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="mt-3 pt-3 border-t">
+                                <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">moodboard_themes.json</code></h5>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
+                                    aria-label="Copy mood board themes JSON to clipboard"
+                                    className="text-xs"
+                                    disabled={!results.moodBoardCellsJsonString}
+                                >
+                                    <Copy className="h-3 w-3 mr-1.5" /> Copy JSON Content
+                                </Button>
+                              </div>
+                              <p className="mt-3 text-xs text-muted-foreground text-center">
+                                Use these 9 thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
+                              </p>
+                            </>
+                          ) : (<p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
+                        </div>
                       </div>
                     </div>
                   </ResultCard>
@@ -504,7 +508,7 @@ export default function PromptToPrototypePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {mounted ? renderForm() : (
+          {mounted ? renderFormAndMoodboard() : (
              <div className="grid md:grid-cols-5 gap-6">
               <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
                 <Skeleton className="h-10 w-1/3" />
@@ -551,6 +555,7 @@ export default function PromptToPrototypePage() {
                    <div className="mt-3 pt-3 border-t">
                     <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">loglines.json</code></h5>
                     <Button
+                        type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
@@ -601,6 +606,7 @@ export default function PromptToPrototypePage() {
                 <div className="mt-3 pt-3 border-t">
                     <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">shotlist.md</code></h5>
                     <Button
+                        type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
@@ -642,6 +648,7 @@ export default function PromptToPrototypePage() {
               headerActions={
                 results && results.pitchSummary && (
                   <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
