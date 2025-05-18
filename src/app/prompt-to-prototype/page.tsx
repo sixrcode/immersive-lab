@@ -378,7 +378,7 @@ export default function PromptToPrototypePage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-6"> {/* Updated for single column flow */}
+            <div className="flex flex-col gap-6"> {/* Stack input and moodboard sections */}
               {/* Input Panel Skeleton */}
               <div className="space-y-6 p-6 bg-muted/30 rounded-lg">
                 <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-32 w-full" />
@@ -447,8 +447,8 @@ export default function PromptToPrototypePage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
-                {/* Input Panel & Mood Board Output Panel (now stacked) */}
-                <div className="p-6 bg-muted/30 rounded-lg no-print space-y-6"> {/* Input fields container */}
+                {/* Input Panel */}
+                <div className="p-6 bg-muted/30 rounded-lg no-print space-y-6">
                   <FormField
                     control={form.control}
                     name="prompt"
@@ -537,7 +537,7 @@ export default function PromptToPrototypePage() {
                 </div>
 
                 {/* Mood Board Concept Output (below input panel) */}
-                <div className="print-card"> {/* This div will ensure it stacks and is styled for print */}
+                <div className="print-card">
                   { isLoading ? (
                        <ResultCard
                           title="Mood Board Concept"
@@ -586,7 +586,7 @@ export default function PromptToPrototypePage() {
                           noContentMessage="Mood board concept could not be generated."
                           className="print-card"
                           contentClassName="flex flex-col"
-                          headerActions={
+                           headerActions={
                              <div className="flex items-center gap-1">
                               {results.moodBoardImage && !isPlaceholderImage && (
                                   <Tooltip>
@@ -614,7 +614,7 @@ export default function PromptToPrototypePage() {
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
-                                        aria-label="Copy mood board themes JSON to clipboard"
+                                        aria-label="Copy mood board themes JSON"
                                         className="no-print"
                                       >
                                         <Copy className="h-4 w-4" />
@@ -700,11 +700,15 @@ export default function PromptToPrototypePage() {
                                       {results.moodBoardCells.map((cell, index) => (
                                         <div
                                           key={index}
-                                          className="border p-3 rounded bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow print-overflow-visible"
+                                          className="border rounded bg-card aspect-square flex flex-col shadow-sm hover:shadow-md transition-shadow print-overflow-visible min-h-[120px] max-h-[200px]"
                                           aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
                                         >
-                                          <span className="font-semibold text-foreground text-sm mb-1.5 block">{cell.title || moodBoardPositionalLabels[index]}</span>
-                                          <div className="text-xs text-muted-foreground">
+                                          <div className="p-3 pb-2 border-b border-border/60">
+                                            <h5 className="font-semibold text-foreground text-sm block truncate">
+                                              {cell.title || moodBoardPositionalLabels[index]}
+                                            </h5>
+                                          </div>
+                                          <div className="p-3 pt-2 text-xs text-muted-foreground overflow-y-auto flex-grow">
                                             <p>{cell.description}</p>
                                           </div>
                                         </div>
@@ -755,7 +759,7 @@ export default function PromptToPrototypePage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
-                          aria-label="Copy loglines JSON to clipboard"
+                          aria-label="Copy loglines JSON"
                           className="no-print"
                       >
                           <Copy className="h-4 w-4" />
@@ -794,7 +798,7 @@ export default function PromptToPrototypePage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
-                            aria-label="Copy shotlist markdown to clipboard"
+                            aria-label="Copy shotlist markdown"
                             className="no-print"
                         >
                             <Copy className="h-4 w-4" />
@@ -848,7 +852,7 @@ export default function PromptToPrototypePage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleCopyToClipboard(results.proxyClipAnimaticDescription, "Animatic Description")}
-                        aria-label="Copy animatic description to clipboard"
+                        aria-label="Copy animatic description"
                         className="no-print"
                       >
                         <Copy className="h-4 w-4" />
@@ -881,7 +885,7 @@ export default function PromptToPrototypePage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
-                        aria-label="Copy pitch summary to clipboard"
+                        aria-label="Copy pitch summary"
                         className="no-print"
                       >
                         <Copy className="h-4 w-4" />
@@ -907,6 +911,8 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
+    
 
     
 
