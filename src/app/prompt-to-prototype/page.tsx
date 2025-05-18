@@ -92,6 +92,12 @@ const stylePresets = [
   { value: "Nature Documentary", label: "Nature Documentary" },
 ];
 
+const moodBoardCellLabels = [
+  "Top-Left", "Top-Center", "Top-Right",
+  "Middle-Left", "Middle-Center", "Middle-Right",
+  "Bottom-Left", "Bottom-Center", "Bottom-Right"
+];
+
 export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<PromptToPrototypeOutput | null>(null);
@@ -170,7 +176,7 @@ export default function PromptToPrototypePage() {
     return results.shotList
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line)
+      .filter(line => line) // Ensure no empty lines from bad splits
       .map(line => {
         const parts = line.split(',');
         return {
@@ -326,22 +332,27 @@ export default function PromptToPrototypePage() {
                         title="Mood Board Concept"
                         icon={<Palette className="h-6 w-6 text-accent" />}
                         isLoading={true}
-                        loadingHeight="h-[calc(100%-2rem)]"
+                        loadingHeight="h-[calc(100%-2rem)]" // Adjusted for better fit
                         className="h-full"
                       >
+                        {/* Skeleton for mood board area */}
                         <div className="flex flex-col gap-6">
                           <div><Skeleton className="h-48 w-full"/></div>
-                          <div><Skeleton className="h-48 w-full"/></div>
+                          <div>
+                            <div className="grid grid-cols-3 gap-2.5">
+                              {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+                            </div>
+                          </div>
                         </div>
                       </ResultCard>
-                  ) : results && mounted ? ( // Ensure mounted before showing results
+                  ) : results && mounted ? (
                      <ResultCard
                         title="Mood Board Concept"
                         icon={<Palette className="h-6 w-6 text-accent" />}
                         isLoading={false}
                         hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
                         noContentMessage="Mood board concept could not be generated."
-                        loadingHeight="h-96" // Default loading height for ResultCard
+                        loadingHeight="h-96" 
                         className="h-full"
                       >
                         <div className="flex flex-col gap-6">
@@ -375,9 +386,9 @@ export default function PromptToPrototypePage() {
                                   <div 
                                     key={index} 
                                     className="border p-3 rounded text-xs text-muted-foreground bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[110px] max-h-[160px] shadow-sm hover:shadow-md transition-shadow"
-                                    aria-label={`Mood board cell ${index + 1} description`}
+                                    aria-label={`Mood board cell: ${moodBoardCellLabels[index]}`}
                                   >
-                                    <span className="font-semibold text-foreground/90 mb-1.5 text-[0.8rem]">Cell {index + 1}</span>
+                                    <span className="font-semibold text-foreground/90 mb-1.5 text-[0.8rem]">{moodBoardCellLabels[index]}</span>
                                     <p className="whitespace-pre-wrap leading-relaxed text-[0.75rem]">{cellDescription}</p>
                                   </div>
                                 ))}
@@ -386,7 +397,7 @@ export default function PromptToPrototypePage() {
                           </div>
                         </div>
                       </ResultCard>
-                  ) : ( // Initial state before any generation or if not mounted
+                  ) : ( 
                     <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
                         <Palette size={48} className="text-muted-foreground mb-4" />
                         <h3 className="text-xl font-semibold text-muted-foreground">Your creative assets will appear here.</h3>
@@ -410,9 +421,9 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={false}
+              isLoading={false} // Already handled by parent isLoading
               hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
-              noContentMessage="No loglines were generated."
+              noContentMessage="No loglines were generated for this prototype."
               loadingHeight="h-40"
             >
               {results.loglines && results.loglines.length > 0 && (
@@ -433,7 +444,7 @@ export default function PromptToPrototypePage() {
               icon={<ListChecks className="h-6 w-6 text-accent" />}
               isLoading={false}
               hasContentAfterLoading={parsedShotList.length > 0}
-              noContentMessage="No shot list was generated."
+              noContentMessage="No shot list was generated for this prototype."
               loadingHeight="h-60"
             >
               {parsedShotList.length > 0 && (
@@ -468,7 +479,7 @@ export default function PromptToPrototypePage() {
               icon={<Video className="h-6 w-6 text-accent" />}
               isLoading={false}
               hasContentAfterLoading={!!results.proxyClipAnimaticDescription}
-              noContentMessage="No animatic description was generated."
+              noContentMessage="No animatic description was generated for this prototype."
               loadingHeight="h-40"
               className="md:col-span-1" 
             >
@@ -483,7 +494,7 @@ export default function PromptToPrototypePage() {
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
               isLoading={false}
               hasContentAfterLoading={!!results.pitchSummary}
-              noContentMessage="No pitch summary was generated."
+              noContentMessage="No pitch summary was generated for this prototype."
               loadingHeight="h-40"
               className="md:col-span-1"
             >
@@ -501,5 +512,7 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
+    
 
     
