@@ -447,10 +447,10 @@ export default function PromptToPrototypePage() {
                     headerActions={
                       <>
                         <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
-                            <Download />
+                            <Download className="h-4 w-4" />
                         </Button>
                         <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
-                           <Copy />
+                           <Copy className="h-4 w-4" />
                         </Button>
                        </>
                     }
@@ -472,7 +472,7 @@ export default function PromptToPrototypePage() {
                     isLoading={false}
                     hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
                     noContentMessage="Mood board concept could not be generated."
-                    className="h-full"
+                    className="h-full print-card" // Ensure this primary card is also print-styled
                     contentClassName="flex flex-col"
                     headerActions={
                        <>
@@ -485,7 +485,7 @@ export default function PromptToPrototypePage() {
                               aria-label="Download mood board image"
                               disabled={!results.moodBoardImage || isPlaceholderImage}
                             >
-                              <Download />
+                              <Download className="h-4 w-4" />
                             </Button>
                           )}
                           {results.moodBoardCellsJsonString && (
@@ -496,7 +496,7 @@ export default function PromptToPrototypePage() {
                               onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
                               aria-label="Copy mood board themes JSON to clipboard"
                             >
-                              <Copy />
+                              <Copy className="h-4 w-4" />
                             </Button>
                           )}
                        </>
@@ -517,7 +517,7 @@ export default function PromptToPrototypePage() {
                                       layout="fill"
                                       objectFit="cover"
                                       data-ai-hint="mood board concept"
-                                      className="print-image"
+                                      className="print-image" // Class for print styling
                                   />
                                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 no-print">
                                     {imageActionButtons()}
@@ -600,10 +600,16 @@ export default function PromptToPrototypePage() {
   if (!mounted) {
      return (
       <div className="container mx-auto py-8" id="promptToPrototypePage">
-        <Card className="max-w-6xl mx-auto shadow-xl no-print">
-          <CardHeader>
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-1/2 mt-2" />
+        <Card className="max-w-6xl mx-auto shadow-xl">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/2 mt-2" />
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+                <Skeleton className="h-8 w-8" />
+                <Skeleton className="h-8 w-8" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-5 gap-6">
@@ -626,7 +632,7 @@ export default function PromptToPrototypePage() {
 
   return (
     <div className="container mx-auto py-8" id="promptToPrototypePage">
-      <Card className="max-w-6xl mx-auto shadow-xl no-print">
+      <Card className="max-w-6xl mx-auto shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -647,7 +653,7 @@ export default function PromptToPrototypePage() {
                     aria-label="Download all text assets as JSON"
                     disabled={isLoading || !results}
                 >
-                    <FileJson />
+                    <FileJson className="h-4 w-4" />
                 </Button>
             )}
             <Button
@@ -658,7 +664,7 @@ export default function PromptToPrototypePage() {
                 aria-label="Print or Save as PDF"
                 disabled={isLoading || !results}
             >
-                <Printer />
+                <Printer className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
@@ -680,69 +686,10 @@ export default function PromptToPrototypePage() {
         </CardContent>
       </Card>
 
-      {/* This section is for displaying all results together, especially for print */}
       {(results && !isLoading && mounted) && (
         <div className="mt-12">
           <h2 className="text-2xl font-semibold mb-6 text-center text-foreground no-print">Other Generated Assets</h2>
           
-          {/* Re-render Mood Board Concept for print if it was in the form card */}
-           <div className="hidden md:block print-only-moodboard-section"> {/* Shown on print if moodboard was in right panel, hidden on screen. */}
-            <ResultCard
-                title="Mood Board Concept"
-                icon={<Palette className="h-6 w-6 text-accent" />}
-                isLoading={false}
-                hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
-                noContentMessage="Mood board concept could not be generated."
-                className="h-full mb-6 print-card" 
-                contentClassName="flex flex-col"
-              >
-                <div className="flex flex-col gap-6 flex-grow">
-                    <div className="flex flex-col gap-4">
-                    <div>
-                        <h4 className="font-semibold text-sm text-foreground mb-2">Representative Mood Board Image:</h4>
-                        {results.moodBoardImage && (
-                        <NextImage 
-                            src={results.moodBoardImage} 
-                            alt="Generated Mood Board Representation" 
-                            width={600} 
-                            height={400}
-                            objectFit="contain"
-                            data-ai-hint="mood board concept"
-                            className="print-image rounded-md border shadow-md"
-                        />
-                        )}
-                        {isPlaceholderImage && (
-                        <p className="text-xs text-muted-foreground text-center">
-                            Representative image generation failed or is unavailable. Using a placeholder.
-                        </p>
-                        )}
-                    </div>
-                    
-                    <div className="print-moodboard-grid-container">
-                        <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed Thematic Descriptions:</h4>
-                        {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner print-moodboard-grid">
-                            {results.moodBoardCells.map((cell, index) => (
-                            <div 
-                                key={`print-cell-${index}`} 
-                                className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm print-overflow-visible"
-                                aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
-                            >
-                                <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || moodBoardPositionalLabels[index]}</span>
-                                <div className="text-[0.75rem] text-muted-foreground space-y-1">
-                                <p>{cell.description}</p>
-                                </div>
-                            </div>
-                            ))}
-                        </div>
-                        ) : (<p className="text-sm text-muted-foreground">No thematic descriptions were generated.</p>)}
-                    </div>
-                    </div>
-                </div>
-            </ResultCard>
-          </div>
-
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ResultCard
               title="Logline Variants"
@@ -760,7 +707,7 @@ export default function PromptToPrototypePage() {
                       onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
                       aria-label="Copy loglines JSON to clipboard"
                   >
-                      <Copy />
+                      <Copy className="h-4 w-4" />
                   </Button>
                 )
               }
@@ -793,7 +740,7 @@ export default function PromptToPrototypePage() {
                         onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
                         aria-label="Copy shotlist markdown to clipboard"
                     >
-                        <Copy />
+                        <Copy className="h-4 w-4" />
                     </Button>
                   )
               }
@@ -841,7 +788,7 @@ export default function PromptToPrototypePage() {
                     onClick={() => handleCopyToClipboard(results.proxyClipAnimaticDescription, "Animatic Description")}
                     aria-label="Copy animatic description to clipboard"
                   >
-                    <Copy />
+                    <Copy className="h-4 w-4" />
                   </Button>
                 )
               }
@@ -868,7 +815,7 @@ export default function PromptToPrototypePage() {
                     onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
                     aria-label="Copy pitch summary to clipboard"
                   >
-                    <Copy />
+                    <Copy className="h-4 w-4" />
                   </Button>
                 )
               }
@@ -888,3 +835,4 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
