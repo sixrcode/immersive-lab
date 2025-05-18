@@ -22,12 +22,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={cn(
-        geistSans.variable, 
-        geistMono.variable, 
-        "font-sans antialiased"
-        )}>
+    <html lang="en" className="dark" suppressHydrationWarning={true}>
+      <body 
+        className={cn(
+          geistSans.variable, 
+          geistMono.variable, 
+          "font-sans antialiased"
+        )}
+        suppressHydrationWarning={true}
+      >
         <SidebarProvider>
           <AppSidebar />
           <div className="flex flex-col flex-1 min-h-screen">
