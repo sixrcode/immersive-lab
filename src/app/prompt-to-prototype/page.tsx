@@ -71,7 +71,7 @@ function ResultCard({
           {icon}
           <CardTitle className="text-lg font-medium">{title}</CardTitle>
         </div>
-        {headerActions && <div className="ml-auto">{headerActions}</div>}
+        {headerActions && <div className="ml-auto flex items-center gap-2">{headerActions}</div>}
       </CardHeader>
       <CardContent className={cn("flex-grow", contentClassName)}>
         {isLoading ? (
@@ -112,6 +112,23 @@ const stylePresets = [
   { value: "Solarpunk Utopia", label: "Solarpunk Utopia" },
   { value: "Cosmic Horror", label: "Cosmic Horror" },
 ];
+
+const sanitizePromptForFilename = (prompt: string | undefined, maxLength: number = 25): string => {
+  if (!prompt || prompt.trim() === '') return 'untitled_prompt';
+  const slug = prompt
+    .trim()
+    .toLowerCase()
+    .split(' ') // Split into words
+    .slice(0, 5) // Take first 5 words
+    .join('_') // Join with underscores
+    .replace(/[^\w_.-]/g, '') // Remove non-word characters (except . - _)
+    .replace(/__+/g, '_') // Replace multiple underscores with single
+    .slice(0, maxLength);
+  
+  const cleanedSlug = slug.replace(/[_.-]+$/, '');
+  
+  return cleanedSlug || 'prompt_extract';
+};
 
 
 export default function PromptToPrototypePage() {
@@ -183,9 +200,11 @@ export default function PromptToPrototypePage() {
 
   const handleDownloadImage = () => {
     if (results?.moodBoardImage && !isPlaceholderImage) {
+      const currentPrompt = form.getValues("prompt");
+      const filenameSuffix = sanitizePromptForFilename(currentPrompt);
       const link = document.createElement('a');
       link.href = results.moodBoardImage;
-      link.download = 'moodboard_image.png'; // Or derive from prompt/style
+      link.download = `moodboard_image_${filenameSuffix}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -374,18 +393,32 @@ export default function PromptToPrototypePage() {
                     noContentMessage="Mood board concept could not be generated."
                     className="h-full"
                     contentClassName="flex flex-col"
+                    headerActions={
+                      <>
+                        {results.moodBoardImage && !isPlaceholderImage && (
+                          <Button type="button" variant="outline" size="sm" onClick={handleDownloadImage} className="text-xs">
+                            <Download className="h-3 w-3 mr-1.5" /> Download Image
+                          </Button>
+                        )}
+                        {results.moodBoardCellsJsonString && (
+                           <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
+                              aria-label="Copy mood board themes JSON to clipboard"
+                              className="text-xs"
+                            >
+                              <Copy className="h-3 w-3 mr-1.5" /> Copy Themes JSON
+                            </Button>
+                        )}
+                      </>
+                    }
                   >
                     <div className="flex flex-col gap-6 flex-grow">
                       <div className="flex flex-col gap-4">
                         <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-semibold text-sm text-foreground">Representative Mood Board Image:</h4>
-                            {results.moodBoardImage && !isPlaceholderImage && (
-                              <Button type="button" variant="outline" size="sm" onClick={handleDownloadImage} className="text-xs">
-                                <Download className="h-3 w-3 mr-1.5" /> Download Image
-                              </Button>
-                            )}
-                          </div>
+                          <h4 className="font-semibold text-sm text-foreground mb-2">Representative Mood Board Image:</h4>
                           {results.moodBoardImage ? (
                             <>
                               <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
@@ -407,7 +440,7 @@ export default function PromptToPrototypePage() {
                         </div>
                         
                         <div>
-                          <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Themes & Descriptions:</h4>
+                          <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed Thematic Descriptions:</h4>
                           {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
                             <>
                               <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
@@ -424,25 +457,11 @@ export default function PromptToPrototypePage() {
                                   </div>
                                 ))}
                               </div>
-                              <div className="mt-3 pt-3 border-t">
-                                <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">moodboard_themes.json</code></h5>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
-                                    aria-label="Copy mood board themes JSON to clipboard"
-                                    className="text-xs"
-                                    disabled={!results.moodBoardCellsJsonString}
-                                >
-                                    <Copy className="h-3 w-3 mr-1.5" /> Copy JSON Content
-                                </Button>
-                              </div>
                               <p className="mt-3 text-xs text-muted-foreground text-center">
-                                Use these 9 thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
+                                Use these thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
                               </p>
                             </>
-                          ) : (<p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
+                          ) : (<p className="text-sm text-muted-foreground">No thematic descriptions were generated.</p>)}
                         </div>
                       </div>
                     </div>
@@ -543,6 +562,20 @@ export default function PromptToPrototypePage() {
               hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
               noContentMessage="No loglines were generated for this prototype."
               loadingHeight="h-40"
+              headerActions={
+                results && results.loglinesJsonString && (
+                  <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
+                      aria-label="Copy loglines JSON to clipboard"
+                      className="text-xs"
+                  >
+                      <Copy className="h-3 w-3 mr-1.5" /> Copy JSON
+                  </Button>
+                )
+              }
             >
               {results.loglines && results.loglines.length > 0 && (
                 <div className="space-y-3">
@@ -552,20 +585,6 @@ export default function PromptToPrototypePage() {
                       <p className="text-sm text-muted-foreground">{logline.text}</p>
                     </div>
                   ))}
-                   <div className="mt-3 pt-3 border-t">
-                    <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">loglines.json</code></h5>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
-                        aria-label="Copy loglines JSON to clipboard"
-                        className="text-xs"
-                        disabled={!results.loglinesJsonString}
-                    >
-                        <Copy className="h-3 w-3 mr-1.5" /> Copy JSON Content
-                    </Button>
-                   </div>
                 </div>
               )}
             </ResultCard>
@@ -578,9 +597,22 @@ export default function PromptToPrototypePage() {
               hasContentAfterLoading={parsedShotList.length > 0}
               noContentMessage="No shot list was generated for this prototype."
               loadingHeight="h-60"
+              headerActions={
+                 results && results.shotListMarkdownString && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
+                        aria-label="Copy shotlist markdown to clipboard"
+                        className="text-xs"
+                    >
+                        <Copy className="h-3 w-3 mr-1.5" /> Copy MD
+                    </Button>
+                  )
+              }
             >
               {parsedShotList.length > 0 && (
-                <>
                 <div className="max-h-96 overflow-y-auto border rounded-md shadow-inner">
                   <Table>
                     <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
@@ -603,21 +635,6 @@ export default function PromptToPrototypePage() {
                     </TableBody>
                   </Table>
                 </div>
-                <div className="mt-3 pt-3 border-t">
-                    <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">shotlist.md</code></h5>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
-                        aria-label="Copy shotlist markdown to clipboard"
-                        className="text-xs"
-                        disabled={!results.shotListMarkdownString}
-                    >
-                        <Copy className="h-3 w-3 mr-1.5" /> Copy Markdown Content
-                    </Button>
-                </div>
-                </>
               )}
             </ResultCard>
 
@@ -649,12 +666,13 @@ export default function PromptToPrototypePage() {
                 results && results.pitchSummary && (
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
                     aria-label="Copy pitch summary to clipboard"
+                    className="text-xs"
                   >
-                    <Copy className="h-4 w-4 mr-1" /> Copy
+                    <Copy className="h-3 w-3 mr-1" /> Copy Summary
                   </Button>
                 )
               }
@@ -666,7 +684,7 @@ export default function PromptToPrototypePage() {
 
           </div>
           <p className="mt-8 text-xs text-muted-foreground text-center">
-            AI Output Transparency: Assets generated by AI. Review and refine as needed. Use the 3x3 mood board descriptions to guide further visual development.
+            AI Output Transparency: Assets generated by AI. Review and refine as needed. Use the thematic descriptions to guide further visual development.
             To get a consolidated view of all generated assets for printing or saving as a PDF, please use your browser's print functionality (Ctrl+P or Cmd+P).
           </p>
         </div>
@@ -675,3 +693,5 @@ export default function PromptToPrototypePage() {
   );
 }
 
+
+    
