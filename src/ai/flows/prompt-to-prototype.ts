@@ -21,14 +21,21 @@ const PromptToPrototypeInputSchema = z.object({
 });
 export type PromptToPrototypeInput = z.infer<typeof PromptToPrototypeInputSchema>;
 
+const MoodBoardCellSchema = z.object({
+  visuals: z.string().describe("A concise description of the key imagery or scene depicted in this cell. (1-2 sentences)"),
+  palette: z.string().describe("The dominant colors and overall color scheme for this cell. (e.g., 'Warm earth tones with a splash of crimson')"),
+  atmosphere: z.string().describe("The mood or feeling this cell should evoke. (e.g., 'Mysterious and melancholic', 'Bright and energetic')"),
+  keyProps: z.string().describe("Specific objects, characters, or significant visual details central to this cell. (e.g., 'A lone figure, a glowing artifact')")
+});
+
 const PromptToPrototypeOutputSchema = z.object({
   loglines: z.array(z.object({
     tone: z.string().describe("The tone of the logline (e.g., whimsical, gritty, dramatic)."),
     text: z.string().describe("The logline text."),
   })).describe('Three logline variants targeting distinct tones.'),
-  moodBoardCells: z.array(
-    z.string().describe("A detailed textual description for one cell of the 3x3 mood board, covering its specific visuals, palette, atmosphere, and key props/elements. Aim for 2-4 sentences per cell.")
-  ).length(9).describe("An array of 9 textual descriptions, one for each cell of a 3x3 mood board grid, ordered from top-left to bottom-right, row by row."),
+  moodBoardCells: z.array(MoodBoardCellSchema)
+    .length(9)
+    .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid, ordered from top-left to bottom-right, row by row. Each object details the cell's visuals, palette, atmosphere, and key props."),
   moodBoardImage: z
     .string()
     .describe(
@@ -54,37 +61,35 @@ const prompt = ai.definePrompt({
   User Inputs:
   - Prompt: {{{prompt}}}
   {{#if imageDataUri}}
-  - User Provided Image: {{media url=imageDataUri}} (This image should serve as a primary visual inspiration for the mood board cell descriptions and the overall visual tone. Describe elements or styles from the image if relevant in those sections.)
+  - User Provided Image: {{media url=imageDataUri}} (This image should serve as a primary visual inspiration for the mood board cell descriptions and the overall visual tone. Refer to its elements or style when describing the mood board cells.)
   {{/if}}
   {{#if stylePreset}}
-  - Style Preset: "{{stylePreset}}" (Apply this selected style to the mood board descriptions, the tone of the loglines, the shot list suggestions, and the style of the proxy clip animatic description.)
+  - Style Preset: "{{stylePreset}}" (Apply this selected style to the mood board cell descriptions, the tone of the loglines, the shot list suggestions, and the style of the proxy clip animatic description.)
   {{/if}}
 
-  Generate the following assets:
+  Generate the following assets, adhering strictly to the output schema provided:
 
   1.  **Loglines**: Provide three distinct logline variants for the project. Each logline should target a different tone (e.g., whimsical, gritty, dramatic, comedic, thrilling, mysterious). If a style preset is provided, let it influence the tone.
-      Output schema for each logline: { tone: string, text: string }
+      For each logline, output an object with 'tone' (string) and 'text' (string) properties.
 
-  2.  **Mood Board 3x3 Grid Cell Descriptions**: Generate an array of 9 detailed textual descriptions, one for each cell of a 3x3 mood board grid. The order should be row by row, starting from top-left (cell 1) to bottom-right (cell 9). For each cell, provide a description (approximately 2-4 sentences) that clearly outlines:
-      *   **Visuals**: The key imagery or scene depicted.
-      *   **Palette**: The dominant colors and overall color scheme.
-      *   **Atmosphere**: The mood or feeling the cell should evoke.
-      *   **Key Props/Elements**: Specific objects, characters, or significant visual details.
-      If a user image is provided, it's a key inspiration. If a style preset is provided, apply it.
-      The output for this entire item must be a JSON array of 9 strings. Each string in the array corresponds to one cell's description.
+  2.  **Mood Board 3x3 Grid Cell Content**: Generate an array of 9 objects for the 'moodBoardCells' field. Each object represents one cell in a 3x3 grid, ordered row by row (top-left to bottom-right).
+      For each of the 9 cells, the object MUST contain the following string properties:
+      *   'visuals': A concise description (1-2 sentences) of the key imagery or scene depicted in this cell.
+      *   'palette': The dominant colors and overall color scheme for this cell (e.g., 'Warm earth tones, deep blues, a splash of crimson').
+      *   'atmosphere': The mood or feeling this cell should evoke (e.g., 'Mysterious and melancholic', 'Joyful and vibrant').
+      *   'keyProps': Specific objects, characters, or significant visual details central to this cell (e.g., 'A worn leather-bound book', 'A futuristic cityscape at dusk').
+      If a user image is provided, it's a key inspiration for these details. If a style preset is provided, apply it to the descriptions.
 
   3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes. Adapt suggestions if a style preset is specified.
-      Output each shot on a new line, with values separated by a comma (e.g., Shot #,Lens,Camera Move,Framing Notes).
+      Output this as a single multi-line string, with each shot on a new line, and values separated by commas (e.g., "1,35mm,Slow Push-in,Close up on character's eyes revealing fear.").
       **Do not include a header row in the shot list output.**
-      Example of a single line:
-      1,35mm,Slow Push-in,Close up on character's eyes revealing fear.
 
   4.  **Proxy Clip Animatic Description**: Provide a detailed textual description for a 4-second proxy clip animatic. This ultra-low-res moving animatic should preview pacing and key moments. Describe the sequence of visuals, any simple motion, and how it conveys the core idea or feeling of the prompt. If a style preset is provided, let it influence the description. Imagine you're describing 3-5 key still frames that would make up this animatic.
 
-  5.  **Pitch Summary**: Generate a concise and compelling overview of the project idea (1-2 paragraphs), suitable for a quick pitch. It should encapsulate the core concept, dominant tone (influenced by style preset if any), and potential appeal, drawing from the main prompt and other generated assets.
+  5.  **Pitch Summary**: Generate a concise (1-2 paragraphs) and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, dominant tone (influenced by style preset if any), and potential appeal, drawing from the main prompt and other generated assets.
 
-  Ensure all outputs adhere to the schema provided.
-  The mood board image itself will be generated separately by the application after this text generation step.
+  Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells'.
+  The representative 'moodBoardImage' (a single image) will be generated separately by the application after this text generation step and added to the final output.
   `,
 });
 
@@ -117,6 +122,12 @@ const promptToPrototypeFlow = ai.defineFlow(
         prompt: [{text: imageGenPromptText}],
         config: {
             responseModalities: ['TEXT', 'IMAGE'],
+            safetySettings: [
+              { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+              { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+              { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+              { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+            ],
         },
     };
 
@@ -137,3 +148,4 @@ const promptToPrototypeFlow = ai.defineFlow(
     return textOutput;
   }
 );
+

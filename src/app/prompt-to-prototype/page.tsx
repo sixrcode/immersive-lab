@@ -90,6 +90,8 @@ const stylePresets = [
   { value: "Cyberpunk Dystopian", label: "Cyberpunk Dystopian" },
   { value: "Retro 80s VHS", label: "Retro 80s VHS" },
   { value: "Nature Documentary", label: "Nature Documentary" },
+  { value: "Wes Anderson Quirk", label: "Wes Anderson Quirk" },
+  { value: "Studio Ghibli Charm", label: "Studio Ghibli Charm" },
 ];
 
 const moodBoardCellLabels = [
@@ -332,15 +334,14 @@ export default function PromptToPrototypePage() {
                         title="Mood Board Concept"
                         icon={<Palette className="h-6 w-6 text-accent" />}
                         isLoading={true}
-                        loadingHeight="h-[calc(100%-2rem)]" // Adjusted for better fit
+                        loadingHeight="h-[calc(100%-2rem)]" 
                         className="h-full"
                       >
-                        {/* Skeleton for mood board area */}
                         <div className="flex flex-col gap-6">
                           <div><Skeleton className="h-48 w-full"/></div>
                           <div>
                             <div className="grid grid-cols-3 gap-2.5">
-                              {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+                              {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
                             </div>
                           </div>
                         </div>
@@ -382,14 +383,19 @@ export default function PromptToPrototypePage() {
                             <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Cell Descriptions:</h4>
                             {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
                               <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
-                                {results.moodBoardCells.map((cellDescription, index) => (
+                                {results.moodBoardCells.map((cell, index) => (
                                   <div 
                                     key={index} 
-                                    className="border p-3 rounded text-xs text-muted-foreground bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[110px] max-h-[160px] shadow-sm hover:shadow-md transition-shadow"
+                                    className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5"
                                     aria-label={`Mood board cell: ${moodBoardCellLabels[index]}`}
                                   >
-                                    <span className="font-semibold text-foreground/90 mb-1.5 text-[0.8rem]">{moodBoardCellLabels[index]}</span>
-                                    <p className="whitespace-pre-wrap leading-relaxed text-[0.75rem]">{cellDescription}</p>
+                                    <span className="font-semibold text-foreground/90 text-[0.8rem] block">{moodBoardCellLabels[index]}</span>
+                                    <div className="text-[0.75rem] text-muted-foreground space-y-1">
+                                      <p><strong className="text-foreground/75">Visuals:</strong> {cell.visuals}</p>
+                                      <p><strong className="text-foreground/75">Palette:</strong> {cell.palette}</p>
+                                      <p><strong className="text-foreground/75">Atmosphere:</strong> {cell.atmosphere}</p>
+                                      <p><strong className="text-foreground/75">Key Props:</strong> {cell.keyProps}</p>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
