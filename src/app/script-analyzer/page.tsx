@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { AnalyzeScriptInput, AnalyzeScriptOutput, AnalyzeScriptOutputSuggestion } from "@/ai/flows/ai-script-analyzer";
+import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/ai/flows/ai-script-analyzer"; // Removed AnalyzeScriptOutputSuggestion from direct import as it's part of AnalyzeScriptOutput
 import { analyzeScript } from "@/ai/flows/ai-script-analyzer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle } from "lucide-react"; // Added CheckCircle, XCircle
+import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,6 +17,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Define AnalyzeScriptOutputSuggestion here if it's nested within AnalyzeScriptOutput in the flow file,
+// or ensure it's correctly exported and imported if it's a top-level type.
+// Assuming it's part of AnalyzeScriptOutput as `suggestions: Array<...>`
+type AnalyzeScriptOutputSuggestion = AnalyzeScriptOutput extends { suggestions: Array<infer S> } ? S : never;
 
 
 const formSchema = z.object({
@@ -62,19 +67,22 @@ export default function ScriptAnalyzerPage() {
     }
   }
 
-  const handleApplyFix = (suggestion: AnalyzeScriptOutputSuggestion) => {
+  const handleApplySuggestion = (suggestion: AnalyzeScriptOutputSuggestion) => {
     const currentScript = form.getValues("script");
-    if (currentScript.includes(suggestion.section)) {
-      const newScript = currentScript.replace(suggestion.section, suggestion.improvement);
+    // Ensure suggestion.section is a string and not undefined
+    const sectionToReplace = suggestion.section || ""; 
+    
+    if (sectionToReplace && currentScript.includes(sectionToReplace)) {
+      const newScript = currentScript.replace(sectionToReplace, suggestion.improvement || "");
       form.setValue("script", newScript, { shouldValidate: true, shouldDirty: true });
       toast({
-        title: "Fix Applied!",
+        title: "Suggestion Applied!",
         description: "The suggestion has been applied to your script.",
         action: <CheckCircle className="text-green-500" />,
       });
     } else {
       toast({
-        title: "Could Not Apply Fix",
+        title: "Could Not Apply Suggestion",
         description: "The specific script section was not found. It might have been edited or the AI's reference is not an exact match.",
         variant: "destructive",
         duration: 5000,
@@ -171,7 +179,7 @@ export default function ScriptAnalyzerPage() {
                   {results.suggestions.map((suggestion, index) => (
                     <AccordionItem value={`item-${index}`} key={index}>
                       <AccordionTrigger className="text-left hover:bg-muted/20 px-2 rounded-t-md">
-                        <span className="font-medium">Suggestion for: "{suggestion.section.length > 50 ? suggestion.section.substring(0, 50) + '...' : suggestion.section}"</span>
+                        <span className="font-medium">Suggestion for: "{suggestion.section && suggestion.section.length > 50 ? suggestion.section.substring(0, 50) + '...' : suggestion.section || 'N/A'}"</span>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-3 p-4 bg-muted/30 rounded-b-md border-t-0 border">
                         <div>
@@ -186,11 +194,11 @@ export default function ScriptAnalyzerPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleApplyFix(suggestion)}
+                          onClick={() => handleApplySuggestion(suggestion)}
                           className="mt-3 bg-accent/10 hover:bg-accent/20 text-accent-foreground border-accent/30"
                           disabled={isLoading}
                         >
-                          <Edit3 className="mr-2 h-4 w-4" /> Apply Fix
+                          <Edit3 className="mr-2 h-4 w-4" /> Apply Suggestion
                         </Button>
                       </AccordionContent>
                     </AccordionItem>
@@ -200,17 +208,10 @@ export default function ScriptAnalyzerPage() {
             </Card>
           )}
            <p className="mt-4 text-sm text-muted-foreground text-center">
-              AI Output Transparency: Analysis and suggestions are AI-generated. Use your creative judgment when applying fixes.
+              AI Output Transparency: Analysis and suggestions are AI-generated. Use your creative judgment when applying suggestions.
             </p>
         </div>
       )}
     </div>
   );
-}
-
-// Helper type for suggestion, if not already exported from flow file
-interface AnalyzeScriptOutputSuggestion {
-  section: string;
-  issue: string;
-  improvement: string;
 }
