@@ -118,11 +118,11 @@ const sanitizePromptForFilename = (prompt: string | undefined, maxLength: number
   const slug = prompt
     .trim()
     .toLowerCase()
-    .split(' ') // Split into words
-    .slice(0, 5) // Take first 5 words
-    .join('_') // Join with underscores
-    .replace(/[^\w_.-]/g, '') // Remove non-word characters (except . - _)
-    .replace(/__+/g, '_') // Replace multiple underscores with single
+    .split(' ') 
+    .slice(0, 5) 
+    .join('_') 
+    .replace(/[^\w_.-]/g, '') 
+    .replace(/__+/g, '_') 
     .slice(0, maxLength);
   
   const cleanedSlug = slug.replace(/[_.-]+$/, '');
@@ -349,7 +349,7 @@ export default function PromptToPrototypePage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || !mounted}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -416,7 +416,7 @@ export default function PromptToPrototypePage() {
                     }
                   >
                     <div className="flex flex-col gap-6 flex-grow">
-                      <div className="flex flex-col gap-4">
+                       <div className="flex flex-col gap-4">
                         <div>
                           <h4 className="font-semibold text-sm text-foreground mb-2">Representative Mood Board Image:</h4>
                           {results.moodBoardImage ? (
@@ -457,7 +457,7 @@ export default function PromptToPrototypePage() {
                                   </div>
                                 ))}
                               </div>
-                              <p className="mt-3 text-xs text-muted-foreground text-center">
+                               <p className="mt-3 text-xs text-muted-foreground text-center">
                                 Use these thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
                               </p>
                             </>
@@ -481,10 +481,8 @@ export default function PromptToPrototypePage() {
       </Form>
   );
 
-
   if (!mounted) {
-    // Skeleton for the entire form area if not mounted
-    return (
+     return (
       <div className="container mx-auto py-8">
         <Card className="max-w-6xl mx-auto shadow-xl">
           <CardHeader>
@@ -494,18 +492,14 @@ export default function PromptToPrototypePage() {
           <CardContent>
             <div className="grid md:grid-cols-5 gap-6">
               <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-10 w-1/3 mt-4" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-1/3 mt-4" />
-                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-12 w-full mt-4" />
               </div>
               <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px]">
                 <Skeleton className="h-12 w-12 mb-4 rounded-full" />
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-6 w-3/4 mb-2" /> <Skeleton className="h-4 w-1/2" />
               </div>
             </div>
           </CardContent>
@@ -530,31 +524,25 @@ export default function PromptToPrototypePage() {
           {mounted ? renderFormAndMoodboard() : (
              <div className="grid md:grid-cols-5 gap-6">
               <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-10 w-1/3 mt-4" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-1/3 mt-4" />
-                <Skeleton className="h-10 w-full" />
+                 <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-1/3 mt-4" /> <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-12 w-full mt-4" />
               </div>
               <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px]">
                 <Skeleton className="h-12 w-12 mb-4 rounded-full" />
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-6 w-3/4 mb-2" /> <Skeleton className="h-4 w-1/2" />
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Other Generated Assets - Only shown if results exist, not loading, and mounted */}
       {(results && !isLoading && mounted) && (
         <div className="mt-12">
           <h2 className="text-2xl font-semibold mb-6 text-center text-foreground">Other Generated Assets</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Loglines Card */}
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
@@ -563,7 +551,7 @@ export default function PromptToPrototypePage() {
               noContentMessage="No loglines were generated for this prototype."
               loadingHeight="h-40"
               headerActions={
-                results && results.loglinesJsonString && (
+                results.loglinesJsonString && (
                   <Button
                       type="button"
                       variant="outline"
@@ -589,7 +577,6 @@ export default function PromptToPrototypePage() {
               )}
             </ResultCard>
 
-            {/* Shot List Card */}
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
@@ -598,7 +585,7 @@ export default function PromptToPrototypePage() {
               noContentMessage="No shot list was generated for this prototype."
               loadingHeight="h-60"
               headerActions={
-                 results && results.shotListMarkdownString && (
+                 results.shotListMarkdownString && (
                     <Button
                         type="button"
                         variant="outline"
@@ -638,7 +625,6 @@ export default function PromptToPrototypePage() {
               )}
             </ResultCard>
 
-            {/* Proxy Clip Animatic Description Card */}
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
@@ -647,13 +633,26 @@ export default function PromptToPrototypePage() {
               noContentMessage="No animatic description was generated for this prototype."
               loadingHeight="h-40"
               className="md:col-span-1" 
+              headerActions={
+                results.proxyClipAnimaticDescription && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCopyToClipboard(results.proxyClipAnimaticDescription, "Animatic Description")}
+                    aria-label="Copy animatic description to clipboard"
+                    className="text-xs"
+                  >
+                    <Copy className="h-3 w-3 mr-1" /> Copy Description
+                  </Button>
+                )
+              }
             >
                 {results.proxyClipAnimaticDescription && (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 border rounded-md bg-muted/50 shadow-sm">{results.proxyClipAnimaticDescription}</p>
                 )}
             </ResultCard>
 
-            {/* Pitch Summary Card */}
             <ResultCard
               title="Pitch Summary"
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
@@ -663,7 +662,7 @@ export default function PromptToPrototypePage() {
               loadingHeight="h-40"
               className="md:col-span-1"
               headerActions={
-                results && results.pitchSummary && (
+                results.pitchSummary && (
                   <Button
                     type="button"
                     variant="outline"
@@ -692,6 +691,3 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
-
-
-    
