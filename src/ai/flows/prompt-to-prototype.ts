@@ -22,7 +22,7 @@ const PromptToPrototypeInputSchema = z.object({
 export type PromptToPrototypeInput = z.infer<typeof PromptToPrototypeInputSchema>;
 
 const MoodBoardCellSchema = z.object({
-  title: z.string().describe("The specific theme/category for this mood board cell (e.g., 'Key Character Focus', 'Environment Details'). This title MUST be one of the 9 predefined themes."),
+  title: z.string().describe("The specific theme/category for this mood board cell (e.g., 'Key Character Focus', 'Environment Details'). This title MUST be one of the 9 predefined themes from the THEME_LIST provided in the prompt."),
   description: z.string().describe(
     "A detailed textual description for this specific cell, related to its assigned theme. This should elaborate on the visual and conceptual elements relevant to the theme."
   )
@@ -39,6 +39,7 @@ const PromptToPrototypeOutputSchema = z.object({
   moodBoardCells: z.array(MoodBoardCellSchema)
     .length(9)
     .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid. Each object represents a specific theme and its textual description, ordered from top-left to bottom-right, row by row. The themes are: 1. Key Character Focus, 2. Environment Details, 3. Color Palette & Texture, 4. Specific Props or Symbols, 5. Emotional Tone / Lighting, 6. Cinematography Hints, 7. Visuals: Patterns & Swatches, 8. Text: Words & Typography, 9. Concept & Overall Theme."),
+  moodBoardCellsJsonString: z.string().describe('The mood board cells (themes and descriptions) formatted as a JSON string, suitable for file handoff.'),
   moodBoardImage: z
     .string()
     .describe(
@@ -102,7 +103,7 @@ const prompt = ai.definePrompt({
       9.  **Concept & Overall Theme**: Provide a concise summary of the core concept or overarching theme that the mood board aims to visually represent, based on the user's prompt.
 
       For each of these 9 themes, the object in the array MUST contain:
-      *   'title': A string that is the exact name of the theme (e.g., "Key Character Focus", "Environment Details", etc.).
+      *   'title': A string that is the exact name of the theme (e.g., "Key Character Focus", "Environment Details", etc., from the THEME_LIST above). You MUST use the exact titles from this list.
       *   'description': A string containing your detailed textual elaboration for that specific theme, directly inspired by and expanding upon the user's main prompt.
 
       {{#if stylePreset}}
@@ -111,6 +112,7 @@ const prompt = ai.definePrompt({
       {{#if imageDataUri}}
       If a user image was provided, it should heavily inspire these descriptions, particularly for palette, texture, composition, and initial character/environment ideas. Explicitly draw from it where appropriate.
       {{/if}}
+      Also, provide a 'moodBoardCellsJsonString' field which is a JSON string representation of this array of mood board cell objects.
 
   3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes. {{#if stylePreset}}Adapt suggestions if the "{{stylePreset}}" style preset is specified.{{/if}}
       Output this as a single multi-line string for the 'shotList' field, with each shot on a new line, and values separated by commas (e.g., "1,35mm,Slow Push-in,Close up on character's eyes revealing fear.").
@@ -121,7 +123,7 @@ const prompt = ai.definePrompt({
 
   5.  **Pitch Summary**: Generate a concise (1-2 paragraphs) and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, dominant tone ({{#if stylePreset}}influenced by the "{{stylePreset}}" preset{{else}}reflecting the main prompt{{/if}}), and potential appeal, drawing from the main prompt and other generated assets.
 
-  Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells' and the provision of 'loglinesJsonString' and 'shotListMarkdownString'.
+  Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells' and the provision of 'loglinesJsonString', 'moodBoardCellsJsonString', and 'shotListMarkdownString'.
   The representative 'moodBoardImage' (a single image) will be generated separately by the application after this text generation step and added to the final output.
   `,
 });
@@ -151,6 +153,7 @@ const promptToPrototypeFlow = ai.defineFlow(
 
     // Populate the JSON and Markdown string fields
     textOutput.loglinesJsonString = JSON.stringify(textOutput.loglines || [], null, 2);
+    textOutput.moodBoardCellsJsonString = JSON.stringify(textOutput.moodBoardCells || [], null, 2);
     textOutput.shotListMarkdownString = textOutput.shotList || "";
 
 

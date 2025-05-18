@@ -179,6 +179,27 @@ export default function PromptToPrototypePage() {
     }
   };
 
+  const handleDownloadImage = () => {
+    if (results?.moodBoardImage && !isPlaceholderImage) {
+      const link = document.createElement('a');
+      link.href = results.moodBoardImage;
+      link.download = 'moodboard_image.png'; // Or derive from prompt/style
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+       toast({
+        title: "Image Download Started",
+        description: "Your mood board image is downloading.",
+      });
+    } else {
+      toast({
+        title: "Download Failed",
+        description: "No image available to download or image generation failed.",
+        variant: "destructive",
+      });
+    }
+  };
+
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
     setResults(null);
@@ -343,20 +364,26 @@ export default function PromptToPrototypePage() {
                       </div>
                     </div>
                   </ResultCard>
-              ) : results && mounted ? ( // Only render results if mounted and available
+              ) : results && mounted ? ( 
                  <ResultCard
                     title="Mood Board Concept"
                     icon={<Palette className="h-6 w-6 text-accent" />}
                     isLoading={false}
                     hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
                     noContentMessage="Mood board concept could not be generated."
-                    loadingHeight="h-96" // This might not be needed if hasContentAfterLoading handles it
                     className="h-full"
                     contentClassName="flex flex-col"
                   >
                     <div className="flex flex-col gap-6 flex-grow">
                        <div>
-                        <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="font-semibold text-sm text-foreground">Representative Mood Board Image:</h4>
+                          {results.moodBoardImage && !isPlaceholderImage && (
+                            <Button variant="outline" size="sm" onClick={handleDownloadImage} className="text-xs">
+                              <Download className="h-3 w-3 mr-1.5" /> Download Image
+                            </Button>
+                          )}
+                        </div>
                         {results.moodBoardImage ? (
                           <>
                             <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
@@ -395,6 +422,19 @@ export default function PromptToPrototypePage() {
                                 </div>
                               ))}
                             </div>
+                            <div className="mt-3 pt-3 border-t">
+                              <h5 className="text-xs font-semibold text-muted-foreground mb-1">For Handoff: <code className="font-mono bg-gray-200 dark:bg-gray-700 p-1 rounded text-xs">moodboard_themes.json</code></h5>
+                              <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCopyToClipboard(results.moodBoardCellsJsonString, "Mood Board Themes JSON")}
+                                  aria-label="Copy mood board themes JSON to clipboard"
+                                  className="text-xs"
+                                  disabled={!results.moodBoardCellsJsonString}
+                              >
+                                  <Copy className="h-3 w-3 mr-1.5" /> Copy JSON Content
+                              </Button>
+                            </div>
                             <p className="mt-3 text-xs text-muted-foreground text-center">
                               Use these 9 thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
                             </p>
@@ -404,7 +444,6 @@ export default function PromptToPrototypePage() {
                     </div>
                   </ResultCard>
               ) : ( 
-                // Initial placeholder state before any generation if mounted
                 mounted && (
                   <div className="flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20 min-h-[400px] md:min-h-full">
                       <Palette size={48} className="text-muted-foreground mb-4" />
@@ -496,7 +535,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} // Should be false here
+              isLoading={isLoading} 
               hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
               noContentMessage="No loglines were generated for this prototype."
               loadingHeight="h-40"
@@ -530,7 +569,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} // Should be false here
+              isLoading={isLoading} 
               hasContentAfterLoading={parsedShotList.length > 0}
               noContentMessage="No shot list was generated for this prototype."
               loadingHeight="h-60"
@@ -580,7 +619,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} // Should be false here
+              isLoading={isLoading} 
               hasContentAfterLoading={!!results.proxyClipAnimaticDescription}
               noContentMessage="No animatic description was generated for this prototype."
               loadingHeight="h-40"
@@ -595,7 +634,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Pitch Summary"
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} // Should be false here
+              isLoading={isLoading} 
               hasContentAfterLoading={!!results.pitchSummary}
               noContentMessage="No pitch summary was generated for this prototype."
               loadingHeight="h-40"
@@ -621,6 +660,7 @@ export default function PromptToPrototypePage() {
           </div>
           <p className="mt-8 text-xs text-muted-foreground text-center">
             AI Output Transparency: Assets generated by AI. Review and refine as needed. Use the 3x3 mood board descriptions to guide further visual development.
+            To get a consolidated view of all generated assets for printing or saving as a PDF, please use your browser's print functionality (Ctrl+P or Cmd+P).
           </p>
         </div>
       )}
