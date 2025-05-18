@@ -105,7 +105,7 @@ function KanbanColumn({ column }: { column: KanbanColumnType }) {
         </div>
         <Badge variant="secondary">{column.cards.length}</Badge>
       </div>
-      <ScrollArea className="flex-1 h-[calc(100vh-20rem)] p-2"> {/* Adjust height as needed */}
+      <ScrollArea className="flex-1 p-2"> {/* Changed: Removed h-[calc(100vh-20rem)] and relying on flex-1 */}
         {column.cards.length > 0 ? (
           column.cards.map((card) => <KanbanCard key={card.id} card={card} />)
         ) : (
@@ -152,3 +152,4 @@ export default function ProductionBoardPage() {
     </div>
   );
 }
+
