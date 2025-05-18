@@ -9,12 +9,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video } from "lucide-react";
+import { Loader2, Sparkles, FileText, ListChecks, Video, Image as ImageIcon, Palette } from "lucide-react";
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 const formSchema = z.object({
   prompt: z.string().min(10, "Prompt must be at least 10 characters long."),
@@ -25,22 +27,23 @@ type FormValues = z.infer<typeof formSchema>;
 interface ResultCardProps {
   title: string;
   icon: ReactNode;
-  content: ReactNode | string;
+  children: ReactNode;
   isLoading: boolean;
+  loadingHeight?: string; // e.g., "h-64" or "h-20"
 }
 
-function ResultCard({ title, icon, content, isLoading }: ResultCardProps) {
+function ResultCard({ title, icon, children, isLoading, loadingHeight = "h-32" }: ResultCardProps) {
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg flex flex-col">
       <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
         {icon}
         <CardTitle className="text-lg font-medium">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow">
         {isLoading ? (
-          title === "Mood Board" ? <Skeleton className="h-64 w-full" /> : <Skeleton className="h-20 w-full" />
+          <Skeleton className={`w-full ${loadingHeight}`} />
         ) : (
-          typeof content === 'string' ? <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p> : content
+          children
         )}
       </CardContent>
     </Card>
@@ -73,9 +76,13 @@ export default function PromptToPrototypePage() {
       });
     } catch (error) {
       console.error("Error generating prototype:", error);
+      let errorMessage = "Failed to generate prototype. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       toast({
-        title: "Error",
-        description: "Failed to generate prototype. Please try again.",
+        title: "Error Generating Prototype",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -92,7 +99,7 @@ export default function PromptToPrototypePage() {
             <CardTitle className="text-2xl">Prompt-to-Prototype Studio</CardTitle>
           </div>
           <CardDescription>
-            Enter a prompt to generate a mood board, logline, shot list, and proxy clip description.
+            Enter a prompt to generate a mood board concept (image + 3x3 grid description), three logline variants, a shot list, and a proxy clip animatic description.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -120,12 +127,12 @@ export default function PromptToPrototypePage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
+                    Generating (takes up to 30s)...
                   </>
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Prototype
+                    Generate Prototype Package
                   </>
                 )}
               </Button>
@@ -139,46 +146,75 @@ export default function PromptToPrototypePage() {
           <h2 className="text-2xl font-semibold mb-6 text-center text-foreground">Generated Assets</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ResultCard
-              title="Mood Board"
-              icon={<Sparkles className="h-6 w-6 text-accent" />}
-              isLoading={isLoading && !results?.moodBoardImage}
-              content={
-                results?.moodBoardImage ? (
-                  <div className="relative aspect-video w-full overflow-hidden rounded-md border">
-                    {/* Using img tag for data URI compatibility. Next/Image needs loader for external URLs primarily. */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+              title="Mood Board Concept"
+              icon={<Palette className="h-6 w-6 text-accent" />}
+              isLoading={isLoading && (!results?.moodBoardImage && !results?.moodBoardDescription)}
+              loadingHeight="h-80"
+            >
+              <>
+                {results?.moodBoardImage ? (
+                  <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-4">
                     <img 
                         src={results.moodBoardImage} 
-                        alt="Generated Mood Board" 
+                        alt="Generated Mood Board Representation" 
                         className="object-cover w-full h-full"
-                        data-ai-hint="mood board"
+                        data-ai-hint="mood board concept"
                     />
                   </div>
-                ) : <Skeleton className="h-64 w-full" />
-              }
-            />
+                ) : (!isLoading && <p className="text-sm text-muted-foreground mb-2">No representative image generated.</p>)}
+                
+                <h4 className="font-semibold text-sm mb-1 text-foreground">3x3 Grid Description:</h4>
+                {results?.moodBoardDescription ? (
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{results.moodBoardDescription}</p>
+                ) : (!isLoading && <p className="text-sm text-muted-foreground">No grid description available.</p>)}
+              </>
+            </ResultCard>
+
             <ResultCard
-              title="Logline"
+              title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={isLoading && !results?.logline}
-              content={results?.logline || ""}
-            />
+              isLoading={isLoading && !results?.loglines}
+              loadingHeight="h-40"
+            >
+              {results?.loglines && results.loglines.length > 0 ? (
+                <div className="space-y-3">
+                  {results.loglines.map((logline, index) => (
+                    <div key={index} className="p-2 border rounded-md bg-muted/50">
+                      <Badge variant="secondary" className="mb-1">{logline.tone || `Variant ${index + 1}`}</Badge>
+                      <p className="text-sm text-muted-foreground">{logline.text}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (!isLoading && <p className="text-sm text-muted-foreground">No loglines generated.</p>)}
+            </ResultCard>
+
             <ResultCard
-              title="Shot List"
+              title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
               isLoading={isLoading && !results?.shotList}
-              content={results?.shotList || ""}
-            />
+              loadingHeight="h-60"
+            >
+                {results?.shotList ? (
+                    <pre className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded-md overflow-x-auto">
+                        <code>{results.shotList}</code>
+                    </pre>
+                ) : (!isLoading && <p className="text-sm text-muted-foreground">No shot list generated.</p>)}
+            </ResultCard>
+
             <ResultCard
-              title="Proxy Clip Description"
+              title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
-              isLoading={isLoading && !results?.proxyClipDescription}
-              content={results?.proxyClipDescription || ""}
-            />
+              isLoading={isLoading && !results?.proxyClipAnimaticDescription}
+              loadingHeight="h-40"
+            >
+                {results?.proxyClipAnimaticDescription ? (
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{results.proxyClipAnimaticDescription}</p>
+                ) : (!isLoading && <p className="text-sm text-muted-foreground">No animatic description generated.</p>)}
+            </ResultCard>
           </div>
           {results && !isLoading && (
-            <p className="mt-4 text-sm text-muted-foreground text-center">
-              AI Output Transparency: Assets generated by AI. Review and refine as needed.
+            <p className="mt-6 text-sm text-muted-foreground text-center">
+              AI Output Transparency: Assets generated by AI. Review and refine as needed. Use the 3x3 mood board description to guide further visual development.
             </p>
           )}
         </div>
