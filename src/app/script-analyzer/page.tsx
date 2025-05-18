@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/ai/flows/ai-script-analyzer"; // Removed AnalyzeScriptOutputSuggestion from direct import as it's part of AnalyzeScriptOutput
+import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/ai/flows/ai-script-analyzer";
 import { analyzeScript } from "@/ai/flows/ai-script-analyzer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle, Copy } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,9 +18,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Define AnalyzeScriptOutputSuggestion here if it's nested within AnalyzeScriptOutput in the flow file,
-// or ensure it's correctly exported and imported if it's a top-level type.
-// Assuming it's part of AnalyzeScriptOutput as `suggestions: Array<...>`
 type AnalyzeScriptOutputSuggestion = AnalyzeScriptOutput extends { suggestions: Array<infer S> } ? S : never;
 
 
@@ -69,7 +66,6 @@ export default function ScriptAnalyzerPage() {
 
   const handleApplySuggestion = (suggestion: AnalyzeScriptOutputSuggestion) => {
     const currentScript = form.getValues("script");
-    // Ensure suggestion.section is a string and not undefined
     const sectionToReplace = suggestion.section || ""; 
     
     if (sectionToReplace && currentScript.includes(sectionToReplace)) {
@@ -83,10 +79,37 @@ export default function ScriptAnalyzerPage() {
     } else {
       toast({
         title: "Could Not Apply Suggestion",
-        description: "The specific script section was not found. It might have been edited or the AI's reference is not an exact match.",
+        description: "The specific script section was not found. It might have been edited, or the AI's reference is not an exact match. Ensure the 'section' in the AI's output is a verbatim quote from the script.",
         variant: "destructive",
-        duration: 5000,
+        duration: 7000,
         action: <XCircle className="text-red-500" />,
+      });
+    }
+  };
+
+  const handleCopyScript = async () => {
+    const currentScript = form.getValues("script");
+    if (!currentScript) {
+      toast({
+        title: "Nothing to Copy",
+        description: "The script is empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(currentScript);
+      toast({
+        title: "Script Copied!",
+        description: "The current script has been copied to your clipboard.",
+        action: <CheckCircle className="text-green-500" />,
+      });
+    } catch (err) {
+      console.error('Failed to copy script: ', err);
+      toast({
+        title: "Copy Failed",
+        description: "Could not copy the script. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -111,11 +134,23 @@ export default function ScriptAnalyzerPage() {
                 name="script"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-lg">Your Script</FormLabel>
+                    <div className="flex justify-between items-center">
+                      <FormLabel className="text-lg">Your Script</FormLabel>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleCopyScript}
+                        disabled={isLoading || !form.getValues("script")}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy Script
+                      </Button>
+                    </div>
                     <FormControl>
                       <Textarea
                         placeholder="Paste your script content here..."
-                        className="min-h-[200px] resize-y bg-background shadow-inner"
+                        className="min-h-[250px] resize-y bg-background shadow-inner"
                         {...field}
                         disabled={isLoading}
                       />
@@ -179,7 +214,7 @@ export default function ScriptAnalyzerPage() {
                   {results.suggestions.map((suggestion, index) => (
                     <AccordionItem value={`item-${index}`} key={index}>
                       <AccordionTrigger className="text-left hover:bg-muted/20 px-2 rounded-t-md">
-                        <span className="font-medium">Suggestion for: "{suggestion.section && suggestion.section.length > 50 ? suggestion.section.substring(0, 50) + '...' : suggestion.section || 'N/A'}"</span>
+                        <span className="font-medium">Suggestion for: "{suggestion.section && suggestion.section.length > 50 ? suggestion.section.substring(0, 50) + '...' : (suggestion.section || 'Unnamed Section')}"</span>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-3 p-4 bg-muted/30 rounded-b-md border-t-0 border">
                         <div>
@@ -207,8 +242,8 @@ export default function ScriptAnalyzerPage() {
               </CardContent>
             </Card>
           )}
-           <p className="mt-4 text-sm text-muted-foreground text-center">
-              AI Output Transparency: Analysis and suggestions are AI-generated. Use your creative judgment when applying suggestions.
+           <p className="mt-8 text-xs text-muted-foreground text-center">
+              AI Output Transparency: Analysis and suggestions are AI-generated. The "section" for suggestions must be an exact verbatim quote from your script for "Apply Suggestion" to work correctly. Review and refine all changes.
             </p>
         </div>
       )}
