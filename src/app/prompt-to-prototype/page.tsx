@@ -96,11 +96,6 @@ const stylePresets = [
   { value: "Studio Ghibli Charm", label: "Studio Ghibli Charm" },
 ];
 
-const moodBoardCellLabels = [
-  "Top-Left", "Top-Center", "Top-Right",
-  "Middle-Left", "Middle-Center", "Middle-Right",
-  "Bottom-Left", "Bottom-Center", "Bottom-Right"
-];
 
 export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -340,7 +335,7 @@ export default function PromptToPrototypePage() {
                       </div>
                       
                       <div>
-                        <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Cell Descriptions:</h4>
+                        <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Themes & Descriptions:</h4>
                         {results.moodBoardCells && results.moodBoardCells.length === 9 ? (
                           <>
                             <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-muted/10 shadow-inner">
@@ -348,21 +343,17 @@ export default function PromptToPrototypePage() {
                                 <div 
                                   key={index} 
                                   className="border p-3 rounded text-xs bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[120px] max-h-[200px] shadow-sm hover:shadow-md transition-shadow space-y-1.5"
-                                  aria-label={`Mood board cell: ${moodBoardCellLabels[index]}`}
+                                  aria-label={`Mood board cell: ${cell.title}`}
                                 >
-                                  <span className="font-semibold text-foreground/90 text-[0.8rem] block">{moodBoardCellLabels[index]}</span>
+                                  <span className="font-semibold text-foreground/90 text-[0.8rem] block">{cell.title || `Theme ${index + 1}`}</span>
                                   <div className="text-[0.75rem] text-muted-foreground space-y-1">
-                                    <p><strong className="text-foreground/75">Visuals:</strong> {cell.visuals}</p>
-                                    <p><strong className="text-foreground/75">Palette:</strong> {cell.palette}</p>
-                                    <p><strong className="text-foreground/75">Atmosphere:</strong> {cell.atmosphere}</p>
-                                    <p><strong className="text-foreground/75">Key Props:</strong> {cell.keyProps}</p>
+                                    <p>{cell.description}</p>
                                   </div>
                                 </div>
                               ))}
                             </div>
                             <p className="mt-3 text-xs text-muted-foreground text-center">
-                              Use these 9 cell descriptions as a detailed guide to manually create or source images for your visual mood board.
-                              Focus on capturing the specified visuals, palette, atmosphere, and key props for each cell to build a rich visual tapestry for your concept.
+                              Use these 9 thematic descriptions as a detailed guide to manually create or source images for your visual mood board.
                             </p>
                           </>
                         ) : (<p className="text-sm text-muted-foreground">No grid cell descriptions were generated.</p>)}
@@ -429,7 +420,24 @@ export default function PromptToPrototypePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {renderForm()}
+          {mounted ? renderForm() : (
+             <div className="grid md:grid-cols-5 gap-6">
+              <div className="md:col-span-2 space-y-6 p-6 bg-muted/30 rounded-lg">
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-10 w-1/3 mt-4" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-1/3 mt-4" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-12 w-full mt-4" />
+              </div>
+              <div className="md:col-span-3 flex flex-col items-center justify-center h-full p-6 border border-dashed rounded-lg bg-muted/20">
+                <Skeleton className="h-12 w-12 mb-4 rounded-full" />
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -443,7 +451,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} // Pass isLoading here
+              isLoading={isLoading}
               hasContentAfterLoading={!!(results.loglines && results.loglines.length > 0)}
               noContentMessage="No loglines were generated for this prototype."
               loadingHeight="h-40"
@@ -464,7 +472,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} // Pass isLoading here
+              isLoading={isLoading}
               hasContentAfterLoading={parsedShotList.length > 0}
               noContentMessage="No shot list was generated for this prototype."
               loadingHeight="h-60"
@@ -499,7 +507,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} // Pass isLoading here
+              isLoading={isLoading}
               hasContentAfterLoading={!!results.proxyClipAnimaticDescription}
               noContentMessage="No animatic description was generated for this prototype."
               loadingHeight="h-40"
@@ -514,7 +522,7 @@ export default function PromptToPrototypePage() {
             <ResultCard
               title="Pitch Summary"
               icon={<ClipboardSignature className="h-6 w-6 text-accent" />}
-              isLoading={isLoading} // Pass isLoading here
+              isLoading={isLoading}
               hasContentAfterLoading={!!results.pitchSummary}
               noContentMessage="No pitch summary was generated for this prototype."
               loadingHeight="h-40"
@@ -534,3 +542,4 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+

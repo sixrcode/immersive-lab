@@ -22,28 +22,20 @@ const PromptToPrototypeInputSchema = z.object({
 export type PromptToPrototypeInput = z.infer<typeof PromptToPrototypeInputSchema>;
 
 const MoodBoardCellSchema = z.object({
-  visuals: z.string().describe(
-    "Key imagery for this cell. This could describe: a key character focus (look, expression), specific environment details (setting, time of day), or hints at cinematography (framing, angle) for this particular cell. (1-2 sentences)"
-  ),
-  palette: z.string().describe(
-    "Dominant colors, textures, and overall color scheme for this cell. This is where you provide specific color palette & texture examples."
-  ),
-  atmosphere: z.string().describe(
-    "The mood, emotional tone, or feeling this cell should evoke. Should include lighting style suggestions (e.g., chiaroscuro, soft daylight, neon glow)."
-  ),
-  keyProps: z.string().describe(
-    "Specific objects, secondary characters (if not the main visual focus), symbolic elements, or other significant visual details central to this cell. This can also include specific props or symbols."
+  title: z.string().describe("The specific theme/category for this mood board cell (e.g., 'Key Character Focus', 'Environment Details')."),
+  description: z.string().describe(
+    "A detailed textual description for this specific cell, related to its assigned theme. This should elaborate on the visual and conceptual elements relevant to the theme."
   )
 });
 
-const PromptToPrototypeOutputSchema = z.object({
+export const PromptToPrototypeOutputSchema = z.object({
   loglines: z.array(z.object({
     tone: z.string().describe("The tone of the logline (e.g., whimsical, gritty, dramatic)."),
     text: z.string().describe("The logline text."),
   })).describe('Three logline variants targeting distinct tones.'),
   moodBoardCells: z.array(MoodBoardCellSchema)
     .length(9)
-    .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid, ordered from top-left to bottom-right, row by row. Each object details the cell's content according to its properties."),
+    .describe("An array of 9 objects, one for each cell of a 3x3 mood board grid. Each object represents a specific theme and its textual description, ordered from top-left to bottom-right, row by row. The themes are: 1. Key Character Focus, 2. Environment Details, 3. Color Palette & Texture, 4. Specific Props or Symbols, 5. Emotional Tone / Lighting, 6. Cinematography Hints, 7. Visuals: Patterns & Swatches, 8. Text: Words & Typography, 9. Concept & Overall Theme."),
   moodBoardImage: z
     .string()
     .describe(
@@ -59,6 +51,18 @@ export type PromptToPrototypeOutput = z.infer<typeof PromptToPrototypeOutputSche
 export async function promptToPrototype(input: PromptToPrototypeInput): Promise<PromptToPrototypeOutput> {
   return promptToPrototypeFlow(input);
 }
+
+const THEME_LIST = [
+  "Key Character Focus",
+  "Environment Details",
+  "Color Palette & Texture",
+  "Specific Props or Symbols",
+  "Emotional Tone / Lighting",
+  "Cinematography Hints",
+  "Visuals: Patterns & Swatches",
+  "Text: Words & Typography",
+  "Concept & Overall Theme"
+];
 
 const prompt = ai.definePrompt({
   name: 'promptToPrototypePrompt',
@@ -80,30 +84,27 @@ const prompt = ai.definePrompt({
   1.  **Loglines**: Provide three distinct logline variants for the project. Each logline should target a different tone (e.g., whimsical, gritty, dramatic, comedic, thrilling, mysterious). If a style preset is provided, let it influence the tone.
       For each logline, output an object with 'tone' (string) and 'text' (string) properties.
 
-  2.  **Mood Board 3x3 Grid Cell Content**: Generate an array of 9 objects for the 'moodBoardCells' field. Each object represents one cell in a 3x3 grid, ordered row by row (top-left to bottom-right).
-      Your goal for these 9 cells is to create a diverse and comprehensive textual guide for a visual mood board that covers a range of important visual and thematic elements derived from the user's core prompt. Try to make each cell distinct. Consider including descriptions across the 9 cells that touch upon:
-      *   A primary character: their look, expression, or a key costume detail.
-      *   A key setting or environment: highlighting its specific atmosphere, time of day, or notable features.
-      *   A close-up or focus on an important prop or symbolic object.
-      *   An example of the intended core color palette and dominant textures.
-      *   A representation of a key emotional beat, overall tone, or a specific mood for a scene.
-      *   A suggestion for lighting style (e.g., chiaroscuro, soft daylight, neon glow).
-      *   A hint at camera work, framing, or a common cinematographic style (e.g., shallow depth of field, wide establishing shot).
-      *   An abstract visual concept or symbolism relevant to the core theme.
-      *   A contrasting visual element or a less obvious idea that still supports the main prompt.
+  2.  **Mood Board 3x3 Grid Cell Content**: Generate an array of 9 objects for the 'moodBoardCells' field. Each object must represent one cell in a 3x3 grid and correspond to a specific theme.
+      The themes, in order for the 9 cells (top-left to bottom-right, row by row), are:
+      1.  **Key Character Focus**: Describe the primary character's appearance, expression, key costume details, or pose relevant to the user's prompt.
+      2.  **Environment Details**: Detail the key setting, its atmosphere, time of day, notable features, or specific location elements from the user's prompt.
+      3.  **Color Palette & Texture**: Specify the dominant colors, secondary colors, accent colors, and key textures that define the visual style, inspired by the user's prompt.
+      4.  **Specific Props or Symbols**: List and describe any important objects, props, or symbolic elements crucial to the story or theme from the user's prompt.
+      5.  **Emotional Tone / Lighting**: Articulate the primary emotional mood (e.g., suspenseful, joyful, melancholic) and suggest lighting styles (e.g., chiaroscuro, soft daylight, neon glow) to achieve it, reflecting the user's prompt.
+      6.  **Cinematography Hints**: Suggest camera angles, framing (e.g., close-up, wide shot), or common camera movements that would enhance the storytelling of the user's prompt.
+      7.  **Visuals: Patterns & Swatches**: Describe any recurring patterns, motifs, or provide examples of visual swatches (textual description) that could be used, based on the user's prompt.
+      8.  **Text: Words & Typography**: Suggest any key words, phrases, or typographic styles (e.g., font choices, text treatments) relevant to the project, as derived from the user's prompt.
+      9.  **Concept & Overall Theme**: Provide a concise summary of the core concept or overarching theme that the mood board aims to visually represent, based on the user's prompt.
 
-      For each of the 9 cells, the object MUST contain the following string properties. These should be directly inspired by and expand upon the user's main prompt:
-      *   'visuals': (1-2 sentences) Describe the key imagery or scene this specific cell represents. This could describe: a **key character focus** (look, expression), specific **environment details** (setting, time of day), or **hints at cinematography** (framing, angle) for this particular cell. Aim for visual richness.
-      *   'palette': Detail the dominant colors, textures, and overall color scheme for THIS CELL (e.g., 'Deep blues and cool grays with a single point of neon pink for contrast', 'Monochromatic sepia tones with high contrast'). This is where you provide specific **color palette & texture examples**.
-      *   'atmosphere': Articulate the specific mood, **emotional tone**, or feeling THIS CELL should evoke (e.g., 'Tense and suspenseful', 'Nostalgic and warm'). Include **lighting style suggestions** here (e.g., chiaroscuro, soft daylight, neon glow).
-      *   'keyProps': List **specific objects, secondary characters** (if not already the main focus in 'visuals'), **symbolic elements, or other significant visual details** central to THIS CELL'S particular focus. This can also include **specific props or symbols** (e.g., 'Rain-streaked window', 'A single wilting flower', 'Eyes wide reflecting city lights').
+      For each of these 9 themes, the object in the array MUST contain:
+      *   'title': A string that is the exact name of the theme (e.g., "Key Character Focus", "Environment Details", etc.).
+      *   'description': A string containing your detailed textual elaboration for that specific theme, directly inspired by and expanding upon the user's main prompt.
 
-      Ensure the descriptions for each cell are distinct and collectively contribute to a holistic and inspiring visual brief.
       {{#if stylePreset}}
       Remember to apply the "{{stylePreset}}" style preset to influence the artistic direction, color choices, and overall feel of these descriptions.
       {{/if}}
       {{#if imageDataUri}}
-      If a user image was provided (see User Inputs section), it should heavily inspire these descriptions, particularly for palette, texture, composition, and initial character/environment ideas. Explicitly draw from it where appropriate.
+      If a user image was provided, it should heavily inspire these descriptions, particularly for palette, texture, composition, and initial character/environment ideas. Explicitly draw from it where appropriate.
       {{/if}}
 
   3.  **Shot List**: Create a numbered shot list consisting of 6 to 10 key shots for the project. For each shot, provide the Shot Number, Lens, Camera Move, and Framing Notes. Adapt suggestions if a style preset is specified.
@@ -132,6 +133,16 @@ const promptToPrototypeFlow = ai.defineFlow(
     if (!textOutput) {
       throw new Error("Failed to generate textual components for the prototype.");
     }
+    
+    // Ensure moodBoardCells have titles if AI didn't provide them (as a fallback)
+    if (textOutput.moodBoardCells && textOutput.moodBoardCells.length === 9) {
+        textOutput.moodBoardCells.forEach((cell, index) => {
+            if (!cell.title && THEME_LIST[index]) {
+                cell.title = THEME_LIST[index];
+            }
+        });
+    }
+
 
     // Generate a single representative mood board image using Gemini
     let imageGenPromptText = `Generate a single piece of concept art or a visual summary that captures the overall essence, style, and atmosphere for a project based on: '${input.prompt}'.`;
