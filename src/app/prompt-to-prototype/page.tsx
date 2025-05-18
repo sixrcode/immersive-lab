@@ -9,8 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video, Palette } from "lucide-react"; // Removed ImageIcon as it's not used
-import NextImage from "next/image"; // Using NextImage for optimized images
+import { Loader2, Sparkles, FileText, ListChecks, Video, Palette } from "lucide-react";
+import NextImage from "next/image";
 import { useState, type ReactNode, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,11 +30,14 @@ interface ResultCardProps {
   icon: ReactNode;
   children: ReactNode;
   isLoading: boolean;
+  hasContentAfterLoading?: boolean;
   loadingHeight?: string;
   className?: string;
 }
 
-function ResultCard({ title, icon, children, isLoading, loadingHeight = "h-32", className }: ResultCardProps) {
+const PLACEHOLDER_IMAGE_URL_TEXT = "Image+Gen+Failed";
+
+function ResultCard({ title, icon, children, isLoading, hasContentAfterLoading = true, loadingHeight = "h-32", className }: ResultCardProps) {
   return (
     <Card className={cn("shadow-lg flex flex-col", className)}>
       <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
@@ -44,6 +47,8 @@ function ResultCard({ title, icon, children, isLoading, loadingHeight = "h-32", 
       <CardContent className="flex-grow">
         {isLoading ? (
           <Skeleton className={`w-full ${loadingHeight}`} />
+        ) : !hasContentAfterLoading ? (
+          <p className="text-sm text-muted-foreground p-3 text-center">No content was generated for this section.</p>
         ) : (
           children
         )}
@@ -103,7 +108,7 @@ export default function PromptToPrototypePage() {
     return results.shotList
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line) // Filter out empty lines
+      .filter(line => line)
       .map(line => {
         const parts = line.split(',');
         return {
@@ -114,6 +119,8 @@ export default function PromptToPrototypePage() {
         };
       });
   }, [results?.shotList]);
+
+  const isPlaceholderImage = results?.moodBoardImage?.includes(PLACEHOLDER_IMAGE_URL_TEXT);
 
   return (
     <div className="container mx-auto py-8">
@@ -175,41 +182,49 @@ export default function PromptToPrototypePage() {
               title="Mood Board Concept"
               icon={<Palette className="h-6 w-6 text-accent" />}
               isLoading={isLoading && (!results?.moodBoardImage || !results?.moodBoardCells)}
-              loadingHeight="h-96" // Adjusted for potentially more content
-              className="md:col-span-2" // Make this card span two columns on medium screens and up
+              hasContentAfterLoading={!!(results?.moodBoardImage || (results?.moodBoardCells && results.moodBoardCells.length > 0))}
+              loadingHeight="h-96"
+              className="md:col-span-2"
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <h4 className="font-semibold text-sm mb-2 text-foreground">Representative Mood Board Image:</h4>
                   {results?.moodBoardImage ? (
-                    <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-4 shadow-md">
-                      <NextImage 
-                          src={results.moodBoardImage} 
-                          alt="Generated Mood Board Representation" 
-                          layout="fill"
-                          objectFit="cover"
-                          data-ai-hint="mood board concept"
-                      />
-                    </div>
-                  ) : (!isLoading && <p className="text-sm text-muted-foreground mb-2">No representative image generated.</p>)}
+                    <>
+                      <div className="relative aspect-video w-full overflow-hidden rounded-md border mb-2 shadow-md">
+                        <NextImage 
+                            src={results.moodBoardImage} 
+                            alt="Generated Mood Board Representation" 
+                            layout="fill"
+                            objectFit="cover"
+                            data-ai-hint="mood board concept"
+                        />
+                      </div>
+                      {isPlaceholderImage && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          Representative image generation failed or is unavailable. Using a placeholder.
+                        </p>
+                      )}
+                    </>
+                  ) : (results && !isLoading && <p className="text-sm text-muted-foreground mb-2">No representative image generated.</p>)}
                 </div>
                 
                 <div>
                   <h4 className="font-semibold text-sm mb-2 text-foreground">Detailed 3x3 Grid Cell Descriptions:</h4>
                   {results?.moodBoardCells && results.moodBoardCells.length === 9 ? (
-                    <div className="grid grid-cols-3 gap-2 border p-2 rounded-md bg-background shadow-inner">
+                    <div className="grid grid-cols-3 gap-2.5 border p-2.5 rounded-md bg-background shadow-inner">
                       {results.moodBoardCells.map((cellDescription, index) => (
                         <div 
                           key={index} 
-                          className="border p-2.5 rounded text-xs text-muted-foreground bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[100px] max-h-[150px] shadow-sm"
+                          className="border p-3 rounded text-xs text-muted-foreground bg-card aspect-square flex flex-col justify-start items-start overflow-y-auto min-h-[110px] max-h-[160px] shadow-sm hover:shadow-md transition-shadow"
                           aria-label={`Mood board cell ${index + 1} description`}
                         >
-                          <span className="font-semibold text-foreground/80 mb-1">Cell {index + 1}</span>
-                          <p className="whitespace-pre-wrap leading-snug">{cellDescription}</p>
+                          <span className="font-semibold text-foreground/90 mb-1.5 text-[0.8rem]">Cell {index + 1}</span>
+                          <p className="whitespace-pre-wrap leading-relaxed text-[0.75rem]">{cellDescription}</p>
                         </div>
                       ))}
                     </div>
-                  ) : (!isLoading && <p className="text-sm text-muted-foreground">No grid cell descriptions available.</p>)}
+                  ) : (results && !isLoading && <p className="text-sm text-muted-foreground">No grid cell descriptions available.</p>)}
                 </div>
               </div>
             </ResultCard>
@@ -218,9 +233,10 @@ export default function PromptToPrototypePage() {
               title="Logline Variants"
               icon={<FileText className="h-6 w-6 text-accent" />}
               isLoading={isLoading && !results?.loglines}
+              hasContentAfterLoading={!!(results?.loglines && results.loglines.length > 0)}
               loadingHeight="h-40"
             >
-              {results?.loglines && results.loglines.length > 0 ? (
+              {results?.loglines && results.loglines.length > 0 && (
                 <div className="space-y-3">
                   {results.loglines.map((logline, index) => (
                     <div key={index} className="p-3 border rounded-md bg-muted/50 shadow-sm">
@@ -229,19 +245,20 @@ export default function PromptToPrototypePage() {
                     </div>
                   ))}
                 </div>
-              ) : (!isLoading && <p className="text-sm text-muted-foreground">No loglines generated.</p>)}
+              )}
             </ResultCard>
 
             <ResultCard
               title="Shot List (6-10 shots)"
               icon={<ListChecks className="h-6 w-6 text-accent" />}
               isLoading={isLoading && !results?.shotList}
+              hasContentAfterLoading={parsedShotList.length > 0}
               loadingHeight="h-60"
             >
-              {parsedShotList.length > 0 ? (
+              {parsedShotList.length > 0 && (
                 <div className="max-h-96 overflow-y-auto border rounded-md shadow-inner">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                    <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                       <TableRow>
                         <TableHead className="w-[15%] px-3 py-2 text-xs">Shot #</TableHead>
                         <TableHead className="w-[25%] px-3 py-2 text-xs">Lens</TableHead>
@@ -261,19 +278,20 @@ export default function PromptToPrototypePage() {
                     </TableBody>
                   </Table>
                 </div>
-              ) : (!isLoading && <p className="text-sm text-muted-foreground p-3">No shot list generated.</p>)}
+              )}
             </ResultCard>
 
             <ResultCard
               title="Proxy Clip Animatic Description"
               icon={<Video className="h-6 w-6 text-accent" />}
               isLoading={isLoading && !results?.proxyClipAnimaticDescription}
+              hasContentAfterLoading={!!results?.proxyClipAnimaticDescription}
               loadingHeight="h-40"
-              className="md:col-span-2" // Allow this to span if it's the last one in a row or on its own row
+              className="md:col-span-2"
             >
-                {results?.proxyClipAnimaticDescription ? (
+                {results?.proxyClipAnimaticDescription && (
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 border rounded-md bg-muted/50 shadow-sm">{results.proxyClipAnimaticDescription}</p>
-                ) : (!isLoading && <p className="text-sm text-muted-foreground p-3">No animatic description available.</p>)}
+                )}
             </ResultCard>
           </div>
           {results && !isLoading && (
@@ -286,3 +304,4 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
