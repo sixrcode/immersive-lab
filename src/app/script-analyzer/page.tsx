@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/ai/flows/ai-script-analyzer";
+import type { AnalyzeScriptInput, AnalyzeScriptOutput, AnalyzeScriptOutputSuggestion } from "@/ai/flows/ai-script-analyzer";
 import { analyzeScript } from "@/ai/flows/ai-script-analyzer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, ScanText, Lightbulb, Edit3 } from "lucide-react";
+import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle } from "lucide-react"; // Added CheckCircle, XCircle
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -47,18 +47,41 @@ export default function ScriptAnalyzerPage() {
       toast({
         title: "Script Analysis Complete!",
         description: "Review the analysis and suggestions below.",
+        action: <CheckCircle className="text-green-500" />,
       });
     } catch (error) {
       console.error("Error analyzing script:", error);
       toast({
-        title: "Error",
+        title: "Error Analyzing Script",
         description: "Failed to analyze script. Please try again.",
         variant: "destructive",
+        action: <XCircle className="text-red-500" />,
       });
     } finally {
       setIsLoading(false);
     }
   }
+
+  const handleApplyFix = (suggestion: AnalyzeScriptOutputSuggestion) => {
+    const currentScript = form.getValues("script");
+    if (currentScript.includes(suggestion.section)) {
+      const newScript = currentScript.replace(suggestion.section, suggestion.improvement);
+      form.setValue("script", newScript, { shouldValidate: true, shouldDirty: true });
+      toast({
+        title: "Fix Applied!",
+        description: "The suggestion has been applied to your script.",
+        action: <CheckCircle className="text-green-500" />,
+      });
+    } else {
+      toast({
+        title: "Could Not Apply Fix",
+        description: "The specific script section was not found. It might have been edited or the AI's reference is not an exact match.",
+        variant: "destructive",
+        duration: 5000,
+        action: <XCircle className="text-red-500" />,
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -69,7 +92,7 @@ export default function ScriptAnalyzerPage() {
             <CardTitle className="text-2xl">AI Script & Dialogue Analyzer</CardTitle>
           </div>
           <CardDescription>
-            Paste your script below to get an AI-powered analysis, flagging unclear or off-tone sections and offering suggestions for improvement.
+            Paste your script below to get an AI-powered analysis, flagging unclear or off-tone sections and offering suggestions for improvement. You can apply suggestions directly.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -84,7 +107,7 @@ export default function ScriptAnalyzerPage() {
                     <FormControl>
                       <Textarea
                         placeholder="Paste your script content here..."
-                        className="min-h-[200px] resize-y"
+                        className="min-h-[200px] resize-y bg-background shadow-inner"
                         {...field}
                         disabled={isLoading}
                       />
@@ -132,7 +155,7 @@ export default function ScriptAnalyzerPage() {
               <CardTitle className="flex items-center gap-2"><Lightbulb className="h-6 w-6 text-accent" /> Overall Analysis</CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+              <ScrollArea className="h-[200px] w-full rounded-md border p-4 bg-muted/20 shadow-inner">
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{results.analysis}</p>
               </ScrollArea>
             </CardContent>
@@ -147,10 +170,10 @@ export default function ScriptAnalyzerPage() {
                 <Accordion type="single" collapsible className="w-full">
                   {results.suggestions.map((suggestion, index) => (
                     <AccordionItem value={`item-${index}`} key={index}>
-                      <AccordionTrigger className="text-left">
-                        <span className="font-medium">Suggestion for: {suggestion.section}</span>
+                      <AccordionTrigger className="text-left hover:bg-muted/20 px-2 rounded-t-md">
+                        <span className="font-medium">Suggestion for: "{suggestion.section.length > 50 ? suggestion.section.substring(0, 50) + '...' : suggestion.section}"</span>
                       </AccordionTrigger>
-                      <AccordionContent className="space-y-3 p-4 bg-muted/30 rounded-md">
+                      <AccordionContent className="space-y-3 p-4 bg-muted/30 rounded-b-md border-t-0 border">
                         <div>
                           <h4 className="font-semibold text-sm text-foreground">Issue Identified:</h4>
                           <p className="text-sm text-muted-foreground">{suggestion.issue}</p>
@@ -158,8 +181,17 @@ export default function ScriptAnalyzerPage() {
                         <Separator />
                         <div>
                           <h4 className="font-semibold text-sm text-foreground">Suggested Improvement:</h4>
-                          <p className="text-sm text-muted-foreground">{suggestion.improvement}</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{suggestion.improvement}</p>
                         </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApplyFix(suggestion)}
+                          className="mt-3 bg-accent/10 hover:bg-accent/20 text-accent-foreground border-accent/30"
+                          disabled={isLoading}
+                        >
+                          <Edit3 className="mr-2 h-4 w-4" /> Apply Fix
+                        </Button>
                       </AccordionContent>
                     </AccordionItem>
                   ))}
@@ -168,10 +200,17 @@ export default function ScriptAnalyzerPage() {
             </Card>
           )}
            <p className="mt-4 text-sm text-muted-foreground text-center">
-              AI Output Transparency: Analysis and suggestions are AI-generated. Use your creative judgment.
+              AI Output Transparency: Analysis and suggestions are AI-generated. Use your creative judgment when applying fixes.
             </p>
         </div>
       )}
     </div>
   );
+}
+
+// Helper type for suggestion, if not already exported from flow file
+interface AnalyzeScriptOutputSuggestion {
+  section: string;
+  issue: string;
+  improvement: string;
 }
