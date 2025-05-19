@@ -49,7 +49,7 @@ const PromptToPrototypeOutputSchema = z.object({
   shotListMarkdownString: z.string().describe('The shot list formatted as a Markdown string, suitable for file handoff.'),
   proxyClipAnimaticDescription: z.string().describe('A detailed textual description for a 4-second proxy clip animatic. This should outline key visuals, pacing, and transitions to help visualize the animatic, as if describing a sequence of still frames or very simple animations.'),
   pitchSummary: z.string().describe('A concise and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, tone, and potential appeal, drawing from the prompt and other generated assets.'),
-  allTextAssetsJsonString: z.string().describe('A JSON string containing the user inputs (prompt, stylePreset, imageProvided flag) and all generated textual assets (loglines, moodBoardCells, shotList, proxyClipAnimaticDescription, and pitchSummary).'),
+  allTextAssetsJsonString: z.string().describe('A JSON string containing the user inputs (prompt, stylePreset, imageProvided flag) and all generated textual assets (loglines, moodBoardCells, shotList, proxyClipAnimaticDescription, and pitchSummary). This field describes the structure of the JSON: { userInput: { prompt: string, stylePreset: string | null, imageProvided: boolean }, generatedAssets: { loglines: LoglineSchema[], moodBoardCells: MoodBoardCellSchema[], shotList: string, proxyClipAnimaticDescription: string, pitchSummary: string } }.'),
 });
 
 export type PromptToPrototypeOutput = z.infer<typeof PromptToPrototypeOutputSchema>;
@@ -70,11 +70,17 @@ const THEME_LIST = [
   "Concept & Overall Theme"
 ];
 
-const prompt = ai.definePrompt({
-  name: 'promptToPrototypePrompt',
+const textGenerationPrompt = ai.definePrompt({
+  name: 'promptToPrototypeTextPrompt',
   input: {schema: PromptToPrototypeInputSchema},
-  output: {schema: PromptToPrototypeOutputSchema.omit({ allTextAssetsJsonString: true, loglinesJsonString: true, moodBoardCellsJsonString: true, shotListMarkdownString: true })}, // AI doesn't generate these JSON/MD string fields directly
-  prompt: `You are a creative assistant helping to generate initial assets for a project based on a user's prompt, an optional image, and an optional style preset. Your goal is to deliver a comprehensive prototype package.
+  output: {schema: PromptToPrototypeOutputSchema.omit({ 
+    allTextAssetsJsonString: true, 
+    loglinesJsonString: true, 
+    moodBoardCellsJsonString: true, 
+    shotListMarkdownString: true,
+    moodBoardImage: true, // AI doesn't generate the image directly in this text prompt
+  })},
+  prompt: `You are a creative assistant helping to generate initial assets for a project based on a user's prompt, an optional image, and an optional style preset. Your goal is to deliver a comprehensive textual prototype package.
   {{#if stylePreset}}
   The user has selected the style preset: "{{stylePreset}}". This style should be consistently reflected across ALL generated textual assets where applicable, influencing aspects like tone, artistic direction, descriptive language, and specific suggestions. This includes loglines, mood board cell content, shot lists, animatic descriptions, and the pitch summary.
   {{/if}}
@@ -85,25 +91,25 @@ const prompt = ai.definePrompt({
   - User Provided Image: {{media url=imageDataUri}} (This image should serve as a primary visual inspiration for the mood board cell descriptions and the overall visual tone. Refer to its elements or style when describing the mood board cells.)
   {{/if}}
 
-  Generate the following assets, adhering strictly to the output schema provided:
+  Generate the following textual assets, adhering strictly to the output schema provided:
 
   1.  **Loglines**: Provide three distinct logline variants for the project. Each logline should target a different tone (e.g., whimsical, gritty, dramatic, comedic, thrilling, mysterious). {{#if stylePreset}}The tone of these loglines should be influenced by the "{{stylePreset}}" preset.{{/if}}
       For each logline, output an object with 'tone' (string) and 'text' (string) properties.
 
   2.  **Mood Board 3x3 Grid Cell Content**: Generate an array of 9 objects for the 'moodBoardCells' field. Each object must represent one cell in a 3x3 grid and correspond to a specific theme.
       The themes, in order for the 9 cells (top-left to bottom-right, row by row), are:
-      1.  **Key Character Focus**: Describe the primary character's appearance, expression, key costume details, or pose relevant to the user's prompt.
-      2.  **Environment Details**: Detail the key setting, its atmosphere, time of day, notable features, or specific location elements from the user's prompt.
-      3.  **Color Palette & Texture**: Specify the dominant colors, secondary colors, accent colors, and key textures that define the visual style, inspired by the user's prompt.
-      4.  **Specific Props or Symbols**: List and describe any important objects, props, or symbolic elements crucial to the story or theme from the user's prompt.
-      5.  **Tone & Lighting**: Articulate the primary emotional mood (e.g., suspenseful, joyful, melancholic) and suggest lighting styles (e.g., chiaroscuro, soft daylight, neon glow) to achieve it, reflecting the user's prompt.
-      6.  **Cinematography Hints**: Suggest camera angles, framing (e.g., close-up, wide shot), or common camera movements that would enhance the storytelling of the user's prompt.
-      7.  **Patterns & Swatches**: Describe any recurring patterns, motifs, or provide examples of visual swatches (textual description) that could be used, based on the user's prompt.
-      8.  **Text: Words & Typography**: Suggest any key words, phrases, or typographic styles (e.g., font choices, text treatments) relevant to the project, as derived from the user's prompt.
-      9.  **Concept & Overall Theme**: Provide a concise summary of the core concept or overarching theme that the mood board aims to visually represent, based on the user's prompt.
+      1.  **${THEME_LIST[0]}**: Describe the primary character's appearance, expression, key costume details, or pose relevant to the user's prompt.
+      2.  **${THEME_LIST[1]}**: Detail the key setting, its atmosphere, time of day, notable features, or specific location elements from the user's prompt.
+      3.  **${THEME_LIST[2]}**: Specify the dominant colors, secondary colors, accent colors, and key textures that define the visual style, inspired by the user's prompt.
+      4.  **${THEME_LIST[3]}**: List and describe any important objects, props, or symbolic elements crucial to the story or theme from the user's prompt.
+      5.  **${THEME_LIST[4]}**: Articulate the primary emotional mood (e.g., suspenseful, joyful, melancholic) and suggest lighting styles (e.g., chiaroscuro, soft daylight, neon glow) to achieve it, reflecting the user's prompt.
+      6.  **${THEME_LIST[5]}**: Suggest camera angles, framing (e.g., close-up, wide shot), or common camera movements that would enhance the storytelling of the user's prompt.
+      7.  **${THEME_LIST[6]}**: Describe any recurring patterns, motifs, or provide examples of visual swatches (textual description) that could be used, based on the user's prompt.
+      8.  **${THEME_LIST[7]}**: Suggest any key words, phrases, or typographic styles (e.g., font choices, text treatments) relevant to the project, as derived from the user's prompt.
+      9.  **${THEME_LIST[8]}**: Provide a concise summary of the core concept or overarching theme that the mood board aims to visually represent, based on the user's prompt.
 
       For each of these 9 themes, the object in the array MUST contain:
-      *   'title': A string that is the exact name of the theme (e.g., "Key Character Focus", "Environment Details", etc., from the THEME_LIST above). You MUST use the exact titles from this list.
+      *   'title': A string that is the exact name of the theme (e.g., "${THEME_LIST[0]}", "${THEME_LIST[1]}", etc., from the THEME_LIST above). You MUST use the exact titles from this list.
       *   'description': A string containing your detailed textual elaboration for that specific theme, directly inspired by and expanding upon the user's main prompt.
 
       {{#if stylePreset}}
@@ -122,7 +128,6 @@ const prompt = ai.definePrompt({
   5.  **Pitch Summary**: Generate a concise (1-2 paragraphs) and compelling overview of the project idea, suitable for a quick pitch. It should encapsulate the core concept, dominant tone ({{#if stylePreset}}influenced by the "{{stylePreset}}" preset{{else}}reflecting the main prompt{{/if}}), and potential appeal, drawing from the main prompt and other generated assets.
 
   Ensure all outputs strictly adhere to the schema definition, especially the structure for 'moodBoardCells'.
-  The representative 'moodBoardImage' (a single image) will be generated separately by the application after this text generation step and added to the final output.
   `,
 });
 
@@ -133,32 +138,10 @@ const promptToPrototypeFlow = ai.defineFlow(
     outputSchema: PromptToPrototypeOutputSchema,
   },
   async (input: PromptToPrototypeInput): Promise<PromptToPrototypeOutput> => {
-    // Generate textual components first
-    const {output: textOutputPartial} = await prompt(input);
+    // Task 1: Generate textual components
+    const textGenerationTask = textGenerationPrompt(input);
 
-    if (!textOutputPartial) {
-      throw new Error("Failed to generate textual components for the prototype.");
-    }
-    
-    // Cast to a mutable type that includes all fields, including allTextAssetsJsonString
-    const textOutput = textOutputPartial as PromptToPrototypeOutput;
-
-
-    // Ensure moodBoardCells have titles if AI didn't provide them (as a fallback)
-    if (textOutput.moodBoardCells && textOutput.moodBoardCells.length === 9) {
-        textOutput.moodBoardCells.forEach((cell, index) => {
-            if (!cell.title && THEME_LIST[index]) {
-                cell.title = THEME_LIST[index];
-            }
-        });
-    }
-
-    // Populate the JSON and Markdown string fields
-    textOutput.loglinesJsonString = JSON.stringify(textOutput.loglines || [], null, 2);
-    textOutput.moodBoardCellsJsonString = JSON.stringify(textOutput.moodBoardCells || [], null, 2);
-    textOutput.shotListMarkdownString = textOutput.shotList || "";
-
-    // Generate a single representative mood board image using Gemini
+    // Task 2: Generate a single representative mood board image
     let imageGenPromptText = `Generate a single piece of concept art or a visual summary that captures the overall essence, style, and atmosphere for a project based on: '${input.prompt}'.`;
     if (input.stylePreset) {
       imageGenPromptText += ` The style should be reminiscent of '${input.stylePreset}'.`;
@@ -183,37 +166,72 @@ const promptToPrototypeFlow = ai.defineFlow(
     };
 
     if (input.imageDataUri) {
-      // Prepend user image to the prompt for image generation if provided for context
       imageGenPayload.prompt = [{media: {url: input.imageDataUri}}, ...imageGenPayload.prompt];
     }
+    const imageGenerationTask = ai.generate(imageGenPayload);
 
-    const {media} = await ai.generate(imageGenPayload);
+    // Execute tasks in parallel
+    const [textResult, imageResult] = await Promise.all([textGenerationTask, imageGenerationTask]);
 
-    if (!media || !media.url) {
-        console.warn("Mood board image generation failed or returned no URL. Using placeholder.");
-        textOutput.moodBoardImage = "https://placehold.co/600x400.png?text=Image+Gen+Failed";
-    } else {
-        textOutput.moodBoardImage = media.url;
+    const { output: textOutputPartial } = textResult;
+    if (!textOutputPartial) {
+      throw new Error("Failed to generate textual components for the prototype.");
     }
+    
+    const output = textOutputPartial as PromptToPrototypeOutput; // Cast to include all fields
+
+    // Assign image result
+    if (!imageResult.media || !imageResult.media.url) {
+        console.warn("Mood board image generation failed or returned no URL. Using placeholder.");
+        output.moodBoardImage = "https://placehold.co/600x400.png?text=Image+Gen+Failed";
+    } else {
+        output.moodBoardImage = imageResult.media.url;
+    }
+    
+    // Ensure moodBoardCells have titles if AI didn't provide them (as a fallback)
+    // and ensure arrays are initialized for robust JSON stringification
+    output.loglines = output.loglines || [];
+    output.moodBoardCells = output.moodBoardCells || [];
+    if (output.moodBoardCells.length === 9) {
+        output.moodBoardCells.forEach((cell, index) => {
+            if (!cell.title && THEME_LIST[index]) {
+                cell.title = THEME_LIST[index];
+            }
+        });
+    } else if (output.moodBoardCells.length !== 9 && output.moodBoardCells.length > 0) {
+        // If AI provided some cells but not all 9, log a warning
+        console.warn(`AI generated ${output.moodBoardCells.length} mood board cells instead of 9. Titles might be missing for some.`);
+    } else {
+        // If AI provided no cells, create placeholder cells
+        output.moodBoardCells = THEME_LIST.map(themeTitle => ({
+            title: themeTitle,
+            description: "Description not generated."
+        }));
+    }
+
+
+    // Populate the JSON and Markdown string fields
+    output.loglinesJsonString = JSON.stringify(output.loglines, null, 2);
+    output.moodBoardCellsJsonString = JSON.stringify(output.moodBoardCells, null, 2);
+    output.shotListMarkdownString = output.shotList || ""; // Ensures it's a string
     
     // Assemble allTextAssetsJsonString
     const allTextAssets = {
       userInput: {
         prompt: input.prompt,
-        stylePreset: input.stylePreset || null, // Use null if undefined for consistent JSON
+        stylePreset: input.stylePreset || null,
         imageProvided: !!input.imageDataUri,
       },
       generatedAssets: {
-        loglines: textOutput.loglines,
-        moodBoardCells: textOutput.moodBoardCells,
-        shotList: textOutput.shotList,
-        proxyClipAnimaticDescription: textOutput.proxyClipAnimaticDescription,
-        pitchSummary: textOutput.pitchSummary,
+        loglines: output.loglines,
+        moodBoardCells: output.moodBoardCells,
+        shotList: output.shotList || "",
+        proxyClipAnimaticDescription: output.proxyClipAnimaticDescription || "",
+        pitchSummary: output.pitchSummary || "",
       }
     };
-    textOutput.allTextAssetsJsonString = JSON.stringify(allTextAssets, null, 2);
+    output.allTextAssetsJsonString = JSON.stringify(allTextAssets, null, 2);
     
-    return textOutput;
+    return output;
   }
 );
-
