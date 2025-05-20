@@ -5,18 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Film, Kanban, ScanText, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
-import NextImage from "next/image"; // Renamed to avoid conflict if a local 'Image' variable existed
+import NextImage from "next/image"; 
 import { useState, useEffect } from "react";
-// import { ai } from '@/ai/genkit'; // Actual AI call would be in a server action
 
 interface Feature {
   title: string;
   description: string;
   icon: React.ElementType;
   href: string;
-  baseImgSrc: string; // Original static placeholder
+  baseImgSrc: string; 
   aiHint: string;
-  generatedImgSrc?: string | null; // Will hold the AI generated image or fallback
+  generatedImgSrc?: string | null; 
 }
 
 const initialFeaturesData: Omit<Feature, 'generatedImgSrc'>[] = [
@@ -65,35 +64,19 @@ export default function DashboardPage() {
     const generateAllImages = async () => {
       const updatedFeaturesList = await Promise.all(
         initialFeaturesData.map(async (featureData) => {
-          let newImgSrc = featureData.baseImgSrc; // Fallback to original static placeholder
+          let newImgSrc = featureData.baseImgSrc; 
           try {
             // SIMULATED AI IMAGE GENERATION:
-            // In a real application, this would call a server action:
-            // const serverActionToGenerateImage = async (title: string, hint: string) => {
-            //   'use server';
-            //   // ... import ai from '@/ai/genkit';
-            //   // const prompt = `... based on ${title} and ${hint} ...`;
-            //   // const { media } = await ai.generate({ model: 'googleai/gemini-2.0-flash-exp', prompt, config });
-            //   // return media?.url;
-            //   return `https://placehold.co/600x400.png?text=AI+${encodeURIComponent(title.substring(0,5))}+${encodeURIComponent(hint.substring(0,5))}`;
-            // };
-            // const generatedUrl = await serverActionToGenerateImage(featureData.title, featureData.aiHint);
-            // if (generatedUrl) {
-            //   newImgSrc = generatedUrl;
-            // }
-
-            // For this exercise, simulating the generation with a dynamic placeholder:
             await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000)); // Simulate network delay
-            const keywords = featureData.aiHint.split(" ").slice(0, 2).join("+"); // Use first two keywords
+            const keywords = featureData.aiHint.split(" ").slice(0, 2).join("+"); 
             const titleAbbreviation = featureData.title.split(" ").map(word => word[0]).join("").toUpperCase();
             newImgSrc = `https://placehold.co/600x400.png?text=${titleAbbreviation}+${keywords}`;
             // End of simulated AI call
 
           } catch (error) {
             console.error(`Failed to generate image for ${featureData.title}:`, error);
-            // newImgSrc remains featureData.baseImgSrc (static placeholder) on error
           }
-          if (!isMounted) return { ...featureData, generatedImgSrc: featureData.baseImgSrc }; // Avoid state update if unmounted
+          if (!isMounted) return { ...featureData, generatedImgSrc: featureData.baseImgSrc }; 
           return { ...featureData, generatedImgSrc: newImgSrc };
         })
       );
@@ -106,9 +89,9 @@ export default function DashboardPage() {
     generateAllImages();
     
     return () => {
-      isMounted = false; // Cleanup to prevent state updates on unmounted component
+      isMounted = false; 
     };
-  }, []); // Empty dependency array means this effect runs once on mount
+  }, []); 
 
   return (
     <div className="flex flex-col gap-8">
@@ -131,7 +114,7 @@ export default function DashboardPage() {
                   layout="fill" 
                   objectFit="cover" 
                   data-ai-hint={feature.aiHint}
-                  unoptimized={!!(feature.generatedImgSrc && feature.generatedImgSrc.startsWith('data:'))} // Important for data URIs from actual AI
+                  unoptimized={!!(feature.generatedImgSrc && feature.generatedImgSrc.startsWith('data:'))} 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-4">
@@ -162,11 +145,12 @@ export default function DashboardPage() {
           <CardContent className="space-y-4 text-muted-foreground">
             <div className="mb-4">
               <NextImage
-                src="/sixr-logo.png" 
+                src="/images/sixr-logo.png" 
                 alt="SIXR Logo"
                 width={120} 
                 height={120}  
                 data-ai-hint="SIXR logo" 
+                className="rounded-md shadow-sm"
               />
             </div>
             <p>
