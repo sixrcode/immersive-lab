@@ -13,14 +13,16 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Drama, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Drama, Settings, LogOut, LayoutGrid, Edit2 } from 'lucide-react'; // Added LayoutGrid
 import { cn } from '@/lib/utils';
+import { Skeleton } from '../ui/skeleton';
+import { useEffect, useState } from 'react';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/prompt-to-prototype', label: 'Prompt to Prototype', icon: Sparkles },
+  { href: '/storyboard-studio', label: 'AI Storyboard Studio', icon: LayoutGrid },
   { href: '/script-analyzer', label: 'Script Analyzer', icon: ScanText },
   { href: '/production-board', label: 'Production Board', icon: Kanban },
   { href: '/collaboration', label: 'Collaboration', icon: Users },
@@ -29,6 +31,55 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <Sidebar>
+        <SidebarHeader className="p-4">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-6 w-40 group-data-[collapsible=icon]:hidden" />
+          </div>
+        </SidebarHeader>
+        <div className="mx-2 my-2 h-px w-auto bg-sidebar-border group-data-[collapsible=icon]:mx-auto" />
+        <SidebarContent className="p-2">
+          <SidebarMenu>
+            {[...Array(navItems.length)].map((_, i) => (
+              <SidebarMenuItem key={i}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={{ children: "Loading...", side: 'right', align: 'center' }}
+                  className="flex items-center"
+                >
+                  <a>
+                    <Skeleton className="h-5 w-5 rounded" />
+                    <Skeleton className="ml-2 h-5 flex-grow group-data-[collapsible=icon]:hidden" />
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarContent>
+        <div className="mx-2 my-2 h-px w-auto bg-sidebar-border group-data-[collapsible=icon]:mx-auto" />
+        <SidebarFooter className="p-4 mt-auto">
+          <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+            <Skeleton className="h-9 w-9 rounded-full" />
+            <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+              <Skeleton className="h-4 w-20 mb-1" />
+              <Skeleton className="h-3 w-28" />
+            </div>
+          </div>
+          <Skeleton className="h-8 w-full mt-2 group-data-[collapsible=icon]:px-2" />
+          <Skeleton className="h-8 w-full mt-2 group-data-[collapsible=icon]:px-2" />
+        </SidebarFooter>
+      </Sidebar>
+    );
+  }
 
   return (
     <Sidebar>
@@ -40,7 +91,7 @@ export function AppSidebar() {
           </h1>
         </Link>
       </SidebarHeader>
-      <Separator />
+      <div className="mx-2 my-2 h-px w-auto bg-sidebar-border group-data-[collapsible=icon]:mx-auto" />
       <SidebarContent className="p-2">
         <SidebarMenu>
           {navItems.map((item) => (
@@ -63,7 +114,7 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <Separator />
+      <div className="mx-2 my-2 h-px w-auto bg-sidebar-border group-data-[collapsible=icon]:mx-auto" />
       <SidebarFooter className="p-4 mt-auto">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
           <Avatar className="h-9 w-9">
