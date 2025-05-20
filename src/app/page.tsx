@@ -164,8 +164,8 @@ export default function DashboardPage() {
               <NextImage
                 src="/sixr-logo.png" 
                 alt="SIXR Logo"
-                width={150} 
-                height={75}  
+                width={120} 
+                height={120}  
                 data-ai-hint="SIXR logo" 
               />
             </div>
@@ -188,5 +188,4 @@ export default function DashboardPage() {
     </div>
   );
 }
-
     
