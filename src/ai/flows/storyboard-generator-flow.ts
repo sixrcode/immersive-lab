@@ -22,14 +22,14 @@ const StoryboardPanelWithImageSchema = StoryboardPanelSchema.extend({
   imageDataUri: z.string().describe("The generated image for this panel, as a data URI. Expected format: 'data:image/png;base64,<encoded_data>'."),
 });
 
-export const StoryboardGeneratorInputSchema = z.object({
+const StoryboardGeneratorInputSchema = z.object({
   sceneDescription: z.string().min(20, "Scene description must be at least 20 characters.").describe("A detailed description of the scene to be storyboarded, including setting, characters, key actions, and overall mood."),
   numPanels: z.number().min(2).max(10).default(6).describe("The desired number of storyboard panels to generate (between 2 and 10).").optional(),
   stylePreset: z.string().optional().describe("An optional style preset to guide the visual style of the generated images (e.g., 'Cinematic Noir', 'Anime Action', 'Whimsical Fantasy')."),
 });
 export type StoryboardGeneratorInput = z.infer<typeof StoryboardGeneratorInputSchema>;
 
-export const StoryboardGeneratorOutputSchema = z.object({
+const StoryboardGeneratorOutputSchema = z.object({
   panels: z.array(StoryboardPanelWithImageSchema).describe("An array of generated storyboard panels, each containing a description, shot details, and an image."),
   titleSuggestion: z.string().optional().describe("A suggested title for the storyboard sequence based on the scene description."),
 });
@@ -104,7 +104,7 @@ const storyboardGeneratorFlow = ai.defineFlow(
           model: 'googleai/gemini-2.0-flash-exp',
           prompt: imagePrompt,
           config: {
-            responseModalities: ['IMAGE'], // Request only IMAGE
+            responseModalities: ['IMAGE'], 
              safetySettings: [
               { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
               { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
@@ -112,8 +112,7 @@ const storyboardGeneratorFlow = ai.defineFlow(
               { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
             ],
           },
-           // Add a timeout to prevent hanging indefinitely
-          timeout: 30000, // 30 seconds
+          timeout: 30000, 
         });
 
         if (media && media.url) {
@@ -145,4 +144,3 @@ const storyboardGeneratorFlow = ai.defineFlow(
     };
   }
 );
-
