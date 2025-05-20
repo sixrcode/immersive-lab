@@ -1,7 +1,7 @@
 
 "use client";
 
-import { generateStoryboard, StoryboardGeneratorInputSchema, type StoryboardGeneratorInput, type StoryboardGeneratorOutput } from "@/ai/flows/storyboard-generator-flow";
+import { generateStoryboard, type StoryboardGeneratorInput, type StoryboardGeneratorOutput } from "@/ai/flows/storyboard-generator-flow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -14,6 +14,7 @@ import { Loader2, LayoutGrid, Image as ImageIcon, Sparkles, Film, Palette, Check
 import NextImage from "next/image";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { z } from "zod"; // Import Zod
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -52,6 +53,15 @@ const sanitizeForFilename = (text: string | undefined, maxLength: number = 25): 
   return cleanedSlug || 'storyboard_extract';
 };
 
+// Define the form schema locally for client-side validation
+const formSchema = z.object({
+  sceneDescription: z.string().min(20, "Scene description must be at least 20 characters."),
+  numPanels: z.number().min(2).max(10).default(6),
+  stylePreset: z.string().optional(),
+});
+// Infer the type for form values from the local schema
+type FormValues = z.infer<typeof formSchema>;
+
 
 export default function StoryboardStudioPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,8 +73,8 @@ export default function StoryboardStudioPage() {
     setMounted(true);
   }, []);
 
-  const form = useForm<StoryboardGeneratorInput>({
-    resolver: zodResolver(StoryboardGeneratorInputSchema),
+  const form = useForm<FormValues>({ // Use the locally inferred FormValues type
+    resolver: zodResolver(formSchema), // Use the local formSchema
     defaultValues: {
       sceneDescription: "",
       numPanels: 6,
@@ -72,11 +82,16 @@ export default function StoryboardStudioPage() {
     },
   });
 
-  async function onSubmit(values: StoryboardGeneratorInput) {
+  async function onSubmit(values: FormValues) { // values are now of type FormValues
     setIsLoading(true);
     setResults(null);
     try {
-      const output = await generateStoryboard(values);
+      // Ensure numPanels is sent as a number, matching StoryboardGeneratorInput
+      const inputToFlow: StoryboardGeneratorInput = {
+        ...values,
+        numPanels: Number(values.numPanels) || 6, // Ensure it's a number, default to 6
+      };
+      const output = await generateStoryboard(inputToFlow);
       setResults(output);
       toast({
         title: "Storyboard Generated!",
@@ -206,7 +221,8 @@ export default function StoryboardStudioPage() {
                             max={10}
                             className="bg-background"
                             {...field}
-                            onChange={event => field.onChange(parseInt(event.target.value, 10) || 2)}
+                            // Ensure the value passed to the form state is a number
+                            onChange={event => field.onChange(parseInt(event.target.value, 10))}
                             disabled={isLoading}
                           />
                         </FormControl>
@@ -221,7 +237,7 @@ export default function StoryboardStudioPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-lg">Style Preset (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined} disabled={isLoading}>
                           <FormControl>
                             <SelectTrigger className="bg-background">
                               <SelectValue placeholder="Choose a style..." />
@@ -364,3 +380,4 @@ export default function StoryboardStudioPage() {
     </TooltipProvider>
   );
 }
+    
