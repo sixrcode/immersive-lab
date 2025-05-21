@@ -3,5 +3,6 @@ Allow: /
 Disallow: /secrets.json
 Disallow: /etc/
 Disallow: /dump.sql
+Disallow: /.vscode/
 
 Sitemap: /sitemap.xml
