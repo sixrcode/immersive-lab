@@ -1,5 +1,4 @@
 User-agent: *
-Allow: /
 Disallow: /secrets.json
 Disallow: /etc/
 Disallow: /dump.sql
@@ -11,5 +10,30 @@ Disallow: /feed
 Disallow: /backup.sql
 Disallow: /server-status
 Disallow: /settings.py
+Disallow: /.env
+Disallow: /backup.zip
+Disallow: /config/
+Disallow: /wp-admin/
+Disallow: /wp-config.php
+Disallow: /database_backup.sql
+Disallow: /server.key
+Disallow: /cloud-config.yml
+Disallow: /_vti_pvt/
+Disallow: /.git/
+Disallow: /config.xml
+Disallow: /database.sql
+Disallow: /.aws/
+Disallow: /api/.env
+Disallow: /backup.tar.gz
+Disallow: /db/
+Disallow: /web.config
+Disallow: /config.yml
+Disallow: /phpinfo.php
+Disallow: /docker-compose.yml
+Disallow: /config.yaml
+Disallow: /.svn/
+Disallow: /user_secrets.yml
+Disallow: /config.php
+Disallow: /js/twint_ch.js
 
 Sitemap: /sitemap.xml
