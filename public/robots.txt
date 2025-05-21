@@ -1,5 +1,9 @@
 User-agent: *
 Disallow: /secrets.json
+Disallow: /etc/
+
+# Allow all other content
 Allow: /
 
-Sitemap: /sitemap.xml
+# Sitemap (optional, add your sitemap URL if you have one)
+# Sitemap: https://your-app-domain.com/sitemap.xml
