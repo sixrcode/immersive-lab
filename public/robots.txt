@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /secrets.json
+Allow: /
+
+Sitemap: /sitemap.xml
