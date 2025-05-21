@@ -1,4 +1,5 @@
 User-agent: *
+Allow: /
 Disallow: /secrets.json
 Disallow: /etc/
 Disallow: /dump.sql
@@ -6,5 +7,6 @@ Disallow: /.vscode/
 Disallow: /.ssh/
 Disallow: /config.json
 Disallow: /.env.production
+Disallow: /feed
 
 Sitemap: /sitemap.xml
