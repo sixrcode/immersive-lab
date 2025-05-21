@@ -10,5 +10,6 @@ Disallow: /.env.production
 Disallow: /feed
 Disallow: /backup.sql
 Disallow: /server-status
+Disallow: /settings.py
 
 Sitemap: /sitemap.xml
