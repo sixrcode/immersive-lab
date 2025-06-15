@@ -176,12 +176,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (db) {
       try {
         await db.collection('promptPackages').doc(newPromptPackage.id).set(newPromptPackage);
-      } catch (firestoreError: any) { // Changed unknown to any
-        console.error('Failed to save PromptPackage to Firestore:', firestoreError);
-        // Decide if this is critical. The client will still get the package, but it won't be saved.
-        // Could return a specific error or a warning. For now, log and continue.
-        // Potentially, you might want to return a 500 error here as the backend state is inconsistent.
-        return NextResponse.json({ error: 'Failed to save data to database.', details: firestoreError.message }, { status: 500 });
+      } catch (firestoreError: unknown) {
+        const message = firestoreError instanceof Error ? firestoreError.message : 'Unknown Firestore error';
+        console.error('Failed to save PromptPackage to Firestore:', message, firestoreError); // Log the original error too
+        return NextResponse.json({ error: 'Failed to save data to database.', details: message }, { status: 500 });
       }
     } else {
       console.warn('Firestore is not initialized. PromptPackage was not saved.');
