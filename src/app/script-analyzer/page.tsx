@@ -15,7 +15,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type AnalyzeScriptOutputSuggestion = AnalyzeScriptOutput extends { suggestions: Array<infer S> } ? S : never;
@@ -224,20 +223,20 @@ export default function ScriptAnalyzerPage() {
                         
                         {suggestion.section && (
                           <div>
-                            <h4 className="font-semibold text-sm text-foreground mb-1">Original Section:</h4>
+                            <h4 className="font-semibold text-sm text-foreground mb-1">Original Section:</h4> 
                             <blockquote className="text-sm text-muted-foreground whitespace-pre-wrap bg-destructive/10 border-l-4 border-destructive p-3 rounded-md">
                               {suggestion.section}
                             </blockquote>
                           </div>
                         )}
-                        
+                         
                         <div>
-                          <h4 className="font-semibold text-sm text-foreground mb-1">Suggested Improvement:</h4>
+                          <h4 className="font-semibold text-sm text-foreground mb-1">Suggested Improvement:</h4> 
                            <blockquote className="text-sm text-muted-foreground whitespace-pre-wrap bg-primary/10 border-l-4 border-primary p-3 rounded-md">
                             {suggestion.improvement}
                           </blockquote>
                         </div>
-                        <Button
+                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleApplySuggestion(suggestion)}
@@ -254,8 +253,8 @@ export default function ScriptAnalyzerPage() {
             </Card>
           )}
            <p className="mt-8 text-xs text-muted-foreground text-center">
-              AI Output Transparency: Analysis and suggestions are AI-generated. The "section" for suggestions must be an exact verbatim quote from your script for "Apply Suggestion" to work correctly. Review and refine all changes.
-            </p>
+              AI Output Transparency: Analysis and suggestions are AI-generated. The &quot;section&quot; for suggestions must be an exact verbatim quote from your script for &quot;Apply Suggestion&quot; to work correctly. Review and refine all changes.
+ </p>
         </div>
       )}
     </div>

@@ -9,6 +9,8 @@
  * - PromptToPrototypeOutput - The return type for the promptToPrototype function.
  */
 
+type PromptItem = { text: string } | { media: { url: string } };
+
 import {ai} from '@/ai/genkit';
 import {z}from 'zod';
 
@@ -151,7 +153,7 @@ const promptToPrototypeFlow = ai.defineFlow(
     }
     imageGenPromptText += ` This image should serve as a central, representative piece for a mood board concept, evoking a "style collage" or "visual keynote" feel. Focus on compelling composition and artistic representation of the theme.`;
     
-    const imageGenPayload: any = {
+    const imageGenPayload = {
         model: 'googleai/gemini-2.0-flash-exp',
         prompt: [{text: imageGenPromptText}],
         config: {
@@ -166,7 +168,10 @@ const promptToPrototypeFlow = ai.defineFlow(
     };
 
     if (input.imageDataUri) {
-      imageGenPayload.prompt = [{media: {url: input.imageDataUri}}, ...imageGenPayload.prompt];
+ imageGenPayload.prompt = [
+  { media: { url: input.imageDataUri } },
+  { text: imageGenPromptText }
+] as PromptItem[];
     }
     const imageGenerationTask = ai.generate(imageGenPayload);
 

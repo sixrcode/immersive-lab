@@ -9,15 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, LayoutGrid, Image as ImageIcon, Sparkles, Film, Palette, CheckCircle, XCircle, Download, Copy } from "lucide-react";
+import { Loader2, LayoutGrid, Sparkles, Film, CheckCircle, XCircle, Download, Copy } from "lucide-react";
 import NextImage from "next/image";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod"; // Import Zod
+import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Same style presets as Prompt-to-Prototype for consistency
 const stylePresets = [
@@ -147,7 +146,7 @@ export default function StoryboardStudioPage() {
       await navigator.clipboard.writeText(textToCopy);
       toast({ title: `${itemName} Copied!`, description: `${itemName} has been copied.`, action: <CheckCircle className="text-green-500" /> });
     } catch (err) {
-      toast({ title: "Copy Failed", description: `Could not copy ${itemName}.`, variant: "destructive" });
+      toast({ title: "Copy Failed", description: `Could not copy ${itemName}. Please try again.`, variant: "destructive" });
     }
   };
 

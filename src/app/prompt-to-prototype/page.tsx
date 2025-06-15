@@ -8,35 +8,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea"; // Import Textarea component
 import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download, ThumbsUp, ThumbsDown, Share2, Eye, Printer, FileJson, MoreVertical } from "lucide-react";
+import { Loader2, Sparkles, FileText, ListChecks, Video, Palette, Image as ImageIcon, ClipboardSignature, XCircle, CheckCircle, Copy, Download, ThumbsUp, ThumbsDown, Share2, Eye, Printer, FileJson, MoreVertical, Users } from "lucide-react";
 import NextImage from "next/image";
-import { useState, type ReactNode, useMemo, ChangeEvent, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"; // Removed TableCaption
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   prompt: z.string().min(10, "Prompt must be at least 10 characters long."),
   imageDataUri: z.string().optional(),
-  imageFileName: z.string().optional(),
-  stylePreset: z.string().optional(),
+  imageFileName: z.string().optional(), // Added to track filename for display/removal
+  stylePreset: z.string().optional(), // Assuming this corresponds to a style preset value
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface ResultCardProps {
-  title: string;
-  icon: ReactNode;
-  children: ReactNode;
+  title: string; // Assuming 'Users' was intended for an icon prop
+  icon: React.ReactNode;
+  children: React.ReactNode;
   isLoading: boolean;
   hasContentAfterLoading?: boolean;
   noContentMessage?: string;
@@ -48,7 +45,6 @@ interface ResultCardProps {
 
 const PLACEHOLDER_IMAGE_URL_TEXT = "Image+Gen+Failed";
 
-const moodBoardPositionalLabels: string[] = [
     "Top-Left", "Top-Center", "Top-Right",
     "Middle-Left", "Middle-Center", "Middle-Right",
     "Bottom-Left", "Bottom-Center", "Bottom-Right"
@@ -138,7 +134,7 @@ export default function PromptToPrototypePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<PromptToPrototypeOutput | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+ const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -146,7 +142,6 @@ export default function PromptToPrototypePage() {
   }, []);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
     defaultValues: {
       prompt: "",
       imageDataUri: undefined,
@@ -452,15 +447,15 @@ export default function PromptToPrototypePage() {
                   <FormField
                     control={form.control}
                     name="prompt"
-                    render={({ field }) => (
+                    render={({ field: promptField }) => (
                       <FormItem>
                         <FormLabel className="text-lg">Your Creative Prompt</FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="e.g., A lone astronaut discovers a mysterious signal on a desolate Mars colony..."
                             className="min-h-[120px] resize-none bg-background"
-                            {...field}
-                            disabled={isLoading}
+                            {...promptField}
+                           disabled={isLoading}
                           />
                         </FormControl>
                         <FormMessage />
@@ -473,7 +468,7 @@ export default function PromptToPrototypePage() {
                     name="imageDataUri"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5" />Upload Image (Optional)</FormLabel>
+ <FormLabel className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5" />Upload Image (Optional)</FormLabel>
                         <FormControl>
                           <Input
                             id="imageUpload"
@@ -549,7 +544,7 @@ export default function PromptToPrototypePage() {
                            headerActions={
                              <div className="flex items-center gap-1">
                                 <Tooltip>
-                                  <TooltipTrigger asChild>
+ <TooltipTrigger asChild>
                                     <Button type="button" variant="outline" size="sm" disabled aria-label="Download mood board image">
                                         <Download className="h-4 w-4" />
                                     </Button>
@@ -557,7 +552,7 @@ export default function PromptToPrototypePage() {
                                   <TooltipContent><p>Download Mood Board Image</p></TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
-                                  <TooltipTrigger asChild>
+ <TooltipTrigger asChild>
                                     <Button type="button" variant="outline" size="sm" disabled aria-label="Copy mood board themes JSON">
                                        <Copy className="h-4 w-4" />
                                     </Button>
@@ -581,7 +576,7 @@ export default function PromptToPrototypePage() {
                        <ResultCard
                           title="Mood Board Concept"
                           icon={<Palette className="h-6 w-6 text-accent" />}
-                          isLoading={false}
+ isLoading={isLoading}
                           hasContentAfterLoading={!!(results.moodBoardImage || (results.moodBoardCells && results.moodBoardCells.length > 0))}
                           noContentMessage="Mood board concept could not be generated."
                           className="print-card"
@@ -591,7 +586,7 @@ export default function PromptToPrototypePage() {
                               {results.moodBoardImage && !isPlaceholderImage && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button
+ <Button
                                         type="button"
                                         variant="outline"
                                         size="sm"
@@ -608,7 +603,7 @@ export default function PromptToPrototypePage() {
                                 )}
                                 {results.moodBoardCellsJsonString && (
                                  <Tooltip>
-                                   <TooltipTrigger asChild>
+ <TooltipTrigger asChild>
                                      <Button
                                         type="button"
                                         variant="outline"
@@ -641,8 +636,8 @@ export default function PromptToPrototypePage() {
                                             layout="fill"
                                             objectFit="cover"
                                             data-ai-hint="mood board concept"
-                                            className="print-image"
-                                        />
+                                           className="print-image"
+                                          />
                                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 no-print">
                                           {imageActionButtons()}
                                           <Eye className="absolute bottom-2 right-2 h-5 w-5 text-white opacity-70 group-hover:opacity-100" />
@@ -659,7 +654,7 @@ export default function PromptToPrototypePage() {
                                             alt="Generated Mood Board Representation - Full Size"
                                             layout="fill"
                                             objectFit="contain"
-                                        />
+                                          />
                                       </div>
                                        <div className="absolute top-4 right-14 flex items-center gap-1">
                                           {imageActionButtons(true)}
@@ -676,14 +671,14 @@ export default function PromptToPrototypePage() {
                                           src={results.moodBoardImage}
                                           alt="Generated Mood Board Representation"
                                           width={500} 
-                                          height={281} 
+                                          height={281}
                                           objectFit="contain"
                                           className="print-image"
                                           data-ai-hint="mood board concept"
                                       />
                                   </div>
 
-                                    {isPlaceholderImage && (
+                                  {isPlaceholderImage && (
                                       <p className="text-xs text-muted-foreground text-center">
                                         Representative image generation failed or is unavailable. Using a placeholder.
                                       </p>
@@ -702,11 +697,11 @@ export default function PromptToPrototypePage() {
                                           key={index}
                                           className="border rounded bg-card aspect-square flex flex-col shadow-sm hover:shadow-md transition-shadow print-overflow-visible min-h-[120px] max-h-[200px]"
                                           aria-label={`Mood board cell: ${cell.title || moodBoardPositionalLabels[index]}`}
-                                        >
+ >
                                           <div className="p-3 pb-2 border-b border-border/60">
                                             <h5 className="font-semibold text-foreground text-sm block truncate">
                                               {cell.title || moodBoardPositionalLabels[index]}
-                                            </h5>
+ </h5>
                                           </div>
                                           <div className="p-3 pt-2 text-xs text-muted-foreground overflow-y-auto flex-grow">
                                             <p>{cell.description}</p>
@@ -755,7 +750,7 @@ export default function PromptToPrototypePage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                          type="button"
+ type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleCopyToClipboard(results.loglinesJsonString, "Loglines JSON")}
@@ -794,7 +789,7 @@ export default function PromptToPrototypePage() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                            type="button"
+ type="button"
                             variant="outline"
                             size="sm"
                             onClick={() => handleCopyToClipboard(results.shotListMarkdownString, "Shotlist Markdown")}
@@ -848,7 +843,7 @@ export default function PromptToPrototypePage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        type="button"
+ type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => handleCopyToClipboard(results.proxyClipAnimaticDescription, "Animatic Description")}
@@ -881,7 +876,7 @@ export default function PromptToPrototypePage() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        type="button"
+ type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => handleCopyToClipboard(results.pitchSummary, "Pitch Summary")}
@@ -904,7 +899,7 @@ export default function PromptToPrototypePage() {
           </div>
           <p className="mt-8 text-xs text-muted-foreground text-center no-print">
             AI Output Transparency: Assets generated by AI. Review and refine as needed. Use the thematic descriptions to guide further visual development.
-            To get a consolidated view of all generated assets for printing or saving as a PDF, please use your browser's print functionality (Ctrl+P or Cmd+P) or the "Print / Save as PDF" button above.
+ To get a consolidated view of all generated assets for printing or saving as a PDF, please use your browser&apos;s print functionality (Ctrl+P or Cmd+P) or the &quot;Print / Save as PDF&quot; button above.
           </p>
         </div>
       )}
