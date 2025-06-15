@@ -64,6 +64,13 @@ export default function PromptToPrototypePage() {
       });
 
     } catch (err: any) {
+      console.log("DEBUG: Entering main catch block in handleGenerate.");
+      if (err instanceof Error && err.message.includes("Unexpected token '<'")) {
+        console.log("DEBUG: Error indicates HTML response instead of JSON.");
+        // The 'response' object from the try block is not directly in scope here.
+        // The original error message (err.message) already includes the problematic token,
+        // which is a strong indicator. This log helps confirm we've hit that specific scenario.
+      }
       console.error('Network or parsing error:', err);
       const message = err.message || 'An unexpected error occurred.';
       setError(message);

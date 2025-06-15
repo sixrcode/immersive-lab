@@ -21,30 +21,31 @@ async function uploadImageToStorage(
 ): Promise<string> {
   if (!storage || !storage.bucket) {
     console.error('Firebase Storage is not initialized. Cannot upload image.');
-    throw new Error('Storage service not available.');
+    // Throw a specific error that the main handler can catch and convert to JSON
+    throw new Error('StorageServiceNotAvailable: Firebase Storage is not initialized.');
   }
-  const bucket = storage.bucket();
-  const fileName = `${fileNamePrefix}-${uuidv4()}.${extension}`;
-  // Use userId and promptPackageId for better organization in storage
-  const filePath = `prototypes/${userId}/${promptPackageId}/${fileName}`;
-  const file = bucket.file(filePath);
+  try {
+    const bucket = storage.bucket();
+    const fileName = `${fileNamePrefix}-${uuidv4()}.${extension}`;
+    // Use userId and promptPackageId for better organization in storage
+    const filePath = `prototypes/${userId}/${promptPackageId}/${fileName}`;
+    const file = bucket.file(filePath);
 
-  await file.save(buffer, {
-    metadata: {
-      contentType: mimeType,
-    },
-  });
-  // Make the file public - consider if this is always desired or if signed URLs are better
-  // await file.makePublic();
-  // return file.publicUrl();
+    await file.save(buffer, {
+      metadata: {
+        contentType: mimeType,
+      },
+    });
 
-  // For now, let's return a gs:// path or construct a public URL if your bucket is set up for that.
-  // Using getSignedUrl for controlled access is generally safer for non-public buckets.
-  const [signedUrl] = await file.getSignedUrl({
-    action: 'read',
-    expires: '03-09-2491', // A far-future expiration date for simplicity
-  });
-  return signedUrl;
+    const [signedUrl] = await file.getSignedUrl({
+      action: 'read',
+      expires: '03-09-2491', // A far-future expiration date for simplicity
+    });
+    return signedUrl;
+  } catch (error: any) {
+    console.error('Error during image upload to Firebase Storage:', error);
+    throw new Error(`ImageUploadFailed: ${error.message}`); // Propagate a specific error
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -196,9 +197,21 @@ export async function POST(req: NextRequest) {
     if (error.errors) { // Zod validation errors
       return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
     }
-    if (error.message.includes('FlowError') || error.name === 'FlowError' || error.message.includes('promptToPrototype')) {
+    // Check for specific error messages from our code
+    if (error.message && error.message.includes('promptToPrototypeFlow')) { // Error from the flow itself
       return NextResponse.json({ error: 'AI flow processing error', details: error.message }, { status: 500 });
     }
-    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
+    if (error.message && error.message.startsWith('ImageUploadFailed:')) {
+      return NextResponse.json({ error: 'Image upload failed', details: error.message }, { status: 500 });
+    }
+    if (error.message && error.message.startsWith('StorageServiceNotAvailable:')) {
+      return NextResponse.json({ error: 'Storage service unavailable', details: error.message }, { status: 500 });
+    }
+    // Fallback for other errors from the flow or unexpected errors
+    if (error.message && (error.message.includes('FlowError') || error.name === 'FlowError')) { // Broader Genkit flow errors
+      return NextResponse.json({ error: 'AI processing error', details: error.message }, { status: 500 });
+    }
+    // Generic fallback
+    return NextResponse.json({ error: 'Internal Server Error', details: error.message || 'An unknown error occurred' }, { status: 500 });
   }
 }
