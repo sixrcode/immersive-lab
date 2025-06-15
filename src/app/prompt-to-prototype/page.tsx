@@ -37,7 +37,7 @@ export default function PromptToPrototypePage() {
         let errorDetails = ""
         if (errorData.details) {
             if (Array.isArray(errorData.details) && errorData.details.length > 0 && errorData.details[0] && typeof errorData.details[0].message === 'string') {
-                 errorDetails = errorData.details.map((d:any) => d.message).join(', ');
+                 errorDetails = errorData.details.map((d: { message: string }) => d.message).join(', ');
             } else if (typeof errorData.details === 'string') {
                 errorDetails = errorData.details;
             } else if (typeof errorData.details === 'object') { // Handle nested Zod error objects
@@ -63,7 +63,7 @@ export default function PromptToPrototypePage() {
         description: 'Your new prototype is ready below.',
       });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.log("DEBUG: Entering main catch block in handleGenerate.");
       if (err instanceof Error && err.message.includes("Unexpected token '<'")) {
         console.log("DEBUG: Error indicates HTML response instead of JSON.");
