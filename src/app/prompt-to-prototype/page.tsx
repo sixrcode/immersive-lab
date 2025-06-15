@@ -633,10 +633,9 @@ export default function PromptToPrototypePage() {
                                         <NextImage
                                             src={results.moodBoardImage}
                                             alt="Generated Mood Board Representation"
-                                            layout="fill"
-                                            objectFit="cover"
+                                            fill
+                                            className="object-cover print-image"
                                             data-ai-hint="mood board concept"
-                                           className="print-image"
                                           />
                                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 no-print">
                                           {imageActionButtons()}
@@ -652,8 +651,8 @@ export default function PromptToPrototypePage() {
                                          <NextImage
                                             src={results.moodBoardImage}
                                             alt="Generated Mood Board Representation - Full Size"
-                                            layout="fill"
-                                            objectFit="contain"
+                                            fill
+                                            className="object-contain"
                                           />
                                       </div>
                                        <div className="absolute top-4 right-14 flex items-center gap-1">
@@ -672,8 +671,7 @@ export default function PromptToPrototypePage() {
                                           alt="Generated Mood Board Representation"
                                           width={500} 
                                           height={281}
-                                          objectFit="contain"
-                                          className="print-image"
+                                          className="object-contain print-image"
                                           data-ai-hint="mood board concept"
                                       />
                                   </div>
