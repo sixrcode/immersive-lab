@@ -149,10 +149,10 @@ export default function DashboardPage() {
               <NextImage
                 src="/images/sixr-logo.png" 
                 alt="SIXR Logo"
-                width={120} 
+                width={120}
+                height={120} 
                 data-ai-hint="SIXR logo" 
                 className="rounded-md shadow-sm"
-                style={{ height: 'auto' }}
               />
             </div>
             <p>
@@ -175,4 +175,3 @@ export default function DashboardPage() {
   );
 }
     
-
