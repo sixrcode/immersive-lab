@@ -12,7 +12,7 @@ import { Separator } from './ui/separator';
 // Placeholder for a Refresh Icon.
 const RefreshIcon = () => (
   // Using a simple text or a unicode character for now if SVG is too verbose for diff
-  <span className="mr-2">↻</span>
+  (<span className="mr-2">↻</span>)
 );
 
 // Placeholder for Download Icon
