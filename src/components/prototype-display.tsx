@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
-import type { PromptPackage, Logline, MoodBoardCell, Shot } from '@/lib/types'; // Assuming types are in @/lib/types
+import Image from 'next/image';
+import React, { FC } from 'react';
+import type { PromptPackage } from '@/lib/types'; // Assuming types are in @/lib/types
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button'; // Already imported
@@ -30,7 +31,7 @@ const RegenerateButton = ({ onClick, sectionName }: { onClick?: () => void; sect
   </Button>
 );
 
-interface PrototypeDisplayProps {
+interface PrototypeDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
   promptPackage: PromptPackage;
   onRegenerate?: (section: string, data?: any) => void; // For future use
 }
@@ -67,7 +68,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
     createdAt,
   } = promptPackage;
 
-  const Section: React.FC<{ title: string; children: React.ReactNode; sectionKey: string; actions?: React.ReactNode }> =
+  const Section: FC<{ title: string; children: React.ReactNode; sectionKey: string; actions?: React.ReactNode }> =
     ({ title, children, sectionKey, actions }) => (
     <Card className="mb-6 print:shadow-none print:border-0">
       <CardHeader className="flex flex-row items-center">
@@ -95,11 +96,14 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
           {stylePreset && <p><strong className="font-medium">Style Preset:</strong> <Badge variant="secondary">{stylePreset}</Badge></p>}
           {originalImageURL && (
             <div>
-              <strong className="font-medium">Uploaded Image:</strong>
-              <img
+              <h3 className="font-medium mb-2">Uploaded Image:</h3>
+              <Image
                 src={originalImageURL}
                 alt="User uploaded reference"
                 className="mt-2 rounded-md max-h-60 w-auto object-contain border p-1 shadow-sm bg-muted/20"
+                width={400} // Or appropriate width
+                height={300} // Or appropriate height
+                style={{ height: 'auto', maxWidth: '100%' }} // Maintain aspect ratio and responsiveness
               />
             </div>
           )}
@@ -135,13 +139,20 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold">Generated Visual</h3>
-               <RegenerateButton sectionName="Mood Board Image" onClick={() => onRegenerate?.('moodBoardImage')} />
+              {/* <RegenerateButton sectionName="Mood Board Image" onClick={() => onRegenerate?.('moodBoardImage')} /> */} {/* Regen button removed as image regen is not a separate flow */}
             </div>
-            <img
-              src={moodBoard.generatedImageURL}
+            <Image
+              src={moodBoard.generatedImageURL!}
               alt="AI Generated Mood Board"
               className="rounded-lg w-full max-w-2xl mx-auto object-contain border p-1 shadow-sm"
+              width={800} // Or appropriate width
+              height={600} // Or appropriate height
+              style={{ height: 'auto', maxWidth: '100%' }} // Maintain aspect ratio and responsiveness
+              // If you know the exact dimensions or ratio, consider layout="responsive" or fixed width/height
+              // For responsive images, you might use 'fill' and a parent container with specific aspect ratio
+              // Here, using explicit width/height and style to maintain aspect ratio while being responsive up to max-width
             />
+
           </div>
         )}
         <h3 className="text-lg font-semibold mb-3 mt-4">Thematic Cells</h3>

@@ -4,12 +4,11 @@ import {
   promptToPrototype,
   PromptToPrototypeInput,
   PromptToPrototypeOutput, // Import this type
-  PromptToPrototypeInputSchema
-} from '@/ai/flows/prompt-to-prototype';
+} from '@/ai/flows/prompt-to-prototype'; // Corrected import to remove unused type
 import type { PromptPackage, Logline, MoodBoardCell, Shot } from '@/lib/types';
-import { db, storage, firebaseAdminApp } from '@/lib/firebase/admin'; // Firebase Admin
+import { db, storage, firebaseAdminApp } from '@/lib/firebase/admin';
 import { dataUriToBuffer, DataUriParts } from '@/lib/utils'; // Data URI utility
-
+ 
 // Helper function to upload image buffer to Firebase Storage
 async function uploadImageToStorage(
   buffer: Buffer,
@@ -43,12 +42,12 @@ async function uploadImageToStorage(
     });
     return signedUrl;
   } catch (error: any) {
-    console.error('Error during image upload to Firebase Storage:', error);
+ console.error('Error during image upload to Firebase Storage:', error);
     throw new Error(`ImageUploadFailed: ${error.message}`); // Propagate a specific error
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!firebaseAdminApp) { // Check if Firebase Admin SDK initialized
     return NextResponse.json({ error: 'Firebase Admin SDK not initialized. Check server logs.' }, { status: 500 });
   }
@@ -59,9 +58,9 @@ export async function POST(req: NextRequest) {
     let validatedInput: PromptToPrototypeInput;
     try {
       validatedInput = PromptToPrototypeInputSchema.parse(body);
-    } catch (error: any) {
-      // error.errors is specific to Zod validation errors
-      return NextResponse.json({ error: 'Invalid input', details: error.errors || error.message }, { status: 400 });
+    } catch (error: unknown) { // Use unknown for catch error type
+      // Safely access error message and details
+      return NextResponse.json({ error: 'Invalid input', details: error instanceof Error ? error.message : 'Unknown validation error' }, { status: 400 }); // Safely access error message
     }
 
     const { prompt, imageDataUri, stylePreset } = validatedInput;
@@ -88,7 +87,7 @@ export async function POST(req: NextRequest) {
             promptPackageId,
             'user-upload'
           );
-        } catch (uploadError: any) {
+        } catch (uploadError: unknown) {
           console.error('Failed to upload original user image:', uploadError);
           // Decide if this is a critical error. For now, we'll proceed with a null/placeholder URL.
           finalOriginalImageURL = undefined; // Or keep original data URI if preferred fallback
@@ -114,7 +113,7 @@ export async function POST(req: NextRequest) {
             promptPackageId,
             'moodboard'
           );
-        } catch (uploadError: any) {
+        } catch (uploadError: unknown) {
           console.error('Failed to upload generated mood board image:', uploadError);
           // Use placeholder if upload fails
         }
@@ -127,7 +126,7 @@ export async function POST(req: NextRequest) {
     }
 
 
-    // Helper to parse shotList string (multi-line, comma-separated)
+    // Helper to parse shotList string (multi-line, comma-separated) 
     const parseShotList = (shotListString: string): Shot[] => {
       if (!shotListString) return [];
       return shotListString.trim().split('\n').map((shotData, index) => {
@@ -176,7 +175,7 @@ export async function POST(req: NextRequest) {
     if (db) {
       try {
         await db.collection('promptPackages').doc(newPromptPackage.id).set(newPromptPackage);
-      } catch (firestoreError: any) {
+      } catch (firestoreError: unknown) {
         console.error('Failed to save PromptPackage to Firestore:', firestoreError);
         // Decide if this is critical. The client will still get the package, but it won't be saved.
         // Could return a specific error or a warning. For now, log and continue.
@@ -192,26 +191,23 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newPromptPackage, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in /api/prototype/generate:', error);
-    if (error.errors) { // Zod validation errors
-      return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
-    }
-    // Check for specific error messages from our code
-    if (error.message && error.message.includes('promptToPrototypeFlow')) { // Error from the flow itself
-      return NextResponse.json({ error: 'AI flow processing error', details: error.message }, { status: 500 });
-    }
-    if (error.message && error.message.startsWith('ImageUploadFailed:')) {
-      return NextResponse.json({ error: 'Image upload failed', details: error.message }, { status: 500 });
-    }
-    if (error.message && error.message.startsWith('StorageServiceNotAvailable:')) {
-      return NextResponse.json({ error: 'Storage service unavailable', details: error.message }, { status: 500 });
-    }
-    // Fallback for other errors from the flow or unexpected errors
-    if (error.message && (error.message.includes('FlowError') || error.name === 'FlowError')) { // Broader Genkit flow errors
-      return NextResponse.json({ error: 'AI processing error', details: error.message }, { status: 500 });
+    let errorMessage = 'An unknown error occurred';
+    let errorDetails = undefined;
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      // Add specific checks if needed, e.g., for Zod errors or custom error types
+      // if ((error as any).errors) { // Zod validation errors
+      //    errorDetails = (error as any).errors;
+      //    errorMessage = 'Invalid input';
+      // }
+    } else if (typeof error === 'object' && error !== null) {
+       // Attempt to get details if the error object has a details property
+       errorDetails = (error as { details?: any }).details;
     }
     // Generic fallback
-    return NextResponse.json({ error: 'Internal Server Error', details: error.message || 'An unknown error occurred' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error', details: errorDetails || errorMessage }, { status: 500 });
   }
 }

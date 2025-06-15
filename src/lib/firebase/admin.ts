@@ -26,8 +26,8 @@ if (!admin.apps.length) {
         storageBucket: FIREBASE_STORAGE_BUCKET,
       });
       console.log('Firebase Admin SDK initialized successfully.');
-    } catch (error: any) {
-      console.error('Firebase Admin SDK initialization error:', error.message);
+    } catch (error: unknown) {
+      console.error('Firebase Admin SDK initialization error:', error instanceof Error ? error.message : 'An unknown error occurred');
       // Optionally, throw the error or handle it as per your application's needs
       // throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
     }

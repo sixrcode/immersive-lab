@@ -4,18 +4,66 @@ import '@testing-library/jest-dom';
 import { PromptInput } from '../prompt-input'; // Adjust path as necessary
 
 // Mock child components that might cause issues if not handled or are irrelevant to this test's focus.
-jest.mock('@/components/ui/textarea', () => (props: any) => <textarea data-testid="textarea" {...props} />);
-jest.mock('@/components/ui/input', () => (props: any) => <input data-testid="input-file" {...props} />);
-jest.mock('@/components/ui/button', () => (props: any) => <button data-testid="button" {...props} />);
+jest.mock('@/components/ui/textarea', () => {
+  const MockTextarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (props) => <textarea data-testid="textarea" {...props} />;
+  MockTextarea.displayName = 'MockTextarea';
+  return MockTextarea;
+});
+jest.mock('@/components/ui/input', () => {
+  const MockInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => <input data-testid="input-file" {...props} />;
+  MockInput.displayName = 'MockInput';
+  return MockInput;
+});
+jest.mock('@/components/ui/button', () => {
+  const MockButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (props) => <button data-testid="button" {...props} />;
+  MockButton.displayName = 'MockButton';
+  return MockButton;
+});
 jest.mock('@/components/ui/select', () => ({
-  Select: (props: any) => <select data-testid="select" value={props.value} onValueChange={props.onValueChange} disabled={props.disabled}>{props.children}</select>,
-  SelectContent: (props: any) => <div data-testid="select-content">{props.children}</div>,
-  SelectItem: (props: any) => <option data-testid={`select-item-${props.value}`} value={props.value}>{props.children}</option>,
-  SelectTrigger: (props: any) => <div data-testid="select-trigger">{props.children}</div>,
-  SelectValue: (props: any) => <div data-testid="select-value">{props.placeholder}</div>,
+  Select: ((props: { value?: string; onValueChange?: (value: string) => void; disabled?: boolean; children?: React.ReactNode }) => (
+    <select data-testid="select" value={props.value} onChange={(e) => props.onValueChange?.(e.target.value)} disabled={props.disabled}>{props.children}</select>
+  )) as React.FC<{ value?: string; onValueChange?: (value: string) => void; disabled?: boolean; children?: React.ReactNode }> & { displayName?: string },
+  SelectContent: ((props: { children?: React.ReactNode }) => (
+    <div data-testid="select-content">{props.children}</div>
+  )) as React.FC<{ children?: React.ReactNode }> & { displayName?: string },
+  SelectItem: ((props: { value: string; children?: React.ReactNode }) => (
+    <option data-testid={`select-item-${props.value}`} value={props.value}>{props.children}</option>
+  )) as React.FC<{ value: string; children?: React.ReactNode }> & { displayName?: string },
+  SelectTrigger: ((props: { children?: React.ReactNode }) => (
+    <div data-testid="select-trigger">{props.children}</div>
+  )) as React.FC<{ children?: React.ReactNode }> & { displayName?: string },
+  SelectValue: ((props: { placeholder?: string }) => (
+    <div data-testid="select-value">{props.placeholder}</div>
+  )) as React.FC<{ placeholder?: string }> & { displayName?: string },
 }));
-jest.mock('@/components/ui/label', () => (props: any) => <label {...props} />);
 
+// Add display names to mocked Select sub-components explicitly outside the mock call
+// This is a workaround because adding it directly inside the mock returns can be tricky
+// and might not be correctly inferred by TypeScript or Jest's module system.
+// However, adding displayName to the component function directly is the preferred way.
+// Let's try to add types to the component functions instead of using `as React.FC<any>`.
+jest.mock('@/components/ui/label', () => {
+  const MockLabel: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = (props) => <label {...props} />;
+  MockLabel.displayName = 'MockLabel';
+  return MockLabel;
+});
+
+// Update the mock to use specific types for props
+jest.mock('@/components/ui/select', () => ({
+  Select: ((props: { value?: string; onValueChange?: (value: string) => void; disabled?: boolean; children?: React.ReactNode }) => <select data-testid="select" value={props.value} onChange={(e) => props.onValueChange?.(e.target.value)} disabled={props.disabled}>{props.children}</select>) as React.FC<{ value?: string; onValueChange?: (value: string) => void; disabled?: boolean; children?: React.ReactNode }> & { displayName?: string },
+  SelectContent: ((props: { children?: React.ReactNode }) => <div data-testid="select-content">{props.children}</div>) as React.FC<{ children?: React.ReactNode }> & { displayName?: string },
+  SelectItem: ((props: { value: string; children?: React.ReactNode }) => <option data-testid={`select-item-${props.value}`} value={props.value}>{props.children}</option>) as React.FC<{ value: string; children?: React.ReactNode }> & { displayName?: string },
+  SelectTrigger: ((props: { children?: React.ReactNode }) => <div data-testid="select-trigger">{props.children}</div>) as React.FC<{ children?: React.ReactNode }> & { displayName?: string },
+  SelectValue: ((props: { placeholder?: string }) => <div data-testid="select-value">{props.placeholder}</div>) as React.FC<{ placeholder?: string }> & { displayName?: string },
+}));
+
+// Add display names to mocked Select sub-components
+import * as MockedSelect from '@/components/ui/select';
+MockedSelect.Select.displayName = 'MockSelect';
+MockedSelect.SelectContent.displayName = 'MockSelectContent';
+MockedSelect.SelectItem.displayName = 'MockSelectItem';
+MockedSelect.SelectTrigger.displayName = 'MockSelectTrigger';
+MockedSelect.SelectValue.displayName = 'MockSelectValue';
 
 describe('PromptInput Component', () => {
   const mockOnSubmit = jest.fn();

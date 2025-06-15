@@ -213,7 +213,7 @@ export default function ScriptAnalyzerPage() {
                   {results.suggestions.map((suggestion, index) => (
                     <AccordionItem value={`item-${index}`} key={index}>
                       <AccordionTrigger className="text-left hover:bg-muted/20 px-2 rounded-t-md">
-                        <span className="font-medium">Suggestion for: "{suggestion.section && suggestion.section.length > 50 ? suggestion.section.substring(0, 50) + '...' : (suggestion.section || 'Unnamed Section')}"</span>
+ <span className="font-medium">Suggestion for: &#34;{suggestion.section && suggestion.section.length > 50 ? suggestion.section.substring(0, 50) + '...' : (suggestion.section || 'Unnamed Section')}&#34;</span>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-4 p-4 bg-muted/30 rounded-b-md border-t-0 border">
                         <div>

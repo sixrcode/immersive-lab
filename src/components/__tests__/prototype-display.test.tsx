@@ -7,16 +7,22 @@ import type { PromptPackage } from '@/lib/types';
 // Mock child UI components as needed, similar to prompt-input.test.tsx if they are complex
 // For simplicity, we'll assume they render content passed to them.
 // If specific UI components have complex logic that interferes, they should be mocked.
-jest.mock('@/components/ui/card', () => ({
-  Card: (props: any) => <div data-testid="card">{props.children}</div>,
-  CardContent: (props: any) => <div data-testid="card-content">{props.children}</div>,
-  CardHeader: (props: any) => <div data-testid="card-header">{props.children}</div>,
-  CardTitle: (props: any) => <div data-testid="card-title">{props.children}</div>,
-  CardDescription: (props: any) => <div data-testid="card-description">{props.children}</div>,
-}));
-jest.mock('@/components/ui/badge', () => (props: any) => <span data-testid="badge">{props.children}</span>);
-jest.mock('@/components/ui/button', () => (props: any) => <button data-testid={`button-${props.children || props.title || 'untitled'}`} {...props} />);
+jest.mock('@/components/ui/card', () => {
+  const MockCard = (props: { children: React.ReactNode }) => <div data-testid="card">{props.children}</div>; MockCard.displayName = 'MockCard';
+  const MockCardContent = (props: { children: React.ReactNode }) => <div data-testid="card-content">{props.children}</div>; MockCardContent.displayName = 'MockCardContent';
+  const MockCardHeader = (props: { children: React.ReactNode }) => <div data-testid="card-header">{props.children}</div>; MockCardHeader.displayName = 'MockCardHeader';
+  const MockCardTitle = (props: { children: React.ReactNode }) => <div data-testid="card-title">{props.children}</div>; MockCardTitle.displayName = 'MockCardTitle';
+  const MockCardDescription = (props: { children: React.ReactNode }) => <div data-testid="card-description">{props.children}</div>; MockCardDescription.displayName = 'MockCardDescription';
+  return { Card: MockCard, CardContent: MockCardContent, CardHeader: MockCardHeader, CardTitle: MockCardTitle, CardDescription: MockCardDescription };
+});
+jest.mock('@/components/ui/badge', () => { const MockBadge = (props: { children: React.ReactNode }) => <span data-testid="badge">{props.children}</span>; MockBadge.displayName = 'MockBadge'; return MockBadge; });
+jest.mock('@/components/ui/button', () => {
+  const MockButton = (props: { children: React.ReactNode; title?: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) =>
+    <button data-testid={`button-${props.children || props.title || 'untitled'}`} {...props} >{props.children}</button>;
+  MockButton.displayName = 'MockButton'; return MockButton;
+});
 jest.mock('@/components/ui/table', () => ({
+
   Table: (props: any) => <table data-testid="table">{props.children}</table>,
   TableBody: (props: any) => <tbody data-testid="table-body">{props.children}</tbody>,
   TableCell: (props: any) => <td data-testid="table-cell">{props.children}</td>,
@@ -24,7 +30,7 @@ jest.mock('@/components/ui/table', () => ({
   TableHeader: (props: any) => <thead data-testid="table-header">{props.children}</thead>,
   TableRow: (props: any) => <tr data-testid="table-row">{props.children}</tr>,
 }));
-jest.mock('@/components/ui/separator', () => (props: any) => <hr data-testid="separator" {...props} />);
+jest.mock('@/components/ui/separator', () => { const MockSeparator = (props: any) => <hr data-testid="separator" {...props} />; MockSeparator.displayName = 'MockSeparator'; return MockSeparator; });
 
 
 const mockPromptPackage: PromptPackage = {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, ChangeEvent, FormEvent, useCallback } from 'react';
+import Image from 'next/image';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -92,10 +93,12 @@ export function PromptInput({ onSubmit, isLoading }: PromptInputProps) {
           />
           {imagePreviewUrl && (
             <div className="mt-4">
-              <img
+              <Image
                 src={imagePreviewUrl}
                 alt="Image preview"
                 className="rounded-md max-h-40 w-auto object-cover shadow-md"
+                width={160} // You can adjust these values as needed
+                height={160} // Or make them dynamic based on layout
               />
             </div>
           )}
