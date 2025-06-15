@@ -1,6 +1,7 @@
 
 "use client";
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -85,7 +86,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <Link href="/" className="flex items-center gap-2">
-          <Drama className="h-8 w-8 text-primary" />
+          <Image src="/images/logo.svg" alt="Immersive Storytelling Lab Logo" width={32} height={32} className="text-primary" />
           <h1 className="text-xl font-semibold group-data-[collapsible=icon]:hidden">
             Immersive Storytelling Lab
           </h1>
