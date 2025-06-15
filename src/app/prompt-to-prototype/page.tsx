@@ -906,9 +906,3 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
