@@ -86,10 +86,12 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <Link href="/" className="flex items-center gap-2" legacyBehavior>
-          <Image src="/images/logo.svg" alt="Immersive Storytelling Lab Logo" width={32} height={32} className="text-primary" />
-          <h1 className="text-xl font-semibold group-data-[collapsible=icon]:hidden">
-            Immersive Storytelling Lab
-          </h1>
+          <span>
+            <Image src="/images/logo.svg" alt="Immersive Storytelling Lab Logo" width={32} height={32} className="text-primary" />
+            <h1 className="text-xl font-semibold group-data-[collapsible=icon]:hidden">
+              Immersive Storytelling Lab
+            </h1>
+          </span>
         </Link>
       </SidebarHeader>
       <div className="mx-2 my-2 h-px w-auto bg-sidebar-border group-data-[collapsible=icon]:mx-auto" />
