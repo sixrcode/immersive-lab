@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import React, { FC } from 'react';
-import type { PromptPackage } from '@/lib/types'; // Assuming types are in @/lib/types
+import type { PromptPackage, MoodBoardCell } from '@/lib/types'; // Assuming types are in @/lib/types
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button'; // Already imported
@@ -157,7 +157,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
         )}
         <h3 className="text-lg font-semibold mb-3 mt-4">Thematic Cells</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {moodBoard.cells.map((cell, index) => (
+          {moodBoard.cells.map((cell: MoodBoardCell, index: number) => (
             <Card key={index} className="flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
