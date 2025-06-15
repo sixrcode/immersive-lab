@@ -16,10 +16,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"; // Removed TableCaption
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useState, useEffect, useMemo, type ChangeEvent, type ReactNode } from "react";
 
 const formSchema = z.object({
   prompt: z.string().min(10, "Prompt must be at least 10 characters long."),
@@ -31,7 +33,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface ResultCardProps {
-  title: string; // Assuming 'Users' was intended for an icon prop
+  title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   isLoading: boolean;
@@ -904,3 +906,5 @@ export default function PromptToPrototypePage() {
     </div>
   );
 }
+
+    
