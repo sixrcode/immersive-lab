@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -85,7 +84,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <Link href="/" className="flex items-center gap-2" legacyBehavior>
+        <Link href="/" className="flex items-center gap-2">
           <span>
             <Image src="/images/logo.svg" alt="Immersive Storytelling Lab Logo" width={32} height={32} className="text-primary" />
             <h1 className="text-xl font-semibold group-data-[collapsible=icon]:hidden">
@@ -99,7 +98,7 @@ export function AppSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref legacyBehavior>
+              <Link href={item.href}>
                 <SidebarMenuButton
                   className={cn(
                     pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground'
@@ -107,10 +106,10 @@ export function AppSidebar() {
                   asChild
                   tooltip={{ children: item.label, side: 'right', align: 'center' }}
                 >
-                  <a>
+                  <>
                     <item.icon className="h-5 w-5" />
                     <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                  </a>
+                  </>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
