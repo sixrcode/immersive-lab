@@ -4,7 +4,7 @@ import {
   // GenerateStoryboardProps, // Proper import from @isl/types later
   // StoryboardPackage, // Proper import from @isl/types later
   // StoryboardStreamResponse // Proper import from @isl/types later
-} from '../../../../../../types/src/storyboard.types'; // Adjust path as necessary
+} from '../../../../../types/src/storyboard.types'; // Adjust path as necessary
 
 import { generateStoryboardWithGenkit } from '../../../services/generation/genkitService'; // Adjust path as necessary
 
@@ -87,9 +87,7 @@ export default async function handler(
       { sceneDescription, panelCount, stylePreset /* referenceImage */ },
       (update) => {
         // If using SSE, this is where you would res.write()
-        // Example: res.write(`data: ${JSON.stringify(update)}
-
-`);
+        // Example: res.write(`data: ${JSON.stringify(update)}\n\n`);
         // For now, just logging on the server. The client will get the final package.
         if (update.status === 'processing') {
           console.log(`API Progress: ${update.progress}% - ${update.message}`);
