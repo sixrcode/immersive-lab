@@ -88,6 +88,7 @@ export function AppSidebar() {
           {/* Text and new SIXR Logo */}
           <span className="flex items-center gap-2">
             <Image src="/images/sixr-logo.png" alt="SIXR Logo" width={32} height={32} className="text-primary" />
+
             <h1 className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
               Immersive Storytelling Lab
             </h1>
