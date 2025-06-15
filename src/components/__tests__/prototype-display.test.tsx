@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { PrototypeDisplay } from '../prototype-display'; // Adjust path
-import type { PromptPackage } from '@/lib/types';
+import type { PromptPackage, MoodBoardCell } from '@/lib/types';
 
 // Mock child UI components as needed, similar to prompt-input.test.tsx if they are complex
 // For simplicity, we'll assume they render content passed to them.
