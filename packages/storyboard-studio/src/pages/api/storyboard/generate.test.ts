@@ -24,6 +24,7 @@ describe('/api/storyboard/generate API Endpoint', () => {
       method: 'GET' as RequestMethod, // Type assertion
     });
 
+    // @ts-expect-error TS2352: Conversion of type 'MockRequest<...>' to 'NextApiRequest' may be a mistake.
     await handler(req as NextApiRequest, res as NextApiResponse); // Type assertion
 
     expect(res._getStatusCode()).toBe(405);
@@ -37,6 +38,7 @@ describe('/api/storyboard/generate API Endpoint', () => {
         panelCount: 3,
       },
     });
+    // @ts-expect-error TS2352: Conversion of type 'MockRequest<...>' to 'NextApiRequest' may be a mistake.
     await handler(req as NextApiRequest, res as NextApiResponse);
     expect(res._getStatusCode()).toBe(400);
     expect(res._getJSONData().error).toBe('sceneDescription is required and must be a string.');
@@ -50,6 +52,7 @@ describe('/api/storyboard/generate API Endpoint', () => {
         panelCount: 1,
       },
     });
+    // @ts-expect-error TS2352: Conversion of type 'MockRequest<...>' to 'NextApiRequest' may be a mistake.
     await handler(req as NextApiRequest, res as NextApiResponse);
     expect(res._getStatusCode()).toBe(400);
     expect(res._getJSONData().error).toBe('panelCount is required and must be a number between 2 and 10.');
@@ -63,6 +66,7 @@ describe('/api/storyboard/generate API Endpoint', () => {
         panelCount: 11,
       },
     });
+    // @ts-expect-error TS2352: Conversion of type 'MockRequest<...>' to 'NextApiRequest' may be a mistake.
     await handler(req as NextApiRequest, res as NextApiResponse);
     expect(res._getStatusCode()).toBe(400);
     expect(res._getJSONData().error).toBe('panelCount is required and must be a number between 2 and 10.');
@@ -76,6 +80,7 @@ describe('/api/storyboard/generate API Endpoint', () => {
         panelCount: "five",
       },
     });
+    // @ts-expect-error TS2352: Conversion of type 'MockRequest<...>' to 'NextApiRequest' may be a mistake.
     await handler(req as NextApiRequest, res as NextApiResponse);
     expect(res._getStatusCode()).toBe(400);
     expect(res._getJSONData().error).toBe('panelCount is required and must be a number between 2 and 10.');
@@ -103,6 +108,7 @@ describe('/api/storyboard/generate API Endpoint', () => {
       body: mockRequestBody,
     });
 
+    // @ts-expect-error TS2352: Conversion of type 'MockRequest<...>' to 'NextApiRequest' may be a mistake.
     await handler(req as NextApiRequest, res as NextApiResponse);
 
     expect(mockGenerateStoryboardWithGenkit).toHaveBeenCalledTimes(1);
@@ -127,6 +133,7 @@ describe('/api/storyboard/generate API Endpoint', () => {
       body: mockRequestBody,
     });
 
+    // @ts-expect-error TS2352: Conversion of type 'MockRequest<...>' to 'NextApiRequest' may be a mistake.
     await handler(req as NextApiRequest, res as NextApiResponse);
 
     expect(mockGenerateStoryboardWithGenkit).toHaveBeenCalledTimes(1);

@@ -1,3 +1,5 @@
+import type { Logline, MoodBoard, Shot } from '@/lib/types';
+
 export interface PromptPackage {
   id: string;
   userId: string;

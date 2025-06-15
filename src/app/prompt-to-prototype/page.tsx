@@ -72,7 +72,12 @@ export default function PromptToPrototypePage() {
         // which is a strong indicator. This log helps confirm we've hit that specific scenario.
       }
       console.error('Network or parsing error:', err);
-      const message = err.message || 'An unexpected error occurred.';
+      let message = 'An unexpected error occurred.';
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (typeof err === 'string') {
+        message = err;
+      }
       setError(message);
       toast({
         variant: 'destructive',
