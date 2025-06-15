@@ -15,6 +15,15 @@ let storage: admin.storage.Storage;
 let app: admin.app.App;
 
 if (!admin.apps.length) {
+  // Add this block for detailed logging in non-production environments
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Firebase Admin SDK Initialization Check (Non-Production):');
+    console.log(`  FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID ? 'Present' : 'MISSING'}`);
+    console.log(`  FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL ? 'Present' : 'MISSING'}`);
+    console.log(`  FIREBASE_PRIVATE_KEY: ${process.env.FIREBASE_PRIVATE_KEY ? 'Present (not displaying value)' : 'MISSING'}`); // Check original env var for presence
+    console.log(`  FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET ? 'Present' : 'MISSING'}`);
+  }
+
   if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY && FIREBASE_STORAGE_BUCKET) {
     try {
       app = admin.initializeApp({
@@ -27,9 +36,10 @@ if (!admin.apps.length) {
       });
       console.log('Firebase Admin SDK initialized successfully.');
     } catch (error: unknown) {
-      console.error('Firebase Admin SDK initialization error:', error instanceof Error ? error.message : 'An unknown error occurred');
-      // Optionally, throw the error or handle it as per your application's needs
-      // throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during Firebase Admin SDK initialization';
+      console.error('Firebase Admin SDK initialization error:', errorMessage);
+      // Re-throw the error to make the failure explicit
+      throw new Error(`Firebase Admin SDK initialization failed: ${errorMessage}`);
     }
   } else {
     console.warn(
