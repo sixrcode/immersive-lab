@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { PromptInput } from '@/components/prompt-input';
 import { PrototypeDisplay } from '@/components/prototype-display';
-import { PromptPackage } from '@/lib/types';
+import { PromptPackage as PagePromptPackage } from '@/lib/types'; // Alias existing import
 import { useToast } from '@/hooks/use-toast';
+import { useGeneratePrototype, PromptPackage as HookPromptPackage } from "@/hooks/useGeneratePrototype"; // Import the hook
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,82 +13,49 @@ import { Button } from '@/components/ui/button';
 
 
 export default function PromptToPrototypePage() {
-  const [promptPackageResult, setPromptPackageResult] = useState<PromptPackage | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleGenerate = async (data: { prompt: string; imageDataUri?: string; stylePreset?: string }) => {
-    setIsLoading(true);
-    setError(null);
-    setPromptPackageResult(null);
+  const {
+    mutate: generatePrototypeMutate, // Renamed to avoid conflict if a handleGenerate function wrapper is kept
+    data: generatedPrototypePackage, // This should be HookPromptPackage | undefined
+    isLoading,
+    error: hookError, // This is Error | null
+  } = useGeneratePrototype();
 
-    try {
-      const response = await fetch('/api/prototype/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+  const handleFormSubmit = (submissionData: { prompt: string; imageDataUri?: string; stylePreset?: string }) => {
+    const promptPackageForHook: HookPromptPackage = {
+      inputs: [{ prompt: submissionData.prompt }],
+      params: {}, // Initialize params
+    };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.error || `API Error: ${response.statusText} (Status: ${response.status})`;
-        let errorDetails = ""
-        if (errorData.details) {
-            if (Array.isArray(errorData.details) && errorData.details.length > 0 && errorData.details[0] && typeof errorData.details[0].message === 'string') {
-                 errorDetails = errorData.details.map((d: { message: string }) => d.message).join(', ');
-            } else if (typeof errorData.details === 'string') {
-                errorDetails = errorData.details;
-            } else if (typeof errorData.details === 'object') { // Handle nested Zod error objects
-                errorDetails = JSON.stringify(errorData.details);
-            }
-        }
-        console.error('API Error:', errorMessage, errorDetails ? `Details: ${errorDetails}` : '');
-        const fullError = `${errorMessage}${errorDetails ? ` - ${errorDetails}` : ''}`;
-        setError(fullError);
+    if (submissionData.stylePreset) {
+      promptPackageForHook.params = { ...promptPackageForHook.params, stylePreset: submissionData.stylePreset };
+    }
+    if (submissionData.imageDataUri) {
+      promptPackageForHook.params = { ...promptPackageForHook.params, imageDataUri: submissionData.imageDataUri };
+    }
+    if (Object.keys(promptPackageForHook.params).length === 0) {
+      delete promptPackageForHook.params; // Remove params if empty, as per original hook structure
+    }
+
+    generatePrototypeMutate(promptPackageForHook, {
+      onSuccess: (data) => { // data here is the result from the mutationFn, assumed to be HookPromptPackage
+        toast({
+          title: 'Prototype Generated!',
+          description: 'Your new prototype is ready below.',
+        });
+        // No need to set local state for data, `generatedPrototypePackage` will update
+      },
+      onError: (error) => { // error here is the Error object
+        console.error('Generation error:', error);
         toast({
           variant: 'destructive',
           title: 'Generation Failed',
-          description: fullError,
+          description: error.message || 'An unexpected error occurred during generation.',
         });
-        setPromptPackageResult(null);
-        return;
-      }
-
-      const result: PromptPackage = await response.json();
-      setPromptPackageResult(result);
-      toast({
-        title: 'Prototype Generated!',
-        description: 'Your new prototype is ready below.',
-      });
-
-    } catch (err: unknown) {
-      console.log("DEBUG: Entering main catch block in handleGenerate.");
-      if (err instanceof Error && err.message.includes("Unexpected token '<'")) {
-        console.log("DEBUG: Error indicates HTML response instead of JSON.");
-        // The 'response' object from the try block is not directly in scope here.
-        // The original error message (err.message) already includes the problematic token,
-        // which is a strong indicator. This log helps confirm we've hit that specific scenario.
-      }
-      console.error('Network or parsing error:', err);
-      let message = 'An unexpected error occurred.';
-      if (err instanceof Error) {
-        message = err.message;
-      } else if (typeof err === 'string') {
-        message = err;
-      }
-      setError(message);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: message,
-      });
-      setPromptPackageResult(null);
-    } finally {
-      setIsLoading(false);
-    }
+        // No need to set local state for error, `hookError` will update
+      },
+    });
   };
 
   const LoadingSkeleton = () => (
@@ -130,30 +98,39 @@ export default function PromptToPrototypePage() {
           <CardTitle className="text-2xl text-primary-foreground">Start Your Creation</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          <PromptInput onSubmit={handleGenerate} isLoading={isLoading} />
+          {/* Pass handleFormSubmit directly to PromptInput */}
+          <PromptInput onSubmit={handleFormSubmit} isLoading={isLoading} />
         </CardContent>
       </Card>
 
       {isLoading && <LoadingSkeleton />}
 
-      {error && !isLoading && (
+      {hookError && !isLoading && (
          <Card className="mt-8 border-destructive bg-destructive/5 text-destructive"> {/* Lighter error bg */}
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle>An Error Occurred</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => setError(null)} aria-label="Dismiss error">
+            {/* Error state is now directly from the hook, no local dismiss function for hookError directly,
+                but re-submitting might clear it or it might persist until a successful call.
+                For a manual dismiss, one might need a separate local state flag if the hook doesn't auto-reset error.
+                Keeping it simple for now by just displaying the error.
+            */}
+            {/* <Button variant="ghost" size="sm" onClick={() => hookError = null} aria-label="Dismiss error">
               Dismiss
-            </Button>
+            </Button> */}
           </CardHeader>
           <CardContent>
-            <p>{error}</p>
+            <p>{hookError.message}</p>
           </CardContent>
         </Card>
       )}
 
-      {!isLoading && promptPackageResult && (
+      {/* Display PrototypeDisplay when data (generatedPrototypePackage) is available and not loading */}
+      {!isLoading && generatedPrototypePackage && (
         <div className="mt-10"> {/* Add more spacing before results */}
           <Separator className="my-8" />
-          <PrototypeDisplay promptPackage={promptPackageResult} />
+          {/* Ensure useGeneratePrototype returns the PromptPackage object as data */}
+          {/* And PrototypeDisplay expects a prop named promptPackage */}
+          <PrototypeDisplay promptPackage={generatedPrototypePackage} />
         </div>
       )}
     </div>
