@@ -14,7 +14,7 @@ The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools de
 -   **Community Showcase:** A space for creators to share their projects, get feedback, and connect with peers. (Basic portfolio functionality currently present)
 -   **Resources Hub:** A collection of links to essential tools, assets, and documentation for immersive content creation. (Vision as per documentation)
 -   **AI Script Analyzer:** Analyzes scripts to provide insights on pacing, character arcs, and potential plot holes. (Actively developed/present in UI)
--   **Prompt to Prototype:** Generates quick prototypes or visual concepts based on text prompts. (Actively developed/present in UI)
+-   **Prompt-to-Prototype Studio (Phase 1: Core Generation):** Generates a comprehensive set of creative assets (loglines, mood board, shot list, animatic description, pitch summary) from a user's prompt, optional image, and style preset. Results are stored in Firestore and Firebase Storage, with a JSON download option. (Actively developed/present in UI)
 -   **Production Board (Production-Gate Board):** Helps manage the production workflow, from pre-production to final output. (Actively developed/present in UI)
 -   **Real-Time Collaboration:** Allows multiple users to work together on creative projects in real-time.
 -   **Authentication and User Profiles:** Secure user accounts and personalized profiles for managing projects and contributions.
@@ -26,7 +26,10 @@ Follow these instructions to get a copy of the project up and running on your lo
 ### Prerequisites
 
 -   **Node.js**: Make sure you have Node.js installed. We recommend using the latest LTS version. You can download it from [nodejs.org](https://nodejs.org/).
--   **Firebase**: This project uses Firebase for its backend services. Ensure you have a Firebase project set up and have the necessary Firebase configuration files (e.g., `firebaseConfig.js` or environment variables) correctly integrated into the project.
+-   **Firebase**: This project uses Firebase for its backend services (Authentication, Firestore, Storage).
+    -   Ensure you have a Firebase project set up.
+    -   For backend functionalities like image uploads and data storage for the Prompt-to-Prototype Studio, you will need to configure Firebase Admin SDK credentials via environment variables. Refer to `src/lib/firebase/admin.ts` for the required variables (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_STORAGE_BUCKET`).
+    -   Client-side Firebase configuration will also be needed (typically in a Firebase config file or environment variables like `NEXT_PUBLIC_FIREBASE_...`).
 
 ### Installation
 
@@ -86,6 +89,20 @@ npm run typecheck
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details (if available). It is recommended to add a `LICENSE` file to the project root.
+
+## Prompt-to-Prototype Studio
+
+The Prompt-to-Prototype Studio is a key feature of ISL.SIXR.tv, designed to rapidly convert initial ideas into a tangible set of creative assets. Users can input a text prompt, optionally upload a reference image, and select a style preset. The studio then generates:
+
+-   Multiple loglines
+-   An AI-generated mood board image and 9 themed descriptive cells
+-   A detailed shot list
+-   An animatic description
+-   A concise pitch summary
+
+All generated data is bundled into a `PromptPackage`, which is stored in Firestore, with images saved to Firebase Cloud Storage. Users can also download this package as a JSON file.
+
+This feature is under active development. For detailed documentation on the current Phase 1 implementation, please see [Core Generation Pipeline Documentation](./docs/v1.1/core.md).
 
 ## ✨ Enhanced Feature Integration
 
