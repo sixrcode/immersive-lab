@@ -14,8 +14,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, LogOut, LayoutGrid } from 'lucide-react'; // Added LayoutGrid
-import { cn } from '@/lib/utils'; // Added LayoutGrid
+import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, LogOut, LayoutGrid } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { useEffect, useState } from 'react';
 
@@ -85,7 +85,6 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4 flex flex-col items-center">
         <Link href="/" className="flex flex-col items-center gap-2 mb-4">
-          {/* Text and new SIXR Logo */}
           <span className="flex items-center gap-2">
             <Image src="/images/sixr-logo.png" alt="SIXR Logo" width={32} height={32} />
             <h1 className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
