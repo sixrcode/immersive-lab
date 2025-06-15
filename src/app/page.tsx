@@ -152,6 +152,7 @@ export default function DashboardPage() {
                 height={120}  
                 data-ai-hint="SIXR logo" 
                 className="rounded-md shadow-sm"
+                style={{ height: 'auto' }}
               />
             </div>
             <p>
