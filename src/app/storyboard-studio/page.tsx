@@ -145,7 +145,7 @@ export default function StoryboardStudioPage() {
     try {
       await navigator.clipboard.writeText(textToCopy);
       toast({ title: `${itemName} Copied!`, description: `${itemName} has been copied.`, action: <CheckCircle className="text-green-500" /> });
-    } catch (err) {
+    } catch {
       toast({ title: "Copy Failed", description: `Could not copy ${itemName}. Please try again.`, variant: "destructive" });
     }
   };
