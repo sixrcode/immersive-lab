@@ -1,3 +1,4 @@
+
 # Immersive Storytelling Lab Platform (ISL.SIXR.tv)
 
 Forge the Future, One Story at a Time.
@@ -12,7 +13,21 @@ The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools de
 -   **Community Showcase:** A space for creators to share their projects, get feedback, and connect with peers. (Basic portfolio functionality currently present)
 -   **Resources Hub:** A collection of links to essential tools, assets, and documentation for immersive content creation. (Vision as per documentation)
 -   **AI Script Analyzer:** Analyzes scripts to provide insights on pacing, character arcs, and potential plot holes. (Actively developed/present in UI)
--   **Prompt to Prototype:** Generates quick prototypes or visual concepts based on text prompts. (Actively developed/present in UI)
+-   **Prompt to Prototype:**
+    *   **Current State:** (Actively developed/present in UI) This feature takes a user's textual prompt, an optional reference image, and an optional style preset to generate a comprehensive initial creative package. This package currently includes:
+        *   Multiple logline variants (exploring different tones).
+        *   A conceptual mood board featuring a single AI-generated representative image and nine detailed textual descriptions for thematic cells (e.g., character focus, environment, color palette).
+        *   A structured shot list (6-10 shots) with suggestions for lenses, camera moves, and framing.
+        *   A textual description for a 4-second proxy clip animatic.
+        *   A concise pitch summary for the project idea.
+        *   All textual assets are also available as a downloadable JSON bundle for easy handoff.
+    *   **Future Phases & Integration:**
+        *   **Storyboard Studio Link:** Generated shot lists or mood board cell descriptions could directly feed into the AI Storyboard Studio to visualize panels for each shot.
+        *   **Production Board Automation:** Successful prototypes could automatically create new project cards in the "Pitch & Concept" stage of the Production Board, attaching key assets like the pitch summary and mood board image.
+        *   **Enhanced Animatics:** Evolve the proxy clip animatic from a textual description to a simple AI-generated visual sequence (e.g., a GIF or series of frames).
+        *   **Iterative Refinement:** Allow users to regenerate or request variations for specific parts of the prototype package (e.g., new loglines, different mood board image) without redoing the entire set.
+        *   **Script Outline Generation:** Use generated loglines or pitch summaries as a basis to create initial script outlines, which can then be refined using the AI Script Analyzer.
+        *   **Collaboration:** Enable team members to view, comment on, and collaboratively refine generated prototypes.
 -   **Production Board (Production-Gate Board):** Helps manage the production workflow, from pre-production to final output. (Actively developed/present in UI)
 -   **Real-Time Collaboration:** Allows multiple users to work together on creative projects in real-time.
 -   **Authentication and User Profiles:** Secure user accounts and personalized profiles for managing projects and contributions.
@@ -84,3 +99,4 @@ npm run typecheck
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details (if available). It is recommended to add a `LICENSE` file to the project root.
+
