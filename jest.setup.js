@@ -21,7 +21,7 @@ jest.mock('next/font/google', () => ({
 // Mock for HTMLCanvasElement.toDataURL, if not provided by jsdom
 if (typeof HTMLCanvasElement !== 'undefined' && !HTMLCanvasElement.prototype.toDataURL) {
   HTMLCanvasElement.prototype.toDataURL = function (type?: string, quality?: any) {
-    return `data:image/png;base64,mocked_canvas_image_data_for_${type}_${quality}`;
+    return `data:image/png;base64,mocked_canvas_image_data_for_${type}_${quality}`; //NOSONAR
   };
 }
 
