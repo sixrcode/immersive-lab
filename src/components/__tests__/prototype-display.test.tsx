@@ -107,7 +107,7 @@ describe('PrototypeDisplay Component', () => {
 
     // Check Mood Board
     expect(screen.getByAltText('AI Generated Mood Board')).toHaveAttribute('src', mockPromptPackage.moodBoard.generatedImageURL);
-    mockPromptPackage.moodBoard.cells.forEach(cell => {
+    mockPromptPackage.moodBoard.cells.forEach((cell: MoodBoardCell) => {
       expect(screen.getByText(cell.title)).toBeInTheDocument();
       expect(screen.getByText(cell.description)).toBeInTheDocument();
     });
@@ -138,8 +138,8 @@ describe('PrototypeDisplay Component', () => {
   });
 
   it('handles "Download JSON" button click and triggers download', () => {
-    const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation(() => {});
-    const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(() => {});
+    const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation((node: Node) => node);
+    const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation((node: Node) => node);
 
     render(<PrototypeDisplay promptPackage={mockPromptPackage} />);
 

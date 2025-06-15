@@ -3,8 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   promptToPrototype,
   PromptToPrototypeInput,
-  PromptToPrototypeOutput, // Import this type
-} from '@/ai/flows/prompt-to-prototype'; // Corrected import to remove unused type
+  PromptToPrototypeInputSchema, // Added this
+  PromptToPrototypeOutput,
+} from '@/ai/flows/prompt-to-prototype';
 import type { PromptPackage, Logline, MoodBoardCell, Shot } from '@/lib/types';
 import { db, storage, firebaseAdminApp } from '@/lib/firebase/admin';
 import { dataUriToBuffer, DataUriParts } from '@/lib/utils'; // Data URI utility
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (db) {
       try {
         await db.collection('promptPackages').doc(newPromptPackage.id).set(newPromptPackage);
-      } catch (firestoreError: unknown) {
+      } catch (firestoreError: any) { // Changed unknown to any
         console.error('Failed to save PromptPackage to Firestore:', firestoreError);
         // Decide if this is critical. The client will still get the package, but it won't be saved.
         // Could return a specific error or a warning. For now, log and continue.
