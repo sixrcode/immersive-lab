@@ -95,6 +95,7 @@ function KanbanCardComponent({ card, columnId }: { card: KanbanCardType; columnI
             fill
             className="rounded-t-lg object-cover"
             data-ai-hint={card.dataAiHint || 'project image'}
+            sizes="320px"
            />
         </div>
       )}

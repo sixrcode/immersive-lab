@@ -636,6 +636,7 @@ export default function PromptToPrototypePage() {
                                             fill
                                             className="object-cover print-image"
                                             data-ai-hint="mood board concept"
+                                            sizes="100vw"
                                           />
                                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 no-print">
                                           {imageActionButtons()}
@@ -653,6 +654,7 @@ export default function PromptToPrototypePage() {
                                             alt="Generated Mood Board Representation - Full Size"
                                             fill
                                             className="object-contain"
+                                            sizes="768px"
                                           />
                                       </div>
                                        <div className="absolute top-4 right-14 flex items-center gap-1">
