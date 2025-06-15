@@ -253,7 +253,7 @@ export default function ScriptAnalyzerPage() {
             </Card>
           )}
            <p className="mt-8 text-xs text-muted-foreground text-center">
-              AI Output Transparency: Analysis and suggestions are AI-generated. The &quot;section&quot; for suggestions must be an exact verbatim quote from your script for &quot;Apply Suggestion&quot; to work correctly. Review and refine all changes.
+              AI Output Transparency: Analysis and suggestions are AI-generated. The &#34;section&#34; for suggestions must be an exact verbatim quote from your script for &#34;Apply Suggestion&#34; to work correctly. Review and refine all changes.
  </p>
         </div>
       )}
