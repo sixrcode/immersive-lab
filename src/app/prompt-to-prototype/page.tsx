@@ -45,11 +45,11 @@ interface ResultCardProps {
 
 const PLACEHOLDER_IMAGE_URL_TEXT = "Image+Gen+Failed";
 
+const moodBoardPositionalLabels = [
     "Top-Left", "Top-Center", "Top-Right",
     "Middle-Left", "Middle-Center", "Middle-Right",
     "Bottom-Left", "Bottom-Center", "Bottom-Right"
 ];
-
 
 function ResultCard({
   title,
