@@ -5,7 +5,7 @@ import {
   StoryboardPackage,
   Panel,
   // StoryboardStreamResponse // Will be imported from @isl/types
-} from '../../../../../types/src/storyboard.types'; // Adjust path as necessary if @isl/types alias is set up
+} from '../../../../types/src/storyboard.types'; // Adjust path as necessary if @isl/types alias is set up
 
 // Import the persistence functions
 import { uploadImageToStorage, saveStoryboardToFirestore } from '../persistence/firebaseService'; // Adjust path as necessary

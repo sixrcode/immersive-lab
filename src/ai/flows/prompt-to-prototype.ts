@@ -157,7 +157,7 @@ const promptToPrototypeFlow = ai.defineFlow(
     
     const imageGenPayload = {
         model: 'googleai/gemini-2.0-flash-exp',
-        prompt: [{text: imageGenPromptText}],
+        prompt: [{text: imageGenPromptText}] as PromptItem[],
         config: {
             responseModalities: ['TEXT', 'IMAGE'],
              safetySettings: [

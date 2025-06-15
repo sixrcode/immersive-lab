@@ -3,10 +3,20 @@
 // Inspired by react-hot-toast library
 import * as React from "react"
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast"
+// import type {
+//   ToastActionElement,
+//   ToastProps,
+// } from "@/components/ui/toast"
+
+import type { ToastActionElement, ToastProps as UiToastProps } from "@/components/ui/toast"; // Rename to avoid conflict
+
+export type ShowToastProps = UiToastProps & {
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: ToastActionElement;
+  // 'variant' is already part of UiToastProps via VariantProps<typeof toastVariants>
+};
+
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000
@@ -24,12 +34,13 @@ function genId() {
   return count.toString()
 }
 
-type Toast = ToastProps & {
-  id: string
-  title?: React.ReactNode
-  description?: React.ReactNode
-  action?: ToastActionElement
-}
+// Internal Toast type, merging ShowToastProps with required internal fields
+type Toast = ShowToastProps & {
+  id: string;
+  open: boolean; // Ensure open is part of the internal Toast type
+  onOpenChange: (open: boolean) => void; // Ensure onOpenChange is part of the internal Toast type
+};
+
 
 type ToastAction =
   | {
@@ -132,35 +143,38 @@ function dispatch(action: ToastAction) {
   })
 }
 
-function toast({ ...props }: ToastProps) {
-  const id = genId()
+function toast({ ...props }: ShowToastProps) {
+  const id = genId(); // Generate ID for the new toast
 
-  const update = (props: ToastProps) =>
+  // The update function for this specific toast instance
+  const updateToast = (updateProps: Partial<ShowToastProps>) =>
     dispatch({
       type: actionTypes.UPDATE_TOAST,
-      toast: { ...props, id },
-    })
+      toast: { ...updateProps, id },
+    });
 
-  const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id })
+  // The dismiss function for this specific toast instance
+  const dismissToast = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
 
   dispatch({
     type: actionTypes.ADD_TOAST,
     toast: {
-      ...props,
-      id,
+      ...props, // Spread all properties from ShowToastProps (title, description, variant, etc.)
+      id,       // Assign the generated ID
       open: true,
       onOpenChange: (open) => {
-        if (!open) dismiss()
+        if (!open) dismissToast(); // Use the specific dismiss for this toast
       },
     },
-  })
+  });
 
   return {
-    id,
-    dismiss,
-    update,
-  }
+    id: id,
+    dismiss: dismissToast,
+    update: updateToast,
+  };
 }
+
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)

@@ -102,7 +102,7 @@ const storyboardGeneratorFlow = ai.defineFlow(
       try {
         const { media } = await ai.generate({
           model: 'googleai/gemini-2.0-flash-exp',
-          prompt: imagePrompt,
+          prompt: [{ text: imagePrompt }],
           config: {
             responseModalities: ['IMAGE'], 
              safetySettings: [
@@ -112,7 +112,6 @@ const storyboardGeneratorFlow = ai.defineFlow(
               { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
             ],
           },
-          timeout: 30000, 
         });
 
         if (media && media.url) {

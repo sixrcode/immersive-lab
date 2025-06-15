@@ -7,7 +7,7 @@
 import {
   StoryboardPackage,
   Panel
-} from '../../../../../types/src/storyboard.types'; // Adjust path as necessary
+} from '../../../../types/src/storyboard.types'; // Adjust path as necessary
 
 // Mock Firebase config - replace with your actual config
 const firebaseConfig = {
