@@ -7,6 +7,7 @@
  * - promptToPrototype - A function that handles the prompt to prototype process.
  * - PromptToPrototypeInput - The input type for the promptToPrototype function.
  * - PromptToPrototypeOutput - The return type for the promptToPrototype function.
+ * - PromptToPrototypeInputSchema - The Zod schema for the input.
  */
 
 type PromptItem = { text: string } | { media: { url: string } };
@@ -14,7 +15,7 @@ type PromptItem = { text: string } | { media: { url: string } };
 import {ai} from '@/ai/genkit';
 import {z}from 'zod';
 
-const PromptToPrototypeInputSchema = z.object({
+export const PromptToPrototypeInputSchema = z.object({
   prompt: z.string().describe('A single prompt describing the desired project.'),
   imageDataUri: z.string().optional().describe(
     "An optional image provided by the user, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
@@ -245,3 +246,5 @@ const promptToPrototypeFlow = ai.defineFlow(
     }
   }
 );
+
+    
