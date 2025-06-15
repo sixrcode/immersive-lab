@@ -2,11 +2,11 @@
 "use client";
 
 import type { PortfolioItemType } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Film, PlayCircle, Eye, Share2, CalendarDays, Clock } from "lucide-react";
+import { Film, PlayCircle, Share2, CalendarDays, Clock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const mockPortfolioItems: PortfolioItemType[] = [

@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Drama, Settings, LogOut, LayoutGrid, Edit2 } from 'lucide-react'; // Added LayoutGrid
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'; // Added LayoutGrid
 import { Skeleton } from '../ui/skeleton';
 import { useEffect, useState } from 'react';
 
