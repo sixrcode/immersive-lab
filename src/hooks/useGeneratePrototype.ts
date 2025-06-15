@@ -13,7 +13,8 @@ export interface PromptPackage {
 }
 
 export const useGeneratePrototype = () => {
-  return useMutation<string, Error, PromptPackage>(async (promptPackage) => {
+  return useMutation<string, Error, PromptPackage>({
+    mutationFn: async (promptPackage) => {
     const response = await fetch("/api/prototype/generate", {
       method: "POST",
       headers: {
@@ -46,5 +47,6 @@ export const useGeneratePrototype = () => {
       // Handle cases where response.json() fails (e.g., not valid JSON)
       throw new Error("Failed to parse JSON response");
     }
+  },
   });
 };
