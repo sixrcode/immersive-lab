@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -128,7 +127,7 @@ export default function DashboardPage() {
                 <CardDescription className="text-base">{feature.description}</CardDescription>
               </CardContent>
               <CardFooter>
-                <Link href={feature.href} passHref legacyBehavior>
+                <Link href={feature.href}>
                   <Button variant="default" className="w-full bg-primary hover:bg-primary/90">
                     Go to {feature.title} <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -174,4 +173,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-    
