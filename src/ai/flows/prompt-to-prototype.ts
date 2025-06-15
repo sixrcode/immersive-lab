@@ -140,8 +140,9 @@ const promptToPrototypeFlow = ai.defineFlow(
     outputSchema: PromptToPrototypeOutputSchema,
   },
   async (input: PromptToPrototypeInput): Promise<PromptToPrototypeOutput> => {
-    // Task 1: Generate textual components
-    const textGenerationTask = textGenerationPrompt(input);
+    try {
+      // Task 1: Generate textual components
+      const textGenerationTask = textGenerationPrompt(input);
 
     // Task 2: Generate a single representative mood board image
     let imageGenPromptText = `Generate a single piece of concept art or a visual summary that captures the overall essence, style, and atmosphere for a project based on: '${input.prompt}'.`;
@@ -238,5 +239,9 @@ const promptToPrototypeFlow = ai.defineFlow(
     output.allTextAssetsJsonString = JSON.stringify(allTextAssets, null, 2);
     
     return output;
+    } catch (error) {
+      console.error("Error within promptToPrototypeFlow:", error);
+      throw error; // Re-throw the error to be caught by the API route
+    }
   }
 );
