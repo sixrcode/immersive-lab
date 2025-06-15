@@ -106,10 +106,11 @@ export function AppSidebar() {
                   asChild
                   tooltip={{ children: item.label, side: 'right', align: 'center' }}
                 >
-                  <>
+                  <span className="flex items-center w-full">
                     <item.icon className="h-5 w-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                  </>
+                    <span className="group-data-[collapsible=icon]:hidden ml-2">{item.label}</span>
+                  </span>
+
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
