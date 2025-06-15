@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/sidebar';
 import { AppHeader } from '@/components/layout/header';
@@ -10,6 +11,9 @@ import { cn } from '@/lib/utils';
 
 const geistSans = GeistSans;
 const geistMono = GeistMono;
+
+// Create a new QueryClient instance
+const queryClient = new QueryClient();
 
 export const metadata: Metadata = {
   title: 'Immersive Storytelling Lab',
@@ -31,16 +35,18 @@ export default function RootLayout({
         )}
         suppressHydrationWarning={true}
       >
-        <SidebarProvider>
-          <AppSidebar />
-          <div className="flex flex-col flex-1 min-h-screen">
-            <AppHeader />
-            <main className="flex-1 p-4 md:p-6 lg:p-8">
-              {children}
-            </main>
-          </div>
-        </SidebarProvider>
-        <Toaster />
+        <QueryClientProvider client={queryClient}>
+          <SidebarProvider>
+            <AppSidebar />
+            <div className="flex flex-col flex-1 min-h-screen">
+              <AppHeader />
+              <main className="flex-1 p-4 md:p-6 lg:p-8">
+                {children}
+              </main>
+            </div>
+          </SidebarProvider>
+          <Toaster />
+        </QueryClientProvider>
       </body>
     </html>
   );
