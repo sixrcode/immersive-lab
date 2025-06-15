@@ -67,8 +67,8 @@ function PortfolioCard({ item }: { item: PortfolioItemType }) {
         <Image 
           src={item.imageUrl} 
           alt={item.title} 
-          layout="fill" 
-          objectFit="cover"
+          fill
+          className="object-cover"
           data-ai-hint={item.dataAiHint} 
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>

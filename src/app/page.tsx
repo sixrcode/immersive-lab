@@ -111,8 +111,9 @@ export default function DashboardPage() {
                 <NextImage 
                   src={feature.generatedImgSrc || feature.baseImgSrc} 
                   alt={feature.title} 
-                  layout="fill" 
-                  objectFit="cover" 
+                  fill
+                  className="object-cover"
+                  priority={feature.aiHint === "creative ideas"}
                   data-ai-hint={feature.aiHint}
                   unoptimized={!!(feature.generatedImgSrc && feature.generatedImgSrc.startsWith('data:'))} 
                 />
