@@ -5,7 +5,6 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from 'lucide-react';
-import Link from 'next/link';
 import { AppSidebar } from './sidebar'; // Import AppSidebar for mobile view
 
 export function AppHeader() {
