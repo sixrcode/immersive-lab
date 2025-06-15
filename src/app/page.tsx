@@ -116,6 +116,7 @@ export default function DashboardPage() {
                   priority={feature.aiHint === "creative ideas"}
                   data-ai-hint={feature.aiHint}
                   unoptimized={!!(feature.generatedImgSrc && feature.generatedImgSrc.startsWith('data:'))} 
+                  sizes="(min-width: 768px) 50vw, 100vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-4">
@@ -149,7 +150,6 @@ export default function DashboardPage() {
                 src="/images/sixr-logo.png" 
                 alt="SIXR Logo"
                 width={120} 
-                height={120}  
                 data-ai-hint="SIXR logo" 
                 className="rounded-md shadow-sm"
                 style={{ height: 'auto' }}

@@ -70,6 +70,7 @@ function PortfolioCard({ item }: { item: PortfolioItemType }) {
           fill
           className="object-cover"
           data-ai-hint={item.dataAiHint} 
+  sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
         <div className="absolute bottom-4 left-4 right-4">
