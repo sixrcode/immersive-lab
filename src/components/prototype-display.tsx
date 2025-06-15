@@ -8,8 +8,6 @@ import { Button } from './ui/button'; // Already imported
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Separator } from './ui/separator';
 
-// Placeholder for a Refresh Icon. If lucide-react is available, this could be replaced.
-const RefreshIcon = () => (
 // Placeholder for a Refresh Icon.
 const RefreshIcon = () => (
   // Using a simple text or a unicode character for now if SVG is too verbose for diff
