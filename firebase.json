@@ -10,18 +10,12 @@
     "rewrites": [
       {
         "source": "/api/**",
-        "run": {
-          "serviceId": "your-isl-sixr-tv-cloud-run-service-id",
-          "region": "your-cloud-run-region"
-        }
-      },
-      {
-        "source": "**",
-        "run": {
-          "serviceId": "your-isl-sixr-tv-cloud-run-service-id",
-          "region": "your-cloud-run-region"
-        }
+        "function": "api"
       }
     ]
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18"
   }
 }
