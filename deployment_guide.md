@@ -16,26 +16,20 @@ firebase deploy --only functions
 *   `--only functions`: This flag specifies that you only want to deploy features related to Cloud Functions. If you have other Firebase services initialized (like Hosting, Firestore rules), this flag ensures only your functions are affected by this deployment.
 *   **What it does**: This command will look for function definitions, typically in your `functions/index.js` file (or as configured in the `functions.source` property in `firebase.json`). It then packages up your functions code and its dependencies (from `functions/package.json`) and uploads them to the Firebase Cloud Functions environment. Firebase then provisions the necessary infrastructure to run your functions.
 
-## 2. Deploying Specific Functions
 
-If you have multiple functions defined but only want to update one or a few, you can specify them in the deploy command. This can be faster than deploying all functions.
+## 2. Deploying Specific Functions (Recommended for Faster Deployments)
 
-*   **To deploy a single specific function (e.g., only the `api` function):**
+If you only want to deploy a single function (e.g., if you've only made changes to the `api` function), you can specify it to speed up deployment:
+```bash
+firebase deploy --only functions:api
+```
+To deploy multiple specific functions, but not all of them (e.g., `api` and `helloWorld`):
+```bash
+firebase deploy --only functions:api,functions:helloWorld
+```
+This is often faster than deploying all functions, especially as your project grows.
+(Note: The general syntax is `functions:functionName`. The function name corresponds to how it's exported in your `index.js`, e.g., `exports.api = ...` means the function name is `api`.)
 
-    ```bash
-    firebase deploy --only functions:api
-    ```
-
-*   **To deploy multiple specific functions (e.g., `api` and `helloWorld`):**
-
-    ```bash
-    firebase deploy --only functions:api,functions:helloWorld
-    ```
-    (Note: The syntax might also be `firebase deploy --only functions:api --only functions:helloWorld` depending on CLI version and preference, but the comma-separated list is common for targeting multiple items within a service.)
-
-**Explanation:**
-
-*   `functions:functionName`: By appending a colon and the function name (as exported in your `index.js`, e.g., `exports.api = ...` means the function name is `api`), you tell Firebase to only deploy that specific function.
 
 ## 3. Accessing Deployed Functions
 
