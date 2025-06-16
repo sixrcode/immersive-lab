@@ -16,6 +16,7 @@ firebase deploy --only functions
 *   `--only functions`: This flag specifies that you only want to deploy features related to Cloud Functions. If you have other Firebase services initialized (like Hosting, Firestore rules), this flag ensures only your functions are affected by this deployment.
 *   **What it does**: This command will look for function definitions, typically in your `functions/index.js` file (or as configured in the `functions.source` property in `firebase.json`). It then packages up your functions code and its dependencies (from `functions/package.json`) and uploads them to the Firebase Cloud Functions environment. Firebase then provisions the necessary infrastructure to run your functions.
 
+
 ## 2. Deploying Specific Functions (Recommended for Faster Deployments)
 
 If you only want to deploy a single function (e.g., if you've only made changes to the `api` function), you can specify it to speed up deployment:
@@ -28,6 +29,7 @@ firebase deploy --only functions:api,functions:helloWorld
 ```
 This is often faster than deploying all functions, especially as your project grows.
 (Note: The general syntax is `functions:functionName`. The function name corresponds to how it's exported in your `index.js`, e.g., `exports.api = ...` means the function name is `api`.)
+
 
 ## 3. Accessing Deployed Functions
 
