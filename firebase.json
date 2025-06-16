@@ -1,0 +1,27 @@
+
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "your-isl-sixr-tv-cloud-run-service-id",
+          "region": "your-cloud-run-region"
+        }
+      },
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "your-isl-sixr-tv-cloud-run-service-id",
+          "region": "your-cloud-run-region"
+        }
+      }
+    ]
+  }
+}
