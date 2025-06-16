@@ -63,10 +63,10 @@ app.get('/items/:id', authenticate, (req, res) => {
 
 // Expose Express app as a single Firebase Function
 // This function will handle all routes defined in the app
-exports.api = functions.https.onRequest(app);
+exports.api = functions.region('us-west1').https.onRequest(app);
 
 // Example of another simple function (not using Express)
-exports.helloWorld = functions.https.onRequest((request, response) => {
+exports.helloWorld = functions.region('us-west1').https.onRequest((request, response) => {
   functions.logger.info("Hello logs!", {structuredData: true});
   response.send("Hello from Firebase!");
 });
