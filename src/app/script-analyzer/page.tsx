@@ -1,8 +1,8 @@
 
 "use client";
 
-import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/ai/flows/ai-script-analyzer";
-import { analyzeScript } from "@/ai/flows/ai-script-analyzer";
+import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/lib/ai-types"; // Updated import
+// import { analyzeScript } from "@/ai/flows/ai-script-analyzer"; // Removed direct import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -19,6 +19,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type AnalyzeScriptOutputSuggestion = AnalyzeScriptOutput extends { suggestions: Array<infer S> } ? S : never;
 
+
+// Placeholder function to represent getting the current user's ID token
+// In a real app, this would use Firebase client SDK, e.g.,
+// import { getAuth } from "firebase/auth";
+// const auth = getAuth();
+// const user = auth.currentUser;
+// if (user) { const idToken = await user.getIdToken(); }
+async function getCurrentUserIdToken(): Promise<string | null> {
+  console.warn("getCurrentUserIdToken: Using placeholder ID token. Real Firebase client authentication required for this to work.");
+  // This is a placeholder and will not work for actual authenticated calls.
+  // Replace with actual Firebase client SDK logic to get the ID token.
+  return "dummy-placeholder-id-token";
+}
 
 const formSchema = z.object({
   script: z.string().min(50, "Script must be at least 50 characters long."),
@@ -41,9 +54,38 @@ export default function ScriptAnalyzerPage() {
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
     setResults(null);
+
+    const idToken = await getCurrentUserIdToken();
+    if (!idToken) {
+      toast({
+        title: "Authentication Error",
+        description: "Could not get user token. Please ensure you are logged in.",
+        variant: "destructive",
+        action: <XCircle className="text-red-500" />,
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const input: AnalyzeScriptInput = { script: values.script };
-      const output = await analyzeScript(input);
+      const response = await fetch('/api/script-analyzer/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        // Use errorData.details from microservice if available, else errorData.error, else generic message
+        const errorMessage = errorData.details || errorData.error || `Request failed with status ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const output: AnalyzeScriptOutput = await response.json();
       setResults(output);
       toast({
         title: "Script Analysis Complete!",
@@ -51,10 +93,10 @@ export default function ScriptAnalyzerPage() {
         action: <CheckCircle className="text-green-500" />,
       });
     } catch (error) {
-      console.error("Error analyzing script:", error);
+      console.error("Error analyzing script via API:", error);
       toast({
         title: "Error Analyzing Script",
-        description: "Failed to analyze script. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to analyze script. Please try again.",
         variant: "destructive",
         action: <XCircle className="text-red-500" />,
       });

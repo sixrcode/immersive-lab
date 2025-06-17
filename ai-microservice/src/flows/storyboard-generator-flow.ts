@@ -1,5 +1,3 @@
-
-'use server';
 /**
  * @fileOverview An AI agent for generating storyboards from scene descriptions.
  *
@@ -8,7 +6,7 @@
  * - StoryboardGeneratorOutput - The return type for the generateStoryboard function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai} from '../genkit';
 import {z} from 'genkit';
 
 const StoryboardPanelSchema = z.object({
