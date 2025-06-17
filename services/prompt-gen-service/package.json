@@ -1,0 +1,22 @@
+{
+  "name": "prompt-gen-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@genkit-ai/ai": "^1.12.0",
+    "@genkit-ai/core": "^1.12.0",
+    "@genkit-ai/googleai": "^1.12.0",
+    "@google-cloud/functions-framework": "^4.0.0",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.4.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.67"
+  }
+}
