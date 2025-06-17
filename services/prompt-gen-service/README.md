@@ -1,6 +1,20 @@
 # Prompt Generation Microservice
 
-This service is responsible for taking a user's prompt, an optional image, and an optional style preset, and generating a suite of creative assets for prototyping. This includes loglines, mood board concepts (textual descriptions and a generated image), shot lists, an animatic description, and a pitch summary.
+This service powers the "Prompt to Prototype" feature of the ISL.SIXR.tv platform. Originally part of the main application monolith, it has been refactored into a standalone microservice to encapsulate all core AI logic (via Genkit flows) and image processing (including Firebase Storage uploads).
+
+It is responsible for taking a user’s prompt—along with an optional image and style preset—and generating a suite of creative assets for rapid prototyping. These assets include:
+
+Loglines
+
+Mood board concepts (text + generated image)
+
+Shot lists
+
+An animatic description
+
+A pitch summary
+
+This separation improves scalability, modularity, and focused resource allocation for AI-intensive tasks.
 
 It uses Express.js as the server framework and Genkit with Google AI for its core AI functionalities. Firebase Admin SDK is used for interacting with Firebase Storage to store generated images.
 
