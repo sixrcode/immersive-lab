@@ -1,18 +1,38 @@
+
 {
   "name": "functions",
   "version": "1.0.0",
-  "description": "",
+  "description": "Cloud Functions for Firebase",
   "main": "index.js",
-  "scripts": {
-    "test": "mocha --reporter spec **/*.test.js --exit"
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^5.0.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "chai": "^5.2.0",
     "firebase-functions-test": "^3.4.1",
     "mocha": "^11.6.0",
     "sinon": "^21.0.0"
-  }
+  },
+  "scripts": {
+    "test": "mocha --reporter spec **/*.test.js --exit",
+    "lint": "eslint .",
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "keywords": [
+    "firebase",
+    "cloud-functions"
+  ],
+  "author": "",
+  "license": "ISC",
+  "private": true
 }
