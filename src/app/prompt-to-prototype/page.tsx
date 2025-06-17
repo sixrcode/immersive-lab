@@ -34,7 +34,7 @@ export default function PromptToPrototypePage() {
     if (submissionData.imageDataUri) {
       promptPackageForHook.params = { ...promptPackageForHook.params, imageDataUri: submissionData.imageDataUri };
     }
-    if (Object.keys(promptPackageForHook.params).length === 0) {
+    if (Object.keys(promptPackageForHook.params || {}).length === 0) {
       delete promptPackageForHook.params; // Remove params if empty, as per original hook structure
     }
 
