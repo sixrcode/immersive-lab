@@ -15,24 +15,23 @@ interface DocumentEditorProps {
   projectId: string | null; // Needed to join the correct socket room
 }
 
+// Debounce function - Moved outside the component
+const debounce = <F extends (...args: unknown[]) => unknown>(func: F, waitFor: number) => {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return (...args: Parameters<F>): void => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => func(...args), waitFor);
+  };
+};
+
 const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }) => {
   const [document, setDocument] = useState<Document | null>(null);
   const [content, setContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
-
-  // Debounce function
-  const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    return (...args: Parameters<F>): Promise<ReturnType<F>> =>
-      new Promise(resolve => {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
-        timeout = setTimeout(() => resolve(func(...args)), waitFor);
-      });
-  };
 
   // Initialize socket connection
   useEffect(() => {
@@ -89,7 +88,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
         }
         const data: Document = await response.json();
         setDocument(data);
-        setContent(data.content);
+        setContent(data.content || ''); // Ensure content is string
       } catch (err: any) {
         setError(err.message || 'An unknown error occurred.');
         console.error("Error fetching document:", err);
@@ -112,7 +111,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
         });
       }
     }, 500), // 500ms debounce time
-    [socket, documentId, projectId]
+    [socket, documentId, projectId, debounce]
   );
 
   const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {

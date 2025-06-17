@@ -80,7 +80,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ projectId, currentUserId, curre
       newSocket.emit('leaveProject', projectId);
       newSocket.disconnect();
     };
-  }, [projectId]);
+  }, [projectId, socket]);
 
   // Scroll to bottom of messages
   useEffect(() => {

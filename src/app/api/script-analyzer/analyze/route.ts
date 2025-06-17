@@ -43,7 +43,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!microserviceResponse.ok) {
       let errorBody = null;
       try {
-        errorBody = await microserviceResponse.json();
+        errorBody = await microserviceResponse.json(); // Corrected variable name
       } catch (e) { /* Ignore */ }
       console.error('Error from AI microservice (analyzeScript):', microserviceResponse.status, errorBody);
       return NextResponse.json(

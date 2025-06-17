@@ -2,14 +2,12 @@
 
 import React from 'react';
 import { PromptInput } from '@/components/prompt-input';
-import { PrototypeDisplay } from '@/components/prototype-display';
-import { PromptPackage as PagePromptPackage } from '@/lib/types'; // Alias existing import
+import { PrototypeDisplay } from '@/components/prototype-display'; // Keep this import
 import { useToast } from '@/hooks/use-toast';
 import { useGeneratePrototype, type GeneratePrototypeHookInput } from "@/hooks/useGeneratePrototype"; // Import the hook
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
 
 export default function PromptToPrototypePage() {
@@ -18,7 +16,6 @@ export default function PromptToPrototypePage() {
   const {
     mutate: generatePrototypeMutate, // Renamed to avoid conflict if a handleGenerate function wrapper is kept
     data: generatedPrototypePackage, // This will be PromptPackageAPIOutput | undefined from the hook
-    isPending, // Changed from isLoading
     error: hookError, // This is Error | null
   } = useGeneratePrototype();
 
@@ -39,7 +36,7 @@ export default function PromptToPrototypePage() {
     }
 
     generatePrototypeMutate(promptPackageForHook, {
-      onSuccess: (data) => { // data here is the result from the mutationFn, assumed to be HookPromptPackage
+      onSuccess: () => { // data here is the result from the mutationFn, assumed to be HookPromptPackage
         toast({
           title: 'Prototype Generated!',
           description: 'Your new prototype is ready below.',
