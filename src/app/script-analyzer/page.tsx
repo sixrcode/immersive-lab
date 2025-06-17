@@ -1,8 +1,10 @@
 
 "use client";
 
+
 import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/lib/ai-types"; // Updated import
 // import { analyzeScript } from "@/ai/flows/ai-script-analyzer"; // Removed direct import
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -10,8 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle, Copy } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import { useForm } from "react-hook-form";
+// Import Firebase auth to get ID token
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import firebaseApp from "@/lib/firebase"; // Assuming firebaseApp is initialized and exported from here
 import { z } from "zod";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,7 +47,16 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ScriptAnalyzerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<AnalyzeScriptOutput | null>(null);
+  const [currentUser, setCurrentUser] = useState<firebase.default.User | null>(null); // To store user
   const { toast } = useToast();
+  const auth = getAuth(firebaseApp);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe(); // Cleanup subscription
+  }, [auth]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -60,6 +74,7 @@ export default function ScriptAnalyzerPage() {
       toast({
         title: "Authentication Error",
         description: "Could not get user token. Please ensure you are logged in.",
+
         variant: "destructive",
         action: <XCircle className="text-red-500" />,
       });
@@ -83,6 +98,7 @@ export default function ScriptAnalyzerPage() {
         // Use errorData.details from microservice if available, else errorData.error, else generic message
         const errorMessage = errorData.details || errorData.error || `Request failed with status ${response.status}`;
         throw new Error(errorMessage);
+
       }
 
       const output: AnalyzeScriptOutput = await response.json();
@@ -92,6 +108,7 @@ export default function ScriptAnalyzerPage() {
         description: "Review the analysis and suggestions below.",
         action: <CheckCircle className="text-green-500" />,
       });
+
     } catch (error) {
       console.error("Error analyzing script via API:", error);
       toast({
