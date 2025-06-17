@@ -1,7 +1,8 @@
 
 "use client";
 
-import { generateStoryboard, type StoryboardGeneratorInput, type StoryboardGeneratorOutput } from "@/ai/flows/storyboard-generator-flow";
+// import { generateStoryboard } from "@/ai/flows/storyboard-generator-flow"; // Removed direct import
+import type { StoryboardGeneratorInput, StoryboardGeneratorOutput } from "@/lib/ai-types"; // Updated import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -61,6 +62,12 @@ const formSchema = z.object({
 // Infer the type for form values from the local schema
 type FormValues = z.infer<typeof formSchema>;
 
+// Placeholder function to represent getting the current user's ID token
+async function getCurrentUserIdToken(): Promise<string | null> {
+  console.warn("getCurrentUserIdToken: Using placeholder ID token. Real Firebase client authentication required for this to work.");
+  return "dummy-placeholder-id-token"; // Replace with actual Firebase client SDK logic
+}
+
 
 export default function StoryboardStudioPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -84,13 +91,41 @@ export default function StoryboardStudioPage() {
   async function onSubmit(values: FormValues) { // values are now of type FormValues
     setIsLoading(true);
     setResults(null);
+
+    const idToken = await getCurrentUserIdToken();
+    if (!idToken) {
+      toast({
+        title: "Authentication Error",
+        description: "Could not get user token. Please ensure you are logged in.",
+        variant: "destructive",
+        action: <XCircle className="text-red-500" />,
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Ensure numPanels is sent as a number, matching StoryboardGeneratorInput
-      const inputToFlow: StoryboardGeneratorInput = {
+      const inputToApi: StoryboardGeneratorInput = {
         ...values,
-        numPanels: Number(values.numPanels) || 6, // Ensure it's a number, default to 6
+        numPanels: Number(values.numPanels) || 6,
       };
-      const output = await generateStoryboard(inputToFlow);
+
+      const response = await fetch('/api/storyboard-studio/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(inputToApi),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        const errorMessage = errorData.details || errorData.error || `Request failed with status ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const output: StoryboardGeneratorOutput = await response.json();
       setResults(output);
       toast({
         title: "Storyboard Generated!",
@@ -98,7 +133,7 @@ export default function StoryboardStudioPage() {
         action: <CheckCircle className="text-green-500" />,
       });
     } catch (error) {
-      console.error("Error generating storyboard:", error);
+      console.error("Error generating storyboard via API:", error);
       let errorMessage = "Failed to generate storyboard. Please try again.";
       if (error instanceof Error) {
         errorMessage = error.message;
