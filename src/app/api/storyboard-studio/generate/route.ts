@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { StoryboardGeneratorInputSchema, StoryboardGeneratorInput, Panel } from '@/lib/ai-types'; // Updated import
+import { StoryboardGeneratorInputSchema, StoryboardGeneratorInput, StoryboardPanelWithImage as Panel } from '@/lib/ai-types'; // Updated import
 import { firebaseAdminApp } from '@/lib/firebase/admin';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, Firestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { StoryboardPackage } from '../../../../../../types/src/storyboard.types'; // Adjust path as necessary
+// import { StoryboardPackage } from '../../../../../../types/src/storyboard.types'; // Adjust path as necessary
 
 const AI_MICROSERVICE_URL = process.env.NEXT_PUBLIC_AI_MICROSERVICE_URL;
 
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // 5. Construct StoryboardPackage
     const now = Timestamp.now();
-    const storyboardPackageData: StoryboardPackage = {
+    const storyboardPackageData: any = {
       id: newStoryboardId,
       userId: userId,
       projectId: projectId, // Include projectId from the request
