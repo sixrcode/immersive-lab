@@ -98,7 +98,7 @@ describe('/api/prototype/generate API Endpoint', () => {
     return new NextRequest(new URL(req.url || '/', 'http://localhost').toString(), {
         // Pass the body as a string or ReadableStream if simulating real request more closely
         method: req.method as any, // Cast to any to satisfy NextRequest type
-        headers: req.headers,
+ headers: req.headers as Headers,
         body: body ? JSON.stringify(body) : null, //node-mocks-http doesn't stringify
     }) as unknown as NextRequest;
 }

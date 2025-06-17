@@ -17,8 +17,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
-  DialogClose, // Might not be explicitly used if controlling open state manually
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -315,7 +313,7 @@ export default function ProductionBoardPage() {
     setColumns(prevColumns => {
       let cardToMove: KanbanCardType | undefined;
       let newColumns = [...prevColumns]; // Create a mutable copy
-
+ 
       // Find and remove card from source column
       const sourceColIndex = newColumns.findIndex(col => col.id === sourceColumnId);
       if (sourceColIndex === -1) return prevColumns; // Source column not found
