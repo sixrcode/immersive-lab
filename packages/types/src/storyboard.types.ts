@@ -31,6 +31,7 @@ export interface StoryboardPackage {
   createdAt: string; // ISO timestamp of when the storyboard package was created
   updatedAt: string; // ISO timestamp of when the storyboard package was last updated
   userId?: string; // Identifier for the user who created the storyboard
+  projectId: string; // ID of the project this storyboard belongs to
   // Add any other storyboard-level metadata here
 }
 
