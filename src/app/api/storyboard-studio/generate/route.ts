@@ -44,7 +44,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       let errorBody = null;
       try {
         errorBody = await microserviceResponse.json();
-      } catch (e) { /* Ignore */ }
+      } catch { /* Ignore */ }
       console.error('Error from AI microservice (generateStoryboard):', microserviceResponse.status, errorBody);
       return NextResponse.json(
         { error: 'AI service request failed (storyboard generation).', details: errorBody || microserviceResponse.statusText },

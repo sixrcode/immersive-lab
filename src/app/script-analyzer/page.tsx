@@ -65,7 +65,6 @@ export default function ScriptAnalyzerPage() {
   });
 
   async function onSubmit(values: FormValues) {
-    setIsLoading(true);
     setResults(null);
 
 const idToken = await getCurrentUserIdToken();
@@ -76,38 +75,35 @@ if (!idToken) {
     description: "You must be logged in to analyze scripts.",
     variant: "destructive", // Optional: adjust styling if your toast system supports it
   });
+      setIsLoading(false);
+    setIsLoading(true);
   return;
 }
 
-        variant: "destructive",
-        action: <XCircle className="text-red-500" />,
-      });
-      setIsLoading(false);
-      return;
+  try {
+    const input: AnalyzeScriptInput = { script: values.script };
+    const response = await fetch("/api/script-analyzer/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        message: "Unknown error occurred",
+      }));
+      const errorMessage =
+        errorData.details || errorData.error || `Request failed with status ${response.status}`;
+      throw new Error(errorMessage);
     }
 
-    try {
-const input: AnalyzeScriptInput = { script: values.script };
+    const output: AnalyzeScriptOutput = await response.json();
+    setResults(output);
 
-const response = await fetch('/api/script-analyzer/analyze', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${idToken}`,
-  },
-  body: JSON.stringify(input),
-});
 
-if (!response.ok) {
-  const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-  const errorMessage =
-    errorData.details || errorData.error || `Request failed with status ${response.status}`;
-  throw new Error(errorMessage);
-}
-      }
-
-      const output: AnalyzeScriptOutput = await response.json();
-      setResults(output);
       toast({
         title: "Script Analysis Complete!",
         description: "Review the analysis and suggestions below.",

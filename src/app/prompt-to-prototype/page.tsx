@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { PromptInput } from '@/components/prompt-input';
 import { PrototypeDisplay } from '@/components/prototype-display';
 import { PromptPackage as PagePromptPackage } from '@/lib/types'; // Alias existing import

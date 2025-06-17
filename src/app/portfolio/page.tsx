@@ -83,6 +83,7 @@ export default function PortfolioPage() {
         // Map _id to id for frontend consistency if PortfolioItemType expects 'id'
         // Also ensure all essential fields for PortfolioCard are present, providing fallbacks if necessary.
         data = data.map((item: any) => ({
+ ...(item as PortfolioItemType), // Explicitly cast item to PortfolioItemType
           ...item,
           id: item._id || item.id, // Use _id from mongo, or id if already present
           imageUrl: item.imageUrl || "https://placehold.co/600x900.png", // Fallback image
