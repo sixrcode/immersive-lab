@@ -19,6 +19,15 @@ The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools de
 -   **Real-Time Collaboration:** Allows multiple users to work together on creative projects in real-time.
 -   **Authentication and User Profiles:** Secure user accounts and personalized profiles for managing projects and contributions.
 
+## System Architecture
+
+The ISL.SIXR.tv platform employs a modern web architecture:
+
+-   **Frontend & BFF (Backend-For-Frontend):** The primary application is built with Next.js, serving both as the user interface and a backend layer that handles user authentication, data management with Firestore, and orchestration of calls to other services.
+-   **AI Microservice (`prompt-gen-service`):** For computationally intensive AI-based generation tasks, specifically the "Prompt-to-Prototype" feature, the system delegates work to a separate Node.js microservice. This service is located in the `services/prompt-gen-service` directory. This approach ensures that the main Next.js application remains responsive and scalable, while the specialized AI tasks are handled by a dedicated service that can be scaled independently. The Next.js backend communicates with this microservice via HTTP requests.
+
+This separation of concerns allows for more focused development, independent scaling of components, and robustness.
+
 ## Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
@@ -66,6 +75,16 @@ ISL.SIXR.tv is built with a modern tech stack designed for scalability and a ric
 -   **Radix UI (implicitly):** Used via a component library like shadcn/ui, providing a foundation of unstyled, accessible UI components.
 -   **TypeScript:** A typed superset of JavaScript that enhances code quality and maintainability.
 -   **Vercel:** Used for deployment and managing serverless functions, ensuring high availability and performance.
+
+## Microservices
+
+The ISL.SIXR.tv platform is evolving to incorporate a microservices architecture for specialized tasks. This allows for more focused development, deployment, and scaling of individual components.
+
+### Prompt Generation Service (`prompt-gen-service`)
+
+-   **Location:** `services/prompt-gen-service`
+-   **Description:** This service is responsible for handling the core AI-driven generation of creative assets (loglines, mood boards, shot lists, etc.) based on user prompts. It's built with Node.js, Express, and Genkit.
+-   **Documentation:** For more details on its setup, environment variables, and API, please see its dedicated [README.md](./services/prompt-gen-service/README.md).
 
 ## Deployment: Firebase Hosting & Cloud Run Strategy
 
