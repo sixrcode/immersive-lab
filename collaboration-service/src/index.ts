@@ -1,6 +1,8 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
+import './firebaseAdmin'; // Initialize Firebase Admin SDK
 import mongoose from 'mongoose';
 import http from 'http';
+import { authenticate } from './middleware/auth'; // Import authentication middleware
 import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
 

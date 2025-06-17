@@ -1,7 +1,9 @@
+require('../firebaseAdmin'); // Initialize Firebase Admin SDK
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config(); // Load environment variables
+const { authenticate } = require('../middleware/auth'); // Import authentication middleware
 
 const app = express(); // Define app
 const port = process.env.PORT || 3000;
@@ -19,6 +21,8 @@ app.get('/', (req, res) => {
 const portfolioRoutes = require('../routes/portfolio');
 
 // Use routes
+// Apply authentication middleware before portfolio routes
+app.use('/portfolio', authenticate);
 app.use('/portfolio', portfolioRoutes);
 
 // Conditionally start server and connect to DB
