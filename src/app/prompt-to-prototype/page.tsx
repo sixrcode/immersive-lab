@@ -5,7 +5,7 @@ import { PromptInput } from '@/components/prompt-input';
 import { PrototypeDisplay } from '@/components/prototype-display';
 import { PromptPackage as PagePromptPackage } from '@/lib/types'; // Alias existing import
 import { useToast } from '@/hooks/use-toast';
-import { useGeneratePrototype, PromptPackage as HookPromptPackage } from "@/hooks/useGeneratePrototype"; // Import the hook
+import { useGeneratePrototype, type GeneratePrototypeHookInput } from "@/hooks/useGeneratePrototype"; // Import the hook
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,13 +17,13 @@ export default function PromptToPrototypePage() {
 
   const {
     mutate: generatePrototypeMutate, // Renamed to avoid conflict if a handleGenerate function wrapper is kept
-    data: generatedPrototypePackage, // This should be HookPromptPackage | undefined
-    isLoading,
+    data: generatedPrototypePackage, // This will be PromptPackageAPIOutput | undefined from the hook
+    isPending, // Changed from isLoading
     error: hookError, // This is Error | null
   } = useGeneratePrototype();
 
   const handleFormSubmit = (submissionData: { prompt: string; imageDataUri?: string; stylePreset?: string }) => {
-    const promptPackageForHook: HookPromptPackage = {
+    const promptPackageForHook: GeneratePrototypeHookInput = { // Changed type to GeneratePrototypeHookInput
       inputs: [{ prompt: submissionData.prompt }],
       params: {}, // Initialize params
     };
@@ -99,13 +99,13 @@ export default function PromptToPrototypePage() {
         </CardHeader>
         <CardContent className="p-6">
           {/* Pass handleFormSubmit directly to PromptInput */}
-          <PromptInput onSubmit={handleFormSubmit} isLoading={isLoading} />
+          <PromptInput onSubmit={handleFormSubmit} isLoading={isPending} />
         </CardContent>
       </Card>
 
-      {isLoading && <LoadingSkeleton />}
+      {isPending && <LoadingSkeleton />}
 
-      {hookError && !isLoading && (
+      {hookError && !isPending && (
          <Card className="mt-8 border-destructive bg-destructive/5 text-destructive"> {/* Lighter error bg */}
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle>An Error Occurred</CardTitle>
@@ -125,7 +125,7 @@ export default function PromptToPrototypePage() {
       )}
 
       {/* Display PrototypeDisplay when data (generatedPrototypePackage) is available and not loading */}
-      {!isLoading && generatedPrototypePackage && (
+      {!isPending && generatedPrototypePackage && (
         <div className="mt-10"> {/* Add more spacing before results */}
           <Separator className="my-8" />
           {/* Ensure useGeneratePrototype returns the PromptPackage object as data */}

@@ -1,9 +1,10 @@
-
 export interface KanbanCardType {
   id: string;
   title: string;
   description?: string;
   stage: string; 
+  columnId?: string; // ID of the column the card is in
+  orderInColumn?: number; // Order of the card within its column
   // Optional: Add tags, assignee, priority, etc.
   tags?: string[];
   priority?: 'low' | 'medium' | 'high';
@@ -59,4 +60,10 @@ export interface PortfolioItemType {
   duration?: string; // e.g., "5 min", "12 episodes"
   datePublished?: string;
   dataAiHint?: string;
+}
+
+export interface PromptToPrototypeInput {
+  prompt: string;
+  imageDataUri?: string; // Base64 encoded image
+  stylePreset?: string;
 }
