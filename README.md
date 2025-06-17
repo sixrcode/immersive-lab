@@ -4,6 +4,47 @@
 
 Forge the Future, One Story at a Time.
 
+## Table of Contents
+
+- [Features](#features)
+- [System Architecture](#system-architecture)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Running the Development Server](#running-the-development-server)
+  - [Environment Variables Nextjs App](#environment-variables-nextjs-app)
+- [Tech Stack](#tech-stack)
+- [Microservices Architecture](#microservices-architecture)
+  - [Prompt Generation Service servicesprompt-gen-service](#prompt-generation-service-servicesprompt-gen-service)
+  - [Centralized AI Microservice ai-microservice](#centralized-ai-microservice-ai-microservice)
+  - [AI Script Analyzer functions](#ai-script-analyzer-functions)
+  - [Collaboration Service collaboration-service](#collaboration-service-collaboration-service)
+  - [Portfolio Microservice portfolio-microservice](#portfolio-microservice-portfolio-microservice)
+- [Deployment: Firebase Hosting & Cloud Run Strategy](#deployment-firebase-hosting--cloud-run-strategy)
+  - [Feature Comparison](#feature-comparison)
+  - [When to Use Which or Both](#when-to-use-which-or-both)
+  - [Example Setup Combine Firebase Hosting--Cloud-Run](#example-setup-combine-firebase-hosting--cloud-run)
+  - [Trade-offs--Tips](#trade-offs--tips)
+  - [TLDR Choose Based On](#tldr-choose-based-on)
+  - [What to Do Next](#what-to-do-next)
+- [Future Improvements](#future-improvements)
+  - [Enhanced AI Capabilities](#enhanced-ai-capabilities)
+  - [Broader Platform Integrations](#broader-platform-integrations)
+  - [Performance and Scalability](#performance-and-scalability)
+  - [Expanded Community Features](#expanded-community-features)
+  - [User Experience UX and Accessibility](#user-experience-ux-and-accessibility)
+- [Development Phases](#development-phases)
+  - [Overall Platform Development Phases](#overall-platform-development-phases)
+  - [Microservice Development Phases](#microservice-development-phases)
+- [Contributing](#contributing)
+  - [Contribution Process](#contribution-process)
+- [License](#license)
+- [Prompt-to-Prototype Studio](#prompt-to-prototype-studio)
+  - [Future Phases--Integrations](#future-phases--integrations)
+- [Enhanced Feature Integration](#enhanced-feature-integration)
+  - [Prompt-to-Prototype Studio Handoff Features](#prompt-to-prototype-studio-handoff-features)
+  - [Workflow Example](#workflow-example)
+
 ISL.SIXR.tv is the digital home of the Immersive Storytelling Lab, a project by SIXR aimed at empowering underrepresented youth and independent creators to master immersive storytelling techniques using VR, XR, AI filmmaking, and open-source creative tools.
 
 ## Features
@@ -24,6 +65,40 @@ The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools de
 The ISL.SIXR.tv platform employs a modern web architecture:
 
 -   **Frontend & BFF (Backend-For-Frontend):** The primary application is built with Next.js, serving both as the user interface and a backend layer that handles user authentication, data management with Firestore, and orchestration of calls to other services.
+
+Below is a textual representation of the system components and their interactions:
+
+```text
++-------------------------------------------------------------------------------------------------+
+|                                     User (Creator)                                              |
++-------------------------------------------------------------------------------------------------+
+      |                                           ^
+      | (Interacts via Web Browser)               | (Views Content, Manages Projects)
+      v                                           |
++-------------------------------------------------------------------------------------------------+
+|                                Next.js Frontend (Vercel/Firebase Hosting)                       |
+|  - UI Components                                                                                |
+|  - User Authentication (Client-side)                                                            |
+|  - BFF (Backend-For-Frontend API Routes)                                                        |
++---------------------------------|------------------------------^--------------------------------+
+      |                             |                              |
+      | (Firebase SDK)              | (API Calls)                  | (Serves Static Assets)
+      v                             v                              |
++-----------------------------+  +---------------------------------------------------------------+
+| Firebase Services           |  |                            Microservices                      |
+|  - Authentication           |  | (Cloud Run / Firebase Functions)                              |
+|  - Firestore (Database)     |  +---------------------------------------------------------------+
+|  - Storage (File Uploads)   |        |               ^               |               ^
+|  - Hosting (Static Assets)  |        | (Data)        | (Requests)    | (Data)        | (Requests)
++-----------------------------+        v               |               v               |
+                               +-------------------+  +-------------------+  +-------------------+
+                               | Prompt Generation |  | Storyboard        |  | Script Analyzer   |
+                               | (Genkit Flow)     |  | (Genkit Flow)     |  | (Genkit Flow)     |
+                               +--------|----------+  +--------|----------+  +--------|----------+
+                                        |                      |                      |
+                                        +--------->------------+--------->------------+
+                                                  (Creative Data Flow)
+```
 
 ## Getting Started
 
@@ -82,6 +157,51 @@ Before running the Next.js application, ensure you have a `.env.local` file in t
 
 Replace `"your_..."` placeholders with your actual Firebase project configuration values.
 
+## 🧪 Testing
+
+This section outlines how to run tests, the frameworks used, and general testing guidelines for the ISL.SIXR.tv platform.
+
+### Running Tests
+
+-   **Root Project Tests:** To run all tests defined in the root project (primarily frontend component tests and potentially integration tests), use the following command from the project root:
+    ```bash
+    npm run test
+    ```
+-   **Microservice-Specific Tests:** Some microservices have their own dedicated test suites. To run these, navigate to the microservice directory and execute its test command (typically also `npm run test` if a `test` script is defined in its `package.json`):
+    ```bash
+    # Example for ai-microservice
+    cd ai-microservice
+    npm run test
+    cd ..
+
+    # Example for collaboration-service
+    cd collaboration-service
+    npm run test
+    cd ..
+
+    # Check other microservices like functions/, portfolio-microservice/ for their specific testing setups.
+    ```
+
+### Frameworks
+
+-   **Jest:** The primary JavaScript testing framework used across the project for both frontend and backend tests. You'll find Jest configuration files (e.g., `jest.config.js`) in the root directory and within several microservice directories.
+-   **React Testing Library:** Used for testing React components in the Next.js frontend, encouraging tests that interact with components as a user would.
+
+### Test Coverage
+
+-   Developers are encouraged to write tests for new features and bug fixes to maintain good test coverage.
+-   To generate a test coverage report, you might be able to use a flag with the test command, such as:
+    ```bash
+    npm run test -- --coverage
+    ```
+    (Note: The exact command for coverage might vary based on Jest configuration in different packages.)
+
+### Types of Tests
+
+-   **Unit Tests:** These form the majority of tests, focusing on individual functions, modules, or components. Examples can be found in `src/components/__tests__/` for frontend components and within specific microservice test directories like `ai-microservice/index.test.js`.
+-   **Integration/Flow Validation Tests:** Some tests might cover the interaction between multiple units or validate entire flows. For example, tests in `functions/test/` or `portfolio-microservice/routes/portfolio.test.js` might perform more integrated testing of API endpoints or specific flows.
+-   **End-to-End Tests (Future Consideration):** While not explicitly detailed, end-to-end tests using frameworks like Cypress or Playwright could be a future addition for testing complete user flows through the UI.
+
 ## Tech Stack
 
 ISL.SIXR.tv is built with a modern tech stack designed for scalability and a rich user experience:
@@ -94,11 +214,55 @@ ISL.SIXR.tv is built with a modern tech stack designed for scalability and a ric
 -   **TypeScript:** A typed superset of JavaScript that enhances code quality and maintainability.
 -   **Vercel:** Used for deployment and managing serverless functions, ensuring high availability and performance.
 
+## 📦 API Contracts & Shared Types
+
+Maintaining clear API contracts and consistent data structures across the platform is crucial for interoperability between the frontend, backend (Next.js BFF), and various microservices.
+
+-   **Shared Type Definitions:**
+    -   Core platform-wide data structures and type definitions are primarily located in `src/lib/types.ts`.
+    -   Specific packages or modules may also have their own type definitions, for example, shared types related to the Storyboard feature can be found in `packages/types/src/storyboard.types.ts`.
+    -   These files serve as a key source of truth for data contracts, ensuring consistency in the data exchanged between different parts of the system.
+
+-   **API Endpoint Contracts (Future: OpenAPI):**
+    -   Currently, API contract details for microservices are often described within their respective `README.md` files or inferred from their implementation and the shared type definitions.
+    -   We plan to expose OpenAPI (Swagger) specifications for all AI and core microservice endpoints in the future. This will facilitate clearer API contracts, easier integration, automated client generation, and improved discoverability of service capabilities.
+
+## 🔐 Authentication & Roles
+
+The platform uses Firebase Authentication to manage user identities and access control. Role-based access ensures that users have appropriate permissions based on their defined roles.
+
+### Authentication Methods
+
+-   **Firebase Authentication:** Core authentication is handled by Firebase.
+    -   **Email/Password:** Users can sign up and log in using their email address and a password.
+    -   **Google OAuth:** Users can also authenticate using their existing Google accounts for a streamlined experience.
+-   **JWT for Service Access:** Upon successful authentication, Firebase ID tokens (JWTs) are issued to clients. These tokens are then sent as Bearer tokens in the `Authorization` header when making requests to protected backend endpoints, particularly the AI microservices (e.g., Centralized AI Microservice).
+
+### User Roles
+
+The platform defines the following user roles to differentiate access and capabilities:
+
+-   **`youth`:** Represents young creators using the platform to learn and develop projects. They typically have access to learning resources, content creation tools, and their own project spaces.
+-   **`mentor`:** Represents educators or experienced individuals guiding youth users. They might have additional permissions to review youth projects, provide feedback, and manage groups.
+-   **`admin`:** Represents platform administrators with full access to manage users, content, platform settings, and monitor overall activity.
+
+Role management is typically handled via Firebase custom claims, which are set on user accounts and can be used in security rules (Firestore) and backend logic to enforce permissions.
+
+### Key Authentication Logic
+
+-   **Client-Side Setup:** Configuration and handling of Firebase authentication on the client-side (e.g., sign-in flows, user state management) are primarily managed in `src/lib/firebase/client.ts`.
+-   **Server-Side Admin Tasks:** Firebase Admin SDK operations, such as token verification and management of custom claims for roles, are handled in `src/lib/firebase/admin.ts`.
+-   **Role-Based Access Control (RBAC):** RBAC is implemented within specific API routes (e.g., in Next.js BFF) and microservices, checking user roles (derived from JWT claims) before allowing access to certain functionalities or data.
+
 ## Microservices Architecture
 
-The ISL.SIXR.tv platform employs a modular, microservices-based architecture to ensure scalability, focused development, and independent deployment of its diverse functionalities. This approach is particularly beneficial for managing AI-intensive workflows and real-time collaborative features. Below is an overview of the key microservices:
+The ISL.SIXR.tv platform employs a modular, microservices-based architecture to ensure scalability, focused development, and independent deployment of its diverse functionalities. This approach is particularly beneficial for managing AI-intensive workflows, real-time collaborative features, and production support tools. Below is an overview of the key microservices, grouped by their primary function:
 
-### Prompt Generation Service (`services/prompt-gen-service/`)
+### AI Microservices
+
+These services are responsible for the core AI-driven functionalities of the platform, including content generation, analysis, and AI model orchestration.
+
+#### Prompt Generation Service (`services/prompt-gen-service/`)
 
 *   **Purpose:** Handles the core AI-driven generation of creative assets such as loglines, mood boards, shot lists, and pitch summaries based on user prompts. It is responsible for all AI-driven content generation and image processing tasks related to the Prompt-to-Prototype Studio.
 *   **Key Technologies:** Node.js, Express, Genkit
@@ -107,12 +271,12 @@ The ISL.SIXR.tv platform employs a modular, microservices-based architecture to 
     *   This service operates independently from the main web application.
     *   Its architectural separation ensures the main Next.js application remains responsive and lightweight, allows the AI microservice to be deployed, monitored, and scaled independently, and maintains clear boundaries between user interface/backend logic and AI model orchestration.
     *   Communication with the frontend is handled via HTTP requests from the Next.js backend, which also manages authentication, Firestore storage, and user session context.
-    *   For detailed setup, environment variables, and API reference, see the `README.md` within its directory.
+    *   For detailed setup, environment variables, and API reference, see the [Prompt Generation Service README](./services/prompt-gen-service/README.md).
 
-### Centralized AI Microservice (`ai-microservice/`)
+#### Centralized AI Microservice (`ai-microservice/`)
 
-*   **Purpose:** Acts as a primary API gateway for a range of AI functionalities beyond prompt generation. It manages Genkit flows, orchestrates communication with various AI models (e.g., Gemini via Google AI), and processes structured input from different frontend features.
-*   **Key Technologies:** Firebase Function, Node.js, Express
+*   **Purpose:** Acts as a primary API gateway for a range of AI functionalities beyond prompt generation. It manages Genkit flows, orchestrates communication with various AI models (e.g., Gemini via Google AI), and processes structured input from different frontend features. It serves as the backend for the Prompt-to-Prototype Studio, AI Script Analyzer, and Storyboard Studio.
+*   **Key Technologies:** Firebase Function, Node.js, Express, Genkit
 *   **Location:** `ai-microservice/`
 *   **Authentication:** All endpoints require a valid Firebase ID token (Authorization: Bearer <token>).
 *   **Endpoints:**
@@ -123,28 +287,48 @@ The ISL.SIXR.tv platform employs a modular, microservices-based architecture to 
 *   **Deployment:**
     *   Deploy using the command: `firebase deploy --only functions:aiApi`
     *   The resulting URL should be set as the `NEXT_PUBLIC_AI_MICROSERVICE_URL` environment variable in the Next.js application.
-*   **Note:** This service centralizes common AI tasks and model interactions, providing a consistent interface for the frontend.
+*   **Note:** This service centralizes common AI tasks and model interactions, providing a consistent interface for the frontend. For more details, see the [Centralized AI Microservice README](./ai-microservice/README.md).
 
-### AI Script Analyzer (`functions/`)
+#### AI Script Analyzer (`functions/`)
 
 *   **Purpose:** Analyzes textual scripts to provide users with insights on narrative elements such as pacing, character development, and potential plot inconsistencies.
-*   **Key Technologies:** Firebase Function
+*   **Key Technologies:** Firebase Function (core logic invoked by Centralized AI Microservice)
 *   **Location:** The core logic resides in `functions/src_copy/ai/flows/ai-script-analyzer.ts`, with the endpoint defined in `functions/index.js`. It is invoked via the Centralized AI Microservice's `/analyzeScript` endpoint.
-*   **Note:** This microservice provides specialized AI analysis for scriptwriting, integrating with the Centralized AI Microservice for API exposure.
+*   **Note:** This microservice provides specialized AI analysis for scriptwriting, integrating with the Centralized AI Microservice for API exposure. For an overview of functions in this directory, see the [Firebase Functions README](./functions/README.md).
 
-### Collaboration Service (`collaboration-service/`)
+### Collaboration & Community
+
+These services focus on enabling user interaction, project sharing, and collaborative workflows.
+
+#### Collaboration Service (`collaboration-service/`)
 
 *   **Purpose:** Enables real-time collaboration features for users working concurrently on creative projects. This can include functionalities like shared document editing, synchronized project states, and potentially real-time chat or presence indicators.
 *   **Key Technologies:** Node.js, Express, Docker (containerization for deployment)
 *   **Location:** `collaboration-service/`
 *   **Note:** This service is crucial for team-based projects, allowing multiple creators to contribute and interact seamlessly.
 
-### Portfolio Microservice (`portfolio-microservice/`)
+#### Portfolio Microservice (`portfolio-microservice/`)
 
 *   **Purpose:** Manages user portfolios and project showcases. It allows creators to publish their work (both completed and in-progress), receive feedback from the community, and build their public profiles on the ISL.SIXR.tv platform.
 *   **Key Technologies:** Node.js, Express
 *   **Location:** `portfolio-microservice/`
-*   **Note:** This service supports the community aspect of the platform, enabling users to share and discover creative projects.
+*   **Note:** This service supports the community aspect of the platform, enabling users to share and discover creative projects. For more details, see the [Portfolio Microservice README](./portfolio-microservice/README.md).
+
+### Production Support
+
+These services provide tools and functionalities to aid in the planning, organization, and execution of creative projects.
+
+#### Production Board Service
+*   **Purpose:** Manages and visualizes the production workflow, from pre-production stages (like concept development and scriptwriting) through to final output. Helps track project status and tasks.
+*   **Key Technologies:** (To be detailed - likely Next.js components interacting with Firestore)
+*   **Location:** (To be detailed - likely part of the core Next.js application logic or a dedicated microservice if planned for separation)
+*   **Note:** This service is integral to the Production-Gate Board feature, providing a Kanban-style or similar interface for project management.
+
+#### Storyboard Studio
+*   **Purpose:** Enables the creation and visualization of storyboards. It can import data from the Prompt-to-Prototype Studio (like shot lists and style presets) and uses AI to generate storyboard images.
+*   **Key Technologies:** Utilizes Genkit-powered AI functions within the Centralized AI Microservice (via the `/generateStoryboard` endpoint) for image generation. Frontend components for displaying and managing storyboard panels.
+*   **Location:** Logic primarily handled by the Centralized AI Microservice, with UI components in the Next.js application.
+*   **Note:** This tool is designed to bridge the gap between textual descriptions/shot lists and visual storytelling, facilitating pre-visualization. It is a key part of the "Prompt-to-Prototype Studio Handoff Features".
 
 ## Deployment: Firebase Hosting & Cloud Run Strategy
 
@@ -232,6 +416,37 @@ This lets Hosting handle static assets, CDN, SSL, and rewrites `/api` to your co
 4.  **Watch latency & cold starts**; optimize container images (e.g. Alpine, Go, caching layers).
 
 Mixing Firebase Hosting with Cloud Run gives you the best of both worlds—fast static delivery, global SSL/CDN, and backend flexibility in containers. If that aligns with SIXR’s mission—empowering creators with style and scale—this combo is a strong play.
+
+## 🚀 CI/CD & Deployment Pipeline
+
+This section outlines the continuous integration, continuous delivery (CI/CD), and deployment pipeline for the ISL.SIXR.tv platform. The goal is to automate testing and deployment processes to ensure reliability and efficiency.
+
+-   **Automation Tool:**
+    -   **GitHub Actions:** The project plans to use GitHub Actions for automating CI/CD workflows. This includes running tests on pull requests to the main branch and orchestrating deployments upon merges to the main branch. (Note: Full configuration is currently in progress or "coming soon").
+
+-   **Environments:**
+    -   **Development:** Local developer setups and feature branches.
+    -   **Staging (Planned/To Be Detailed):** A staging or pre-production environment is typically used to test features in a production-like setting before deploying to live users. Specifics for this project are yet to be detailed.
+    -   **Production:** The live environment accessible to all users, deployed from the main branch.
+
+-   **Deployment Tools & Processes:**
+    -   **Next.js Frontend (Vercel/Firebase Hosting):** The Next.js application is deployed using Vercel for its frontend hosting capabilities, or alternatively via Firebase Hosting. Deployments are expected to be automated via GitHub Actions.
+    -   **Firebase Services (Functions, Firestore Rules, Hosting Config):** The Firebase CLI (`firebase deploy`) is used for deploying Firebase Functions, Firestore security rules, and Firebase Hosting configurations. This is often integrated into CI/CD scripts. For example, the Centralized AI Microservice is deployed using `firebase deploy --only functions:aiApi`.
+    -   **Microservices (Cloud Run):**
+        -   **Containerization:** Microservices designed for Cloud Run (like the Collaboration Service, which mentions Docker) are containerized using Docker.
+        -   **Deployment:** Deployment to Cloud Run is typically handled via `gcloud` CLI commands, which can be scripted in GitHub Actions. This involves building the Docker image, pushing it to a container registry (like Google Container Registry - GCR), and then deploying a new revision to Cloud Run.
+
+-   **General Workflow (Anticipated):**
+    1.  Developers work on features in separate branches.
+    2.  Pull requests are created to merge features into the main branch.
+    3.  GitHub Actions automatically run tests (unit, integration) on these PRs.
+    4.  Upon successful tests and code review, PRs are merged into `main`.
+    5.  (Future) GitHub Actions trigger deployment scripts:
+        *   Builds and deploys the Next.js frontend to Vercel/Firebase Hosting.
+        *   Deploys Firebase Functions and configurations.
+        *   Builds Docker images for relevant microservices and deploys them to Cloud Run.
+
+This setup aims to provide a robust pipeline for delivering updates and new features to the ISL.SIXR.tv platform.
 
 ## Future Improvements
 
