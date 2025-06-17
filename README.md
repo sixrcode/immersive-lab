@@ -55,6 +55,27 @@ npm run dev
 ```
 This will typically start the server on `http://localhost:9002` (or another port if configured).
 
+### Environment Variables (Next.js App)
+
+Before running the Next.js application, ensure you have a `.env.local` file in the root of the Next.js project with the following variables:
+
+-   **Firebase Client SDK Configuration:**
+    -   `NEXT_PUBLIC_FIREBASE_API_KEY="your_api_key"`
+    -   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="your_auth_domain"`
+    -   `NEXT_PUBLIC_FIREBASE_PROJECT_ID="your_project_id"`
+    -   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="your_storage_bucket"`
+    -   `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="your_messaging_sender_id"`
+    -   `NEXT_PUBLIC_FIREBASE_APP_ID="your_app_id"`
+-   **Firebase Admin SDK Configuration (for server-side operations in Next.js API routes, if any remain that are not offloaded to the microservice):**
+    -   `FIREBASE_PROJECT_ID="your_project_id"`
+    -   `FIREBASE_CLIENT_EMAIL="your_firebase_admin_client_email"`
+    -   `FIREBASE_PRIVATE_KEY="your_firebase_admin_private_key"` (Ensure newlines are correctly formatted, e.g., by using `\n` in the string or by using base64 encoding)
+    -   `FIREBASE_STORAGE_BUCKET="your_storage_bucket_name"`
+-   **AI Microservice URL:**
+    -   `NEXT_PUBLIC_AI_MICROSERVICE_URL="your_ai_microservice_functions_url"` (e.g., `https://us-central1-your-project-id.cloudfunctions.net/aiApi`)
+
+Replace `"your_..."` placeholders with your actual Firebase project configuration values.
+
 ## Tech Stack
 
 ISL.SIXR.tv is built with a modern tech stack designed for scalability and a rich user experience:
@@ -66,6 +87,42 @@ ISL.SIXR.tv is built with a modern tech stack designed for scalability and a ric
 -   **Radix UI (implicitly):** Used via a component library like shadcn/ui, providing a foundation of unstyled, accessible UI components.
 -   **TypeScript:** A typed superset of JavaScript that enhances code quality and maintainability.
 -   **Vercel:** Used for deployment and managing serverless functions, ensuring high availability and performance.
+
+## AI Microservice (`ai-microservice/`)
+
+To centralize and manage AI-powered functionalities, the platform utilizes a dedicated AI microservice.
+
+-   **Purpose:** This microservice houses all AI-related logic, including Genkit flows, interactions with AI models (e.g., Google AI via Gemini), and related data processing. This separation improves modularity, scalability, and maintainability of AI features.
+-   **Implementation:** It is implemented as a Firebase Function built with Node.js and Express.js. This allows for easy deployment and scaling within the Firebase ecosystem.
+-   **Authentication:** All endpoints exposed by the AI microservice require Firebase Authentication. Requests must include a valid Firebase ID token in the `Authorization: Bearer <token>` header.
+-   **Source Code:** The code for this microservice resides in the `ai-microservice/` directory at the root of the repository.
+
+### Exposed API Endpoints
+
+The AI microservice exposes its functionalities via a single Firebase Function (`aiApi`), which internally routes requests using Express. The base URL for this function will be similar to `https://<region>-<project-id>.cloudfunctions.net/aiApi`. The following endpoints are available:
+
+-   `POST /analyzeScript`: Accepts script content and returns an AI-driven analysis.
+    -   Request body should match `AnalyzeScriptInput` schema.
+    -   Response will be a `ScriptAnalysisPackage` object.
+-   `POST /promptToPrototype`: Takes a user prompt (and optional image/style) and generates a comprehensive prototype package (loglines, mood board, shot list, etc.).
+    -   Request body should match `PromptToPrototypeInput` schema.
+    -   Response will be a `PromptPackage` object with generated content and URLs to images stored in Firebase Storage.
+-   `POST /generateStoryboard`: Generates storyboard panels based on a scene description.
+    -   Request body should match `StoryboardGeneratorInput` schema.
+    -   Response will be a `StoryboardPackage` object, including URLs to panel images stored in Firebase Storage.
+
+All AI-driven features in the Next.js application (such as the Prompt-to-Prototype Studio, AI Script Analyzer, and Storyboard Studio) now make authenticated HTTP requests to these microservice endpoints instead of calling AI flows directly.
+
+### Deployment of AI Microservice
+
+The AI microservice function needs to be deployed as part of your Firebase setup.
+-   Ensure you have the Firebase CLI installed and configured.
+-   From the root of the repository, you can deploy the function using:
+    ```bash
+    firebase deploy --only functions:aiApi
+    ```
+    (If you have multiple function groups or a different function name, adjust accordingly. The `firebase.json` is configured to deploy functions from the `ai-microservice` directory as part of the `aiApi` group/name).
+-   After deployment, the Firebase CLI will output the URL for the `aiApi` function. This URL should be used for the `NEXT_PUBLIC_AI_MICROSERVICE_URL` environment variable in the Next.js application.
 
 ## Deployment: Firebase Hosting & Cloud Run Strategy
 
@@ -179,7 +236,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Prompt-to-Prototype Studio
 
-The Prompt-to-Prototype Studio is a key feature of ISL.SIXR.tv, designed to rapidly convert initial ideas into a tangible set of creative assets. Users can input a text prompt, optionally upload a reference image, and select a style preset. The studio then generates:
+The Prompt-to-Prototype Studio is a key feature of ISL.SIXR.tv, designed to rapidly convert initial ideas into a tangible set of creative assets. Users can input a text prompt, optionally upload a reference image, and select a style preset. The backend logic for generating these assets is handled by the **AI Microservice**. The studio then receives and displays:
 
 -   Multiple loglines (targeting different tones, influenced by the style preset).
 -   An AI-generated mood board image (inspired by the prompt, image, and style).
@@ -188,9 +245,9 @@ The Prompt-to-Prototype Studio is a key feature of ISL.SIXR.tv, designed to rapi
 -   An animatic description for a 4-second proxy clip, outlining key visuals and pacing, influenced by the style.
 -   A concise pitch summary, capturing the core concept and tone.
 
-All generated data is bundled into a `PromptPackage`, which is stored in Firestore, with images (user-uploaded and AI-generated) saved to Firebase Cloud Storage. Users can also download this package as a JSON file.
+All generated data is bundled into a `PromptPackage`, which is created and stored in Firestore by the AI microservice. Images (user-uploaded and AI-generated) are also handled by the microservice and saved to Firebase Cloud Storage, with their URLs included in the `PromptPackage`. The Next.js application receives this package and allows users to view the content and download it as a JSON file.
 
-This feature is under active development. For detailed documentation on the current Phase 1 implementation, please see [Core Generation Pipeline Documentation](./docs/v1.1/core.md).
+This feature is under active development. For detailed documentation on the current Phase 1 implementation, please see [Core Generation Pipeline Documentation](./docs/v1.1/core.md). The AI logic itself resides in the `ai-microservice/src/flows/prompt-to-prototype.ts` flow.
 
 ### Future Phases & Integrations:
 
@@ -213,13 +270,13 @@ This phased approach ensures that the Prompt-to-Prototype Studio becomes a deepl
 ### Prompt-to-Prototype Studio Handoff Features
 
 #### ➤ Storyboard Studio Integration
-- Converts generated shot lists into visual storyboard panels.
+- Converts generated shot lists into visual storyboard panels. (Handled by the AI Microservice's `/generateStoryboard` endpoint)
 - Auto-fills style and panel details from prototype data.
-- Generates storyboard images using Genkit-powered AI functions.
+- Generates storyboard images using Genkit-powered AI functions within the AI Microservice.
 
 #### ➤ Script & Dialogue Analyzer Integration
 - Transforms logline, shot list, and animatic description into a script draft.
-- AI analyzes tone, clarity, and dialogue strength.
+- AI analyzes tone, clarity, and dialogue strength. (Handled by the AI Microservice's `/analyzeScript` endpoint)
 - Editable script interface with in-line suggestions.
 
 ### Workflow Example

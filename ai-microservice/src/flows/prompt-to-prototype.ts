@@ -1,6 +1,3 @@
-
-'use server';
-
 /**
  * @fileOverview Turns a single prompt (and optional image/style) into mood boards, loglines, shot-lists, proxy clips, and a pitch summary.
  *
@@ -12,7 +9,7 @@
 
 type PromptItem = { text: string } | { media: { url: string } };
 
-import {ai} from '@/ai/genkit';
+import {ai} from '../genkit';
 import {z}from 'zod';
 
 export const PromptToPrototypeInputSchema = z.object({
