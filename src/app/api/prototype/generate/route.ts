@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { NextRequest, NextResponse } from 'next/server';
-import { PromptToPrototypeInputSchema, type PromptToPrototypeInput } from '@/ai/flows/prompt-to-prototype';
-import type { PromptPackage, Logline, MoodBoardCell, Shot } from '@/lib/types';
+// import { PromptToPrototypeInputSchema, type PromptToPrototypeInput } from '@/ai/flows/prompt-to-prototype';
+import type { PromptPackage, Logline, MoodBoardCell, Shot, PromptToPrototypeInput } from '@/lib/types'; // Assuming PromptToPrototypeInput will be here or defined locally
+import { z } from 'zod'; // Import Zod
 import { db, firebaseAdminApp } from '@/lib/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
 /**
@@ -42,6 +43,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // 2. Validate input using Zod
   const rawBody = await req.json();
+  // Define PromptToPrototypeInputSchema locally or import from a valid source
+  const PromptToPrototypeInputSchema = z.object({
+    prompt: z.string().min(1, "Prompt cannot be empty."),
+    imageDataUri: z.string().optional(), // Base64 encoded image
+    stylePreset: z.string().optional(),
+    // Add other fields as necessary based on your PromptToPrototypeInput type
+  });
   const parseResult = PromptToPrototypeInputSchema.safeParse(rawBody);
 
   if (!parseResult.success) {
@@ -174,17 +182,6 @@ if (db) {
   console.warn('Firestore (db) is not initialized. PromptPackage was not saved.');
  return NextResponse.json(
     { error: 'Database service unavailable. Data not saved.' },
-    { status: 500 }
-  );
-}
-
-  const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-
-  return NextResponse.json(
-    {
-      error: 'Internal Server Error in API Gateway',
-      details: errorMessage,
-    },
     { status: 500 }
   );
 }
