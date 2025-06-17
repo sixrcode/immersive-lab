@@ -1,75 +1,27 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import type { PortfolioItemType } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Film, PlayCircle, Share2, CalendarDays, Clock } from "lucide-react";
+import { Film, PlayCircle, Share2, CalendarDays, Clock, Loader2, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
-const mockPortfolioItems: PortfolioItemType[] = [
-  {
-    id: "item1",
-    title: "Ephemeral Echoes",
-    description: "A short sci-fi drama about memory and loss in a futuristic city. Explores themes of identity and connection.",
-    imageUrl: "https://placehold.co/600x900.png",
-    dataAiHint: "sci-fi movie poster",
-    videoUrl: "#",
-    tags: ["Sci-Fi", "Drama", "Short Film"],
-    category: "Short Film",
-    duration: "12 min",
-    datePublished: "2024-05-20"
-  },
-  {
-    id: "item2",
-    title: "The Last Pixel",
-    description: "An animated adventure of a lone pixel trying to find its place in a vast digital world. A tale of courage and belonging.",
-    imageUrl: "https://placehold.co/600x900.png",
-    dataAiHint: "animation movie poster",
-    videoUrl: "#",
-    tags: ["Animation", "Adventure", "Family"],
-    category: "Animated Short",
-    duration: "8 min",
-    datePublished: "2024-03-10"
-  },
-  {
-    id: "item3",
-    title: "Market Melodies",
-    description: "A vibrant microdrama series following the intertwined lives of vendors at a bustling city market. Each episode is a snapshot of life.",
-    imageUrl: "https://placehold.co/600x900.png",
-    dataAiHint: "drama series poster",
-    videoUrl: "#",
-    tags: ["Microdrama", "Series", "Urban Life"],
-    category: "Microdrama Series",
-    duration: "6 Episodes (3 min each)",
-    datePublished: "2023-11-01"
-  },
-   {
-    id: "item4",
-    title: "Concrete Canvas",
-    description: "A documentary exploring the street art scene and its impact on urban culture and community voice.",
-    imageUrl: "https://placehold.co/600x900.png",
-    dataAiHint: "documentary poster art",
-    videoUrl: "#",
-    tags: ["Documentary", "Art", "Urban Culture"],
-    category: "Documentary",
-    duration: "25 min",
-    datePublished: "2024-01-15"
-  },
-];
+// mockPortfolioItems array removed
 
 function PortfolioCard({ item }: { item: PortfolioItemType }) {
   return (
     <Card className="overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 flex flex-col h-full">
       <div className="relative w-full aspect-[2/3]"> {/* Aspect ratio for vertical reel look */}
-        <Image 
-          src={item.imageUrl} 
-          alt={item.title} 
+        <Image
+          src={item.imageUrl || "https://placehold.co/600x900.png"} // Fallback image
+          alt={item.title}
           fill
           className="object-cover"
-          data-ai-hint={item.dataAiHint} 
+          data-ai-hint={item.dataAiHint}
   sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
@@ -96,7 +48,8 @@ function PortfolioCard({ item }: { item: PortfolioItemType }) {
         <div className="flex justify-between items-center w-full text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
                 <CalendarDays className="h-3.5 w-3.5" />
-                <span>{item.datePublished || "N/A"}</span>
+                {/* Assuming datePublished is already a formatted string or "N/A" from fetch logic */}
+                <span>{item.datePublished}</span>
             </div>
             <div className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
@@ -112,6 +65,71 @@ function PortfolioCard({ item }: { item: PortfolioItemType }) {
 }
 
 export default function PortfolioPage() {
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItemType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPortfolioItems = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_PORTFOLIO_API_URL || "http://localhost:3001/portfolio";
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+        }
+        let data = await response.json();
+        // Map _id to id for frontend consistency if PortfolioItemType expects 'id'
+        // Also ensure all essential fields for PortfolioCard are present, providing fallbacks if necessary.
+        data = data.map((item: any) => ({
+          ...item,
+          id: item._id || item.id, // Use _id from mongo, or id if already present
+          imageUrl: item.imageUrl || "https://placehold.co/600x900.png", // Fallback image
+          // Ensure datePublished is a string or can be parsed by Date constructor in PortfolioCard
+          datePublished: item.datePublished ? new Date(item.datePublished).toISOString().split('T')[0] : "N/A",
+        }));
+        setPortfolioItems(data);
+      } catch (e: any) {
+        console.error("Failed to fetch portfolio items:", e);
+        setError(e.message || "Failed to load portfolio items. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPortfolioItems();
+  }, []); // Empty dependency array means this effect runs once on mount
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+        <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
+        <p className="text-xl text-muted-foreground">Loading portfolio items...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+        <p className="text-xl font-semibold text-destructive">Error Loading Portfolio</p>
+        <p className="text-md text-muted-foreground max-w-md">{error}</p>
+        <Button
+          onClick={() => {
+            // Simple reload to retry. For a better UX, abstract fetchPortfolioItems and call it here.
+            window.location.reload();
+          }}
+          className="mt-6"
+          variant="outline"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8">
       <header className="mb-10 text-center">
@@ -124,17 +142,18 @@ export default function PortfolioPage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {mockPortfolioItems.map((item) => (
-          <PortfolioCard key={item.id} item={item} />
-        ))}
-      </div>
-      
-      {mockPortfolioItems.length === 0 && (
-         <div className="text-center py-12">
+      {portfolioItems.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {portfolioItems.map((item) => (
+            // Ensure key is unique, using item.id (which should be mapped from _id)
+            <PortfolioCard key={item.id} item={item} />
+          ))}
+        </div>
+      ) : (
+         <div className="text-center py-12 col-span-full"> {/* Ensure this message spans full width if grid is active */}
             <Film className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <p className="text-xl text-muted-foreground">No portfolio items to display yet.</p>
-            <p className="text-sm text-muted-foreground mt-2">Start creating and publish your work to showcase it here!</p>
+            <p className="text-sm text-muted-foreground mt-2">Check back later or be the first to add a project!</p>
          </div>
       )}
     </div>

@@ -1,24 +1,55 @@
-# Firebase Functions & Microservices
+Firebase Functions for ISL.SIXR.tv
+This directory contains backend microservices and function configurations for the ISL.SIXR.tv platform. These are implemented using Firebase Functions and serve as the foundation for AI workflows, API endpoints, and other backend services.
 
-This directory contains the backend microservices for the ISL.SIXR.tv platform, implemented as Firebase Functions. These functions handle various backend tasks, AI processing, and API endpoints.
+📦 Microservices Overview
+1. api Service (Express Router)
+The index.js file initializes an Express.js application that bundles multiple API routes into a single Firebase Function, typically deployed as api. All routes within this app are protected by Firebase Authentication middleware by default.
 
-## Services Hosted
+✍️ Script Analyzer Microservice
+Purpose: Provides AI-powered analysis of scripts—highlighting unclear sections, off-tone dialogue, and offering revision suggestions.
 
-### 1. API Service (`index.js`)
+Endpoint: POST /api/analyzeScript
 
-This file sets up an Express.js application that bundles multiple API routes and is deployed as a single Firebase Function typically named `api`. This allows for a more organized and scalable way to manage different API endpoints.
+Core Logic: Defined in src_copy/ai/flows/ai-script-analyzer.ts using Genkit-based flows.
 
-All endpoints defined within the Express app in `index.js` are protected by Firebase Authentication middleware by default.
+Input Format:
 
-#### a. Script Analyzer Microservice
+json
+Copy
+Edit
+{ "script": "Your script content here..." }
+Output Format:
 
-*   **Purpose:** Provides AI-powered analysis of scripts, identifying unclear sections, off-tone dialogue, and suggesting improvements.
-*   **Endpoint:** `POST /api/analyzeScript` (routed via the Express app in `index.js`)
-*   **Core Logic:** The main logic for the script analysis is located at `./src_copy/ai/flows/ai-script-analyzer.ts`. This Genkit-based flow performs the AI analysis.
-*   **Input:** Expects a JSON body with a `script` field: `{ "script": "Your script content here..." }`
-*   **Output:** Returns a JSON object with `analysis` and `suggestions`.
-*   **Authentication:** Requires a valid Firebase ID token in the `Authorization: Bearer <token>` header.
+json
+Copy
+Edit
+{ "analysis": "...", "suggestions": [...] }
+Authentication: Requires a valid Firebase ID token in the Authorization: Bearer <token> header.
 
----
+2. aiApi Microservice (Firebase Function)
+A centralized AI microservice deployed as aiApi, located in the ai-microservice/ directory. It powers:
 
-*More microservices and functions may be documented here as they are added.*
+Prompt-to-Prototype generation
+
+AI Script Analysis
+
+Storyboard generation
+
+📖 Refer to the ../ai-microservice/README.md for:
+
+Full endpoint specs
+
+Authentication structure
+
+Deployment instructions
+
+🛠 Other Functions
+The functions/ directory may also include:
+
+Legacy or auxiliary Firebase Functions
+
+Entry points for experimental routes
+
+Deployment configurations for the overall Firebase setup
+
+💡 Tip: Use firebase deploy --only functions:<name> for scoped deployments.
