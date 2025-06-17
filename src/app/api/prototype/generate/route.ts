@@ -114,7 +114,7 @@ try { // Added error handling for fetch
 } catch (error: unknown) { // Catching unknown error type
   console.error('Failed to call AI microservice:', error);
   return NextResponse.json( // Return specific error message
-    { error: 'Failed to contact prompt generation service.', details: error.message },
+    { error: 'Failed to contact prompt generation service.', details: error instanceof Error ? error.message : String(error) },
     { status: 503 }
   );
 }

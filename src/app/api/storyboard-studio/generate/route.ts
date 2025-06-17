@@ -20,6 +20,7 @@ const adminFirestore: Firestore = getFirestore(firebaseAdminApp);
 const adminStorage = getStorage(firebaseAdminApp);
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  let projectId: string;
   if (!firebaseAdminApp) {
     return NextResponse.json({ error: 'Firebase Admin SDK not initialized.' }, { status: 500 });
   }
@@ -31,7 +32,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let validatedInput: StoryboardGeneratorInput;
   try {
     const body = await req.json();
-    const { projectId, ...aiInputData } = body;
+    const { projectId: extractedProjectId, ...aiInputData } = body;
+    projectId = extractedProjectId;
 
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing or invalid projectId' }, { status: 400 });
