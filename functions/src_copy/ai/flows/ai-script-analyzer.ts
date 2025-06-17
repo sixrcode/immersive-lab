@@ -10,7 +10,7 @@
  */
 
 import {ai} from '../genkit'; // MODIFIED: Changed from '@/ai/genkit'
-import {z} from 'genkit';
+import * as z from 'zod'; // MODIFIED: Changed from 'genkit'
 
 const AnalyzeScriptInputSchema = z.object({
   script: z

@@ -1,9 +1,9 @@
 
 "use client";
 
-// Type-only import for AI script analysis input/output
+// Type-only imports for AI script analysis input/output.
+// Note: The `analyzeScript` function is intentionally not imported here.
 import type { AnalyzeScriptInput, AnalyzeScriptOutput } from '@/lib/ai-types';
-// Note: the `analyzeScript` function is intentionally not imported here.
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -74,10 +74,11 @@ if (!idToken) {
   toast({
     title: "Authentication Error",
     description: "You must be logged in to analyze scripts.",
-    variant: "destructive", // optional for styling
+    variant: "destructive", // Optional: adjust styling if your toast system supports it
   });
   return;
 }
+
         variant: "destructive",
         action: <XCircle className="text-red-500" />,
       });
@@ -120,10 +121,9 @@ if (!response.ok) {
       error instanceof Error
         ? error.message
         : "Failed to analyze script. Please try again.",
-    variant: "destructive", // optional: customize based on your toast system
+    variant: "destructive", // Optional: customize based on your toast system
   });
 }
-
         variant: "destructive",
         action: <XCircle className="text-red-500" />,
       });
