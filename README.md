@@ -41,6 +41,7 @@ Forge the Future, One Story at a Time.
   - [Overall Platform Development Phases](#overall-platform-development-phases)
   - [Microservice Development Phases](#microservice-development-phases)
 - [Contributing](#contributing)
+  - [Contribution Process](#contribution-process)
 - [License](#license)
 - [Prompt-to-Prototype Studio](#prompt-to-prototype-studio)
   - [Future Phases--Integrations](#future-phases--integrations)
@@ -476,6 +477,7 @@ This section outlines the continuous integration, continuous delivery (CI/CD), a
     *   Deploys the new images to Google Cloud Run services.
 
 This structured CI/CD pipeline aims to provide a robust, automated pathway for developing, testing, and deploying updates and new features to the ISL.SIXR.tv platform, ensuring stability and rapid iteration.
+
 
 ## Future Improvements
 
