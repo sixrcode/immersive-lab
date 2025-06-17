@@ -5,6 +5,19 @@ import type { PromptPackage, Logline, MoodBoardCell, Shot, PromptToPrototypeInpu
 import { z } from 'zod'; // Import Zod
 import { db, firebaseAdminApp } from '@/lib/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
+
+// Define the structure of the expected response from the prompt generation microservice
+interface PromptGenServiceOutput {
+  loglines: Logline[];
+  moodBoardCells: MoodBoardCell[];
+  moodBoardImage: string; // Firebase Storage URL of the generated mood board image
+  shotList: string;       // Multi-line string representing the shot list
+  proxyClipAnimaticDescription: string;
+  pitchSummary: string;
+  originalUserImageURL?: string; // Firebase Storage URL of the user-uploaded image (if applicable)
+}
+
+/**
  * @fileoverview Next.js API route for generating prototype assets.
  *
  * This route handles POST requests to `/api/prototype/generate`.
@@ -19,18 +32,6 @@ import { Timestamp } from 'firebase-admin/firestore';
  * Note: Local AI flows and direct image processing (e.g., uploadImageToStorage, dataUriToBuffer) have been removed.
  *       This API route now delegates all such logic to the prompt-gen-service microservice.
  */
-
-// Define the structure of the expected response from the prompt generation microservice
-interface PromptGenServiceOutput {
-  loglines: Logline[];
-  moodBoardCells: MoodBoardCell[];
-  moodBoardImage: string; // Firebase Storage URL of the generated mood board image
-  shotList: string;       // Multi-line string representing the shot list
-  proxyClipAnimaticDescription: string;
-  pitchSummary: string;
-  originalUserImageURL?: string; // Firebase Storage URL of the user-uploaded image (if applicable)
-}
-
 export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage | { error: string; details?: any }>> {
   // 1. Check Firebase Admin SDK
   if (!firebaseAdminApp) {
@@ -78,14 +79,14 @@ export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage
   let microserviceUrl =
     process.env.PROMPT_GEN_SERVICE_URL || process.env.NEXT_PUBLIC_AI_MICROSERVICE_URL;
 
- if (!microserviceUrl) {
- console.warn('AI microservice URL is not configured. Defaulting to localhost.');
+  if (!microserviceUrl) {
+    console.warn('AI microservice URL is not configured. Defaulting to localhost.');
     microserviceUrl = 'http://localhost:8080/generate';
-} else if (!microserviceUrl.endsWith('/generate')) {
-  microserviceUrl = microserviceUrl.replace(/\/?$/, '/generate');
-}
+  } else if (!microserviceUrl.endsWith('/generate')) {
+    microserviceUrl = microserviceUrl.replace(/\/?$/, '/generate');
+  }
 
-// 4. Call the AI microservice
+  // 4. Call the AI microservice
 let flowOutput: PromptGenServiceOutput;
 try { // Added error handling for fetch
   const response = await fetch(microserviceUrl, {
@@ -113,7 +114,7 @@ try { // Added error handling for fetch
 } catch (error: unknown) { // Catching unknown error type
   console.error('Failed to call AI microservice:', error);
   return NextResponse.json( // Return specific error message
-    { error: 'Failed to contact prompt generation service.', details: error.message },
+    { error: 'Failed to contact prompt generation service.', details: error instanceof Error ? error.message : String(error) },
     { status: 503 }
   );
 }

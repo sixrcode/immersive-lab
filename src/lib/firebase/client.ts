@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 // import { getAuth } from "firebase/auth"; // Example if auth is needed directly from here
 // import { getFirestore } from "firebase/firestore"; // Example for Firestore
 
@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 // Conditional initialization to prevent re-initialization in Next.js HMR
-let firebaseApp;
+let firebaseApp: FirebaseApp;
 if (!getApps().length) {
   firebaseApp = initializeApp(firebaseConfig);
 } else {
