@@ -543,6 +543,32 @@ app.post('/analyzeScript', async (req, res) => {
   }
 });
 
+// POST /analyzeScript - Analyzes a script (Authenticated)
+app.post('/analyzeScript', async (req, res) => {
+  if (!req.body.script) {
+    return res.status(400).json({ error: 'Script content is required in the request body.' });
+  }
+
+  const { script } = req.body;
+
+  try {
+    // The analyzeScript function expects an object like { script: "..." }
+    const analysisResult = await analyzeScript({ script });
+    res.status(200).json(analysisResult);
+  } catch (error) {
+    functions.logger.error("Error calling analyzeScript:", error);
+    // Check if the error has a message and code, common in Firebase/Google Cloud errors
+    const errorMessage = error.message || 'An unexpected error occurred while analyzing the script.';
+    const errorCode = error.code || 500; // Default to 500 if no specific code
+
+    // It's good practice to not expose raw internal errors to the client,
+    // but for now, we'll return the message. In a production app, you might want to
+    // return a generic message for 500 errors.
+    res.status(typeof errorCode === 'number' && errorCode >= 100 && errorCode < 600 ? errorCode : 500)
+       .json({ error: errorMessage });
+  }
+});
+
 // Expose Express app as a single Firebase Function
 const { onRequest } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
