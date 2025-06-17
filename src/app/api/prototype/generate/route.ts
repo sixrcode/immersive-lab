@@ -5,7 +5,6 @@ import type { PromptPackage, Logline, MoodBoardCell, Shot, PromptToPrototypeInpu
 import { z } from 'zod'; // Import Zod
 import { db, firebaseAdminApp } from '@/lib/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
-/**
  * @fileoverview Next.js API route for generating prototype assets.
  *
  * This route handles POST requests to `/api/prototype/generate`.
@@ -28,10 +27,11 @@ interface PromptGenServiceOutput {
   moodBoardImage: string; // Firebase Storage URL of the generated mood board image
   shotList: string;       // Multi-line string representing the shot list
   proxyClipAnimaticDescription: string;
-  pitchSummary: string; // Optional field for raw JSON outputs
+  pitchSummary: string;
   originalUserImageURL?: string; // Firebase Storage URL of the user-uploaded image (if applicable)
 }
-export async function POST(req: NextRequest): Promise<NextResponse> {
+
+export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage | { error: string; details?: any }>> {
   // 1. Check Firebase Admin SDK
   if (!firebaseAdminApp) {
     console.error('Firebase Admin SDK not initialized. Cannot process request.');
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 // 4. Call the AI microservice
 let flowOutput: PromptGenServiceOutput;
-try {
+try { // Added error handling for fetch
   const response = await fetch(microserviceUrl, {
     method: 'POST',
     headers: {
@@ -100,7 +100,7 @@ try {
   if (!response.ok) {
     let errorBody = null;
     try {
-      errorBody = await response.json();
+      errorBody = await response.json(); // Parse error body if available
     } catch (_) {}
     console.error('AI service error:', response.status, errorBody);
     return NextResponse.json(
@@ -109,10 +109,10 @@ try {
     );
   }
 
-  flowOutput = await response.json() as PromptGenServiceOutput;
-} catch (error: any) {
+  flowOutput = await response.json() as PromptGenServiceOutput; // Type assertion
+} catch (error: unknown) { // Catching unknown error type
   console.error('Failed to call AI microservice:', error);
-  return NextResponse.json(
+  return NextResponse.json( // Return specific error message
     { error: 'Failed to contact prompt generation service.', details: error.message },
     { status: 503 }
   );
@@ -121,7 +121,7 @@ try {
 // 5. Extract values and construct PromptPackage
 const { prompt, imageDataUri, stylePreset } = validatedInput;
 const userId = 'anonymous_user';
-const promptPackageId = uuidv4();
+const promptPackageId: string = uuidv4();
 
 const parseShotList = (shotListString: string): Shot[] => {
   if (!shotListString) return [];
@@ -144,7 +144,7 @@ const moodBoardCells = flowOutput.moodBoardCells.map(cell => ({
 
 const newPromptPackage: PromptPackage = {
   id: promptPackageId,
-  userId,
+  userId: 'anonymous_user', // Using literal string as userId is not derived from auth yet
   prompt,
   stylePreset,
   originalImageURL: flowOutput.originalUserImageURL || imageDataUri,
@@ -158,7 +158,7 @@ const newPromptPackage: PromptPackage = {
   shotList: parseShotList(flowOutput.shotList),
   animaticDescription: flowOutput.proxyClipAnimaticDescription,
   pitchSummary: flowOutput.pitchSummary,
-  version: 1,
+  version: 1, // Assuming version starts at 1
 };
 
 // 6. Store the new `PromptPackage` in Firestore.
@@ -187,5 +187,5 @@ if (db) {
 }
 
   // 7. Return the created `PromptPackage` to the client.
-  return NextResponse.json(newPromptPackage, { status: 200 });
+  return NextResponse.json(newPromptPackage, { status: 201 }); // Use 201 for created resource
 }

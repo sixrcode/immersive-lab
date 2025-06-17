@@ -1,6 +1,6 @@
 
 "use client";
-
+import { type ReactNode } from "react";
 import { useEffect, useState } from "react";
 import type { PortfolioItemType } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Film, PlayCircle, Share2, CalendarDays, Clock, Loader2, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-
+import type { Root } from "react-dom/client";
 // mockPortfolioItems array removed
 
 function PortfolioCard({ item }: { item: PortfolioItemType }) {
@@ -83,7 +83,7 @@ export default function PortfolioPage() {
         // Map _id to id for frontend consistency if PortfolioItemType expects 'id'
         // Also ensure all essential fields for PortfolioCard are present, providing fallbacks if necessary.
         data = data.map((item: any) => ({
- ...(item as PortfolioItemType), // Explicitly cast item to PortfolioItemType
+ // Explicitly cast item to PortfolioItemType
           ...item,
           id: item._id || item.id, // Use _id from mongo, or id if already present
           imageUrl: item.imageUrl || "https://placehold.co/600x900.png", // Fallback image
