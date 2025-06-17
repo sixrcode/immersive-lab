@@ -1,7 +1,25 @@
-const functions = require("firebase-functions");
+// Firebase Admin SDK initialization (used for Firestore, Auth, etc.)
 const admin = require("firebase-admin");
+
+// Firebase Functions v2 (modern HTTP functions + logging)
+const { onRequest } = require("firebase-functions/v2/https");
+const { setGlobalOptions } = require("firebase-functions/v2");
+const logger = require("firebase-functions/logger");
+
+// Optional: Set global options like region and concurrency
+setGlobalOptions({ region: "us-central1" }); // Adjust region as needed
+
 const express = require('express');
 const cors = require('cors');
+// Import for analyzeScript. Assuming the build process handles TypeScript to JS transpilation
+// and path resolution (e.g., from tsconfig.json paths if src is mapped).
+// If functions/index.js is in the same directory as src/ after build, this path might need adjustment.
+// For now, assuming a common root or that the build places it correctly.
+// MODIFIED: Path updated to point to the copied files within functions directory
+const { analyzeScript } = require('./src_copy/ai/flows/ai-script-analyzer');
+
+// Set global options for all functions
+setGlobalOptions({ region: 'us-west1' });
 
 // Initialize admin SDK (ensure it's only done once)
 if (admin.apps.length === 0) {
@@ -19,16 +37,27 @@ app.use(express.json());
 
 // Authentication middleware (applied globally to all routes below)
 async function authenticate(req, res, next) {
+  // Bypass for testing with a specific mock token
+  if (process.env.NODE_ENV === 'test') {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer mock-valid-token')) {
+      req.user = { uid: 'test-uid', email: 'test@example.com' };
+      return next();
+    }
+    // Allow tests to explicitly send no token or other tokens to test unauthenticated/error paths
+  }
+
   if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized - No token provided or incorrect format.' });
   }
   const idToken = req.headers.authorization.split('Bearer ')[1];
   try {
+    // This will now only be hit by actual tokens in non-test env, or by specific test tokens
+    // not matching 'mock-valid-token' if we want to test the stubbed verifyIdToken behavior.
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken; // Add user to request
     next();
   } catch (error) {
-    functions.logger.error("Error while verifying Firebase ID token:", error);
+    logger.error("Error while verifying Firebase ID token:", error);
     res.status(403).json({ error: 'Forbidden - Invalid or expired token.' });
   }
 }
@@ -488,56 +517,86 @@ app.patch('/production-board/cards/:cardId/move', async (req, res) => {
   }
 });
 
+// POST /analyzeScript - Analyzes a script (Authenticated)
+app.post('/analyzeScript', async (req, res) => {
+  if (!req.body.script) {
+    return res.status(400).json({ error: 'Script content is required in the request body.' });
+  }
+
+  const { script } = req.body;
+
+  try {
+    // The analyzeScript function expects an object like { script: "..." }
+    const analysisResult = await analyzeScript({ script });
+    res.status(200).json(analysisResult);
+  } catch (error) {
+    functions.logger.error("Error calling analyzeScript:", error);
+    // Check if the error has a message and code, common in Firebase/Google Cloud errors
+    const errorMessage = error.message || 'An unexpected error occurred while analyzing the script.';
+    const errorCode = error.code || 500; // Default to 500 if no specific code
+
+    // It's good practice to not expose raw internal errors to the client,
+    // but for now, we'll return the message. In a production app, you might want to
+    // return a generic message for 500 errors.
+    res.status(typeof errorCode === 'number' && errorCode >= 100 && errorCode < 600 ? errorCode : 500)
+       .json({ error: errorMessage });
+  }
+});
+
 // Expose Express app as a single Firebase Function
-// This function will handle all routes defined in the app under /api path
-exports.api = functions.region('us-west1').https.onRequest(app);
+const { onRequest } = require("firebase-functions/v2/https");
+const { setGlobalOptions } = require("firebase-functions/v2");
+const logger = require("firebase-functions/logger");
+const admin = require("firebase-admin");
+const app = require("./app"); // your Express app
+const { authenticate } = require("./middleware/authenticate"); // if used
 
-// Conceptual Firestore Collections:
-// 1. productionBoardColumns:
-//    - Document ID: auto-generated or custom column ID
-//    - Fields:
-//      - name (string)
-//      - order (number, for column ordering)
-//      - createdAt (timestamp)
-//      - updatedAt (timestamp)
-//      - cardOrder (array of card IDs, if maintaining order explicitly)
-//
-// 2. productionBoardCards:
-//    - Document ID: auto-generated or custom card ID
-//    - Fields:
-//      - columnId (string, ID of the column it belongs to)
-//      - title (string)
-//      - description (string, optional)
-//      - order (number, for card ordering within a column)
-//      - createdAt (timestamp)
-//      - updatedAt (timestamp)
-//      - assignee (string, user ID, optional)
-//      - dueDate (timestamp, optional)
+admin.initializeApp();
+setGlobalOptions({ region: "us-west1" });
 
-/*
-  Removed original example /items routes and helloWorld function.
-  The production board endpoints are now part of the 'api' export,
-  prefixed by the Express app's base path. If 'app' is mounted at '/api',
-  the GET columns endpoint would be '/api/production-board/columns'.
-  The subtask asked for paths like `/api/production-board/`, which means the
-  Express app itself should be exported as `api`, and then the routes within
-  it are relative to that. For example, `app.get('/production-board/columns', ...)`
-  when `exports.api = ...onRequest(app)` will result in `/api/production-board/columns` if the
-  function is named `api`.
+/**
+ * Main API export.
+ * Handles all routes under `/api`, using an Express app.
+ * Example route: `/api/production-board/columns`
+ */
+exports.api = onRequest(app);
 
-  The subtask's request for `apiProductionBoardColumnsGet` as a separate export
-  for each function implies not using Express router for grouping.
-  However, the previous structure used Express.
-  I will stick to the Express router pattern as it's cleaner and was already in place.
-  The prompt also said "grouping them under a common path like `/api/production-board/`"
-  which Express handles well.
+/**
+ * Conceptual Firestore Collections:
+ *
+ * 1. productionBoardColumns
+ *    - Fields:
+ *        name: string
+ *        order: number
+ *        createdAt: timestamp
+ *        updatedAt: timestamp
+ *        cardOrder: string[] (ordered card IDs)
+ *
+ * 2. productionBoardCards
+ *    - Fields:
+ *        columnId: string
+ *        title: string
+ *        description?: string
+ *        order: number
+ *        createdAt: timestamp
+ *        updatedAt: timestamp
+ *        assignee?: string
+ *        dueDate?: timestamp
+ */
 
-  The function naming `apiProductionBoardColumnsGet` seems like it was intended for individual function exports,
-  e.g. `exports.apiProductionBoardColumnsGet = functions.https.onRequest(...)`.
-  If the Express app `api` handles `/production-board/columns` via `app.get()`,
-  then `apiProductionBoardColumnsGet` is not the actual exported function name.
-  The exported function is `api`.
+/**
+ * Optional simple function for testing or demos.
+ * Not connected to the main Express API.
+ */
+exports.helloWorld = onRequest((req, res) => {
+  logger.info("Hello logs!", { structuredData: true });
+  res.send("Hello from Firebase!");
+});
 
-  Given the existing setup and the benefits of Express, I've used Express routes.
-  The conceptual Firestore structure is added as comments.
-*/
+/**
+ * Expose internals for testing if needed.
+ */
+if (process.env.NODE_ENV === 'test') {
+  exports.testableApp = app;
+  exports.authenticate = authenticate;
+}
