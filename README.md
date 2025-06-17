@@ -19,6 +19,15 @@ The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools de
 -   **Real-Time Collaboration:** Allows multiple users to work together on creative projects in real-time.
 -   **Authentication and User Profiles:** Secure user accounts and personalized profiles for managing projects and contributions.
 
+## System Architecture
+
+The ISL.SIXR.tv platform employs a modern web architecture:
+
+-   **Frontend & BFF (Backend-For-Frontend):** The primary application is built with Next.js, serving both as the user interface and a backend layer that handles user authentication, data management with Firestore, and orchestration of calls to other services.
+-   **AI Microservice (`prompt-gen-service`):** For computationally intensive AI-based generation tasks, specifically the "Prompt-to-Prototype" feature, the system delegates work to a separate Node.js microservice. This service is located in the `services/prompt-gen-service` directory. This approach ensures that the main Next.js application remains responsive and scalable, while the specialized AI tasks are handled by a dedicated service that can be scaled independently. The Next.js backend communicates with this microservice via HTTP requests.
+
+This separation of concerns allows for more focused development, independent scaling of components, and robustness.
+
 ## Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
@@ -88,41 +97,48 @@ ISL.SIXR.tv is built with a modern tech stack designed for scalability and a ric
 -   **TypeScript:** A typed superset of JavaScript that enhances code quality and maintainability.
 -   **Vercel:** Used for deployment and managing serverless functions, ensuring high availability and performance.
 
-## AI Microservice (`ai-microservice/`)
+## AI Microservices Architecture
+
+The ISL.SIXR.tv platform is evolving toward a microservices architecture to modularize and scale AI-driven functionalities. This design allows for focused development, deployment, and management of distinct services.
+
+### 🧠 Prompt Generation Service (`services/prompt-gen-service`)
+
+- **Purpose:** Handles the core AI-driven generation of creative assets including loglines, mood boards, shot lists, and more—based on user prompts.
+- **Implementation:** Built using Node.js, Express, and Genkit. This service operates as a standalone microservice within the larger platform.
+- **Location:** `services/prompt-gen-service`
+- **Documentation:** For setup, environment variables, and available APIs, see its dedicated [README.md](./services/prompt-gen-service/README.md).
+
+### 🚀 Centralized AI Microservice (`ai-microservice/`)
 
 To centralize and manage AI-powered functionalities, the platform utilizes a dedicated AI microservice.
 
--   **Purpose:** This microservice houses all AI-related logic, including Genkit flows, interactions with AI models (e.g., Google AI via Gemini), and related data processing. This separation improves modularity, scalability, and maintainability of AI features.
--   **Implementation:** It is implemented as a Firebase Function built with Node.js and Express.js. This allows for easy deployment and scaling within the Firebase ecosystem.
--   **Authentication:** All endpoints exposed by the AI microservice require Firebase Authentication. Requests must include a valid Firebase ID token in the `Authorization: Bearer <token>` header.
--   **Source Code:** The code for this microservice resides in the `ai-microservice/` directory at the root of the repository.
+- **Purpose:** Houses all AI-related logic, including Genkit flows, interactions with AI models (e.g., Google AI via Gemini), and related data processing. This improves modularity, scalability, and maintainability.
+- **Implementation:** Implemented as a Firebase Function built with Node.js and Express.js. This allows for easy deployment and scaling within the Firebase ecosystem.
+- **Authentication:** All endpoints require Firebase Authentication. Requests must include a valid Firebase ID token in the `Authorization: Bearer <token>` header.
+- **Source Code:** Resides in the `ai-microservice/` directory at the root of the repository.
 
-### Exposed API Endpoints
+#### Available API Endpoints
 
-The AI microservice exposes its functionalities via a single Firebase Function (`aiApi`), which internally routes requests using Express. The base URL for this function will be similar to `https://<region>-<project-id>.cloudfunctions.net/aiApi`. The following endpoints are available:
+The AI microservice exposes its functionalities via a single Firebase Function (`aiApi`), which internally routes requests using Express. The base URL for this function will look like:
+https://<region>-<project-id>.cloudfunctions.net/aiApi
 
--   `POST /analyzeScript`: Accepts script content and returns an AI-driven analysis.
-    -   Request body should match `AnalyzeScriptInput` schema.
-    -   Response will be a `ScriptAnalysisPackage` object.
--   `POST /promptToPrototype`: Takes a user prompt (and optional image/style) and generates a comprehensive prototype package (loglines, mood board, shot list, etc.).
-    -   Request body should match `PromptToPrototypeInput` schema.
-    -   Response will be a `PromptPackage` object with generated content and URLs to images stored in Firebase Storage.
--   `POST /generateStoryboard`: Generates storyboard panels based on a scene description.
-    -   Request body should match `StoryboardGeneratorInput` schema.
-    -   Response will be a `StoryboardPackage` object, including URLs to panel images stored in Firebase Storage.
 
-All AI-driven features in the Next.js application (such as the Prompt-to-Prototype Studio, AI Script Analyzer, and Storyboard Studio) now make authenticated HTTP requests to these microservice endpoints instead of calling AI flows directly.
+| Endpoint                 | Description                                                                                   |
+|--------------------------|-----------------------------------------------------------------------------------------------|
+| `POST /analyzeScript`    | Accepts script content and returns a `ScriptAnalysisPackage`.                                |
+| `POST /promptToPrototype`| Takes a user prompt (and optional image/style) and returns a `PromptPackage`.                |
+| `POST /generateStoryboard`| Generates storyboard panels based on a scene description, returning a `StoryboardPackage`.  |
 
-### Deployment of AI Microservice
+These endpoints are used by features like Prompt-to-Prototype Studio, AI Script Analyzer, and Storyboard Studio in the Next.js frontend.
 
-The AI microservice function needs to be deployed as part of your Firebase setup.
--   Ensure you have the Firebase CLI installed and configured.
--   From the root of the repository, you can deploy the function using:
-    ```bash
-    firebase deploy --only functions:aiApi
-    ```
-    (If you have multiple function groups or a different function name, adjust accordingly. The `firebase.json` is configured to deploy functions from the `ai-microservice` directory as part of the `aiApi` group/name).
--   After deployment, the Firebase CLI will output the URL for the `aiApi` function. This URL should be used for the `NEXT_PUBLIC_AI_MICROSERVICE_URL` environment variable in the Next.js application.
+#### Deployment Instructions
+
+Ensure the Firebase CLI is installed and configured. From the project root, run:
+
+```bash
+firebase deploy --only functions:aiApi
+After deployment, use the CLI output URL as the value for the NEXT_PUBLIC_AI_MICROSERVICE_URL environment variable in your Next.js app.
+
 
 ## Deployment: Firebase Hosting & Cloud Run Strategy
 
