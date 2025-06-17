@@ -2,16 +2,16 @@ import { POST } from '../generate/route'; // Assuming generate.ts exports POST
 import { NextRequest } from 'next/server';
 import { createMocks, RequestMethod } from 'node-mocks-http'; // Add this import at the top
 
-import { promptToPrototype as mockPromptToPrototype } from '@/ai/flows/prompt-to-prototype';
+// import { promptToPrototype as mockPromptToPrototype } from '@/ai/flows/prompt-to-prototype';
 import { db as mockDb, storage as mockStorage } from '@/lib/firebase/admin';
 import { v4 as mockUuidv4 } from 'uuid';
 
 // --- Mocks ---
-jest.mock('@/ai/flows/prompt-to-prototype', () => ({
-  ...jest.requireActual('@/ai/flows/prompt-to-prototype'), // Import and retain default exports
-  promptToPrototype: jest.fn(),
-  PromptToPrototypeInputSchema: jest.requireActual('@/ai/flows/prompt-to-prototype').PromptToPrototypeInputSchema, // Use actual schema
-}));
+// jest.mock('@/ai/flows/prompt-to-prototype', () => ({
+//   ...jest.requireActual('@/ai/flows/prompt-to-prototype'), // Import and retain default exports
+//   promptToPrototype: jest.fn(),
+//   PromptToPrototypeInputSchema: jest.requireActual('@/ai/flows/prompt-to-prototype').PromptToPrototypeInputSchema, // Use actual schema
+// }));
 
 jest.mock('@/lib/firebase/admin', () => ({
   db: {
@@ -75,17 +75,35 @@ describe('/api/prototype/generate API Endpoint', () => {
   beforeEach(() => {
     jest.clearAllMocks(); // Clear mocks before each test
 
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({
+          // Default mock response from AI microservice
+          loglines: [{ tone: 'Test Tone', text: 'Test logline from mock fetch' }],
+          moodBoardCells: Array(9).fill({ title: 'Test Cell', description: 'Test cell description' }),
+          moodBoardImage: 'mock-moodboard-image-url-from-fetch',
+          shotList: '1,35mm,Test move,Test notes from fetch',
+          proxyClipAnimaticDescription: 'Test animatic description from fetch',
+          pitchSummary: 'Test pitch summary from fetch',
+          originalUserImageURL: undefined, // Default, can be overridden in specific tests
+        }),
+        text: () => Promise.resolve('{}'), // Default text method
+      } as Response) // Type assertion for Response
+    );
+
     // Setup default mock implementations for clarity, though they are also set in jest.mock
     (mockUuidv4 as jest.Mock).mockReturnValue(mockPromptPackageId);
-    (mockPromptToPrototype as jest.Mock).mockResolvedValue({
-      // Mock the expected output structure of the flow
-      loglines: [{ tone: 'Test Tone', text: 'Test logline' }],
-      moodBoardImage: 'data:image/png;base64,testmoodboardimagedata',
-      moodBoardCells: Array(9).fill({ title: 'Test Cell', description: 'Test cell description' }),
-      shotList: '1,35mm,Test move,Test notes', // Assuming shotList is initially a string before parsing
-      proxyClipAnimaticDescription: 'Test animatic description',
-      pitchSummary: 'Test pitch summary',
-    });
+    // (mockPromptToPrototype as jest.Mock).mockResolvedValue({
+    //   // Mock the expected output structure of the flow
+    //   loglines: [{ tone: 'Test Tone', text: 'Test logline' }],
+    //   moodBoardImage: 'data:image/png;base64,testmoodboardimagedata',
+    //   moodBoardCells: Array(9).fill({ title: 'Test Cell', description: 'Test cell description' }),
+    //   shotList: '1,35mm,Test move,Test notes', // Assuming shotList is initially a string before parsing
+    //   proxyClipAnimaticDescription: 'Test animatic description',
+    //   pitchSummary: 'Test pitch summary',
+    // });
     (mockStorage.bucket().file('').getSignedUrl as jest.Mock).mockResolvedValue([mockGeneratedImageSignedUrl]);
     (mockDb.collection('').doc('').set as jest.Mock).mockResolvedValue({});
   });
@@ -98,7 +116,7 @@ describe('/api/prototype/generate API Endpoint', () => {
     return new NextRequest(new URL(req.url || '/', 'http://localhost').toString(), {
         // Pass the body as a string or ReadableStream if simulating real request more closely
         method: req.method as any, // Cast to any to satisfy NextRequest type
- headers: req.headers as Headers,
+ headers: new Headers(req.headers as Record<string, string>),
         body: body ? JSON.stringify(body) : null, //node-mocks-http doesn't stringify
     }) as unknown as NextRequest;
 }
@@ -125,30 +143,34 @@ describe('/api/prototype/generate API Endpoint', () => {
     const responseJson = await response.json();
 
     expect(response.status).toBe(200);
-    expect(mockPromptToPrototype).toHaveBeenCalledWith(requestBody);
+    // expect(mockPromptToPrototype).toHaveBeenCalledWith(requestBody);
 
     // Check user image upload
-    expect(mockStorage.bucket).toHaveBeenCalledTimes(2); // Once for user, once for AI
-    expect(mockStorage.bucket().file).toHaveBeenCalledWith(expect.stringContaining(`prototypes/${mockUserId}/${mockPromptPackageId}/user-upload`));
-    expect(mockStorage.bucket().file).toHaveBeenCalledWith(expect.stringContaining(`prototypes/${mockUserId}/${mockPromptPackageId}/moodboard`));
+    // With fetch mock, direct image upload to GCS is not happening in this test's scope for user image.
+    // The microservice is assumed to handle it and return a URL.
+    // So, these specific GCS mocks for user image might not be directly relevant unless testing that part specifically.
+    // For now, let's assume the microservice returns originalUserImageURL if an image was part of input.
+    // expect(mockStorage.bucket).toHaveBeenCalledTimes(2); // Once for user, once for AI
+    // expect(mockStorage.bucket().file).toHaveBeenCalledWith(expect.stringContaining(`prototypes/${mockUserId}/${mockPromptPackageId}/user-upload`));
+    // expect(mockStorage.bucket().file).toHaveBeenCalledWith(expect.stringContaining(`prototypes/${mockUserId}/${mockPromptPackageId}/moodboard`));
 
-    expect(mockDb.collection).toHaveBeenCalledWith('promptPackages');
+    expect(mockDb.collection).toHaveBeenCalledWith('prompt-packages'); // Collection name from route
     expect(mockDb.doc).toHaveBeenCalledWith(mockPromptPackageId);
     expect((mockDb as any).set).toHaveBeenCalledWith(expect.objectContaining({
       id: mockPromptPackageId,
-      userId: mockUserId, // Placeholder in actual code
+      userId: 'anonymous_user', // From route
       prompt: requestBody.prompt,
-      originalImageURL: mockUserImageSignedUrl,
+      originalImageURL: 'mock-user-upload-url', // This needs to come from fetch mock if image was sent
       moodBoard: expect.objectContaining({
-        generatedImageURL: mockGeneratedImageSignedUrl,
+        generatedImageURL: 'mock-moodboard-image-url-from-fetch',
       }),
     }));
 
     expect(responseJson).toEqual(expect.objectContaining({
       id: mockPromptPackageId,
-      originalImageURL: mockUserImageSignedUrl,
+      originalImageURL: 'mock-user-upload-url', // This needs to come from fetch mock
       moodBoard: expect.objectContaining({
-        generatedImageURL: mockGeneratedImageSignedUrl,
+        generatedImageURL: 'mock-moodboard-image-url-from-fetch',
       }),
     }));
   });
@@ -163,24 +185,24 @@ describe('/api/prototype/generate API Endpoint', () => {
     expect(response.status).toBe(400);
     expect(responseJson.error).toBe('Invalid input');
     expect(responseJson.details).toBeDefined(); // Zod errors
-    expect(mockPromptToPrototype).not.toHaveBeenCalled();
+    // expect(mockPromptToPrototype).not.toHaveBeenCalled();
   });
 
-  it('should return 500 if AI flow fails', async () => {
-    (mockPromptToPrototype as jest.Mock).mockRejectedValue(new Error('AI flow crashed'));
+  it('should return 503 if AI microservice fetch fails', async () => {
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
     const requestBody = { prompt: 'A risky prompt' };
     mockRequest = await createMockRequest(requestBody);
 
     const response = await POST(mockRequest);
     const responseJson = await response.json();
 
-    expect(response.status).toBe(500);
-    expect(responseJson.error).toContain('AI flow processing error');
-    expect(responseJson.details).toBe('AI flow crashed');
+    expect(response.status).toBe(503); // Changed from 500 to 503 as per route logic
+    expect(responseJson.error).toContain('Failed to contact prompt generation service.');
+    expect(responseJson.details).toBe('Network error');
   });
 
   it('should return 500 if Firestore save fails', async () => {
-    (mockDb.collection('').doc('').set as jest.Mock).mockRejectedValue(new Error('Firestore unavailable'));
+    (mockDb.collection('prompt-packages').doc(mockPromptPackageId).set as jest.Mock).mockRejectedValue(new Error('Firestore unavailable'));
     const requestBody = { prompt: 'Save this if you can' };
     mockRequest = await createMockRequest(requestBody);
 
@@ -192,58 +214,17 @@ describe('/api/prototype/generate API Endpoint', () => {
     expect(responseJson.details).toBe('Firestore unavailable');
   });
 
-  it('should handle user image upload failure gracefully', async () => {
-    const requestBody = {
-      prompt: 'A grand adventure with a problematic image',
-      imageDataUri: 'data:image/jpeg;base64,testuserimagedata_problematic',
-    };
-    mockRequest = await createMockRequest(requestBody);
+  // This test might need to be re-evaluated as image uploading is now part of the microservice.
+  // The API route itself doesn't handle file operations with GCS directly anymore.
+  // It just passes imageDataUri to the microservice.
+  // it('should handle user image upload failure gracefully', async () => { ... });
 
-    (mockStorage.bucket().file as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('user-upload')) {
-            // Simulate failure for user image upload
-            return { save: jest.fn().mockRejectedValue(new Error('User upload failed')), getSignedUrl: jest.fn() };
-        }
-        // AI moodboard image uploads fine
-        return { save: jest.fn().mockResolvedValue(undefined), getSignedUrl: jest.fn().mockResolvedValue([mockGeneratedImageSignedUrl]) };
-    });
+  // This test also needs re-evaluation for similar reasons.
+  // The fallback URL logic was in the old promptToPrototype flow.
+  // If the microservice fails to produce an image, it should handle that,
+  // or this API should handle the microservice's error response for that case.
+  // it('should handle AI moodboard image upload failure gracefully', async () => { ... });
 
-    const response = await POST(mockRequest);
-    const responseJson = await response.json();
-
-    expect(response.status).toBe(200); // Still 200, but originalImageURL should be undefined
-    expect(responseJson.originalImageURL).toBeUndefined();
-    expect(responseJson.moodBoard.generatedImageURL).toBe(mockGeneratedImageSignedUrl); // AI image is fine
-    expect((mockDb as any).set).toHaveBeenCalledWith(expect.objectContaining({
-      originalImageURL: undefined, // Check it's saved as undefined
-    }));
-  });
-
-  it('should handle AI moodboard image upload failure gracefully', async () => {
-    const requestBody = { prompt: 'A grand adventure, AI image fails' };
-    mockRequest = await createMockRequest(requestBody);
-
-    // Simulate failure for AI moodboard image upload
-     (mockStorage.bucket().file as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('moodboard')) {
-            return { save: jest.fn().mockRejectedValue(new Error('AI image upload failed')), getSignedUrl: jest.fn() };
-        }
-        // User image (if any) would be fine, or not present.
-        return { save: jest.fn().mockResolvedValue(undefined), getSignedUrl: jest.fn().mockResolvedValue([mockUserImageSignedUrl]) };
-    });
-
-
-    const response = await POST(mockRequest);
-    const responseJson = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(responseJson.moodBoard.generatedImageURL).toBe('https://placehold.co/600x400.png?text=Moodboard+Failed'); // Fallback URL
-    expect((mockDb as any).set).toHaveBeenCalledWith(expect.objectContaining({
-      moodBoard: expect.objectContaining({
-        generatedImageURL: 'https://placehold.co/600x400.png?text=Moodboard+Failed',
-      }),
-    }));
-  });
 
   // Test case for when no imageDataUri is provided
   it('should run successfully without an imageDataUri', async () => {
@@ -253,35 +234,42 @@ describe('/api/prototype/generate API Endpoint', () => {
     };
     mockRequest = await createMockRequest(requestBody);
 
-    // Ensure user image upload path is not called by only mocking the moodboard path for storage.file
-    (mockStorage.bucket().file as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes('moodboard')) {
-             return { save: jest.fn().mockResolvedValue(undefined), getSignedUrl: jest.fn().mockResolvedValue([mockGeneratedImageSignedUrl]) };
-        }
-        // This should ideally not be hit if imageDataUri is not provided.
-        // If it is, the test for specific user-upload path will fail, which is good.
-        return { save: jest.fn().mockResolvedValue(undefined), getSignedUrl: jest.fn().mockResolvedValue(['some_other_url']) };
-    });
+    // Configure fetch mock for this specific test if needed, e.g., to ensure originalUserImageURL is undefined
+    (global.fetch as jest.Mock).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({
+          loglines: [{ tone: 'Test Tone', text: 'Test logline' }],
+          moodBoardCells: Array(9).fill({ title: 'Test Cell', description: 'Test cell description' }),
+          moodBoardImage: 'mock-moodboard-image-url',
+          shotList: '1,35mm,Test move,Test notes',
+          proxyClipAnimaticDescription: 'Test animatic description',
+          pitchSummary: 'Test pitch summary',
+          originalUserImageURL: undefined, // Explicitly undefined
+        }),
+      } as Response)
+    );
+
 
     const response = await POST(mockRequest);
     const responseJson = await response.json();
 
     expect(response.status).toBe(200);
-    expect(mockPromptToPrototype).toHaveBeenCalledWith(requestBody);
-
-    // Check that user image upload was NOT attempted for storage.file('prototypes/userId/promptPackageId/user-upload-...')
-    // We check that only the moodboard path was called for storage.file
-    const fileCalls = (mockStorage.bucket().file as jest.Mock).mock.calls;
-    expect(fileCalls.some(call => call[0].includes('user-upload'))).toBe(false);
-    expect(fileCalls.some(call => call[0].includes('moodboard'))).toBe(true);
-
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/generate'), // microservice URL check
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(requestBody), // Check body sent to microservice
+      })
+    );
 
     expect((mockDb as any).set).toHaveBeenCalledWith(expect.objectContaining({
       id: mockPromptPackageId,
       prompt: requestBody.prompt,
       originalImageURL: undefined, // Should be undefined as no image was sent
       moodBoard: expect.objectContaining({
-        generatedImageURL: mockGeneratedImageSignedUrl,
+        generatedImageURL: 'mock-moodboard-image-url', // from fetch mock
       }),
     }));
     expect(responseJson.originalImageURL).toBeUndefined();
