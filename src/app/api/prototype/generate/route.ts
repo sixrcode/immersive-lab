@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // import { PromptToPrototypeInputSchema, type PromptToPrototypeInput } from '@/ai/flows/prompt-to-prototype';
 import type { PromptPackage, Logline, MoodBoardCell, Shot, PromptToPrototypeInput } from '@/lib/types'; // Assuming PromptToPrototypeInput will be here or defined locally
 import { z } from 'zod'; // Import Zod
-import { db, firebaseAdminApp } from '@/lib/firebase/admin';
-import { Timestamp } from 'firebase-admin/firestore';
+import { db, firebaseAdminApp } from '@/lib/firebase/admin'; 
 
 // Define the structure of the expected response from the prompt generation microservice
 interface PromptGenServiceOutput {
@@ -20,7 +19,7 @@ interface PromptGenServiceOutput {
 /**
  * @fileoverview Next.js API route for generating prototype assets.
  *
- * This route handles POST requests to `/api/prototype/generate`.
+ * This route handles POST requests to `/api/prompt-to-prototype/generate`.
  * It serves as a gateway that:
  * 1. Validates the client's input.
  * 2. Calls a dedicated microservice (`prompt-gen-service`) to perform the AI generation.
@@ -32,7 +31,7 @@ interface PromptGenServiceOutput {
  * Note: Local AI flows and direct image processing (e.g., uploadImageToStorage, dataUriToBuffer) have been removed.
  *       This API route now delegates all such logic to the prompt-gen-service microservice.
  */
-export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage | { error: string; details?: any }>> {
+export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage | { error: string; details?: unknown }>> {
   // 1. Check Firebase Admin SDK
   if (!firebaseAdminApp) {
     console.error('Firebase Admin SDK not initialized. Cannot process request.');
@@ -102,7 +101,7 @@ try { // Added error handling for fetch
     let errorBody = null;
     try {
       errorBody = await response.json(); // Parse error body if available
-    } catch (_) {}
+    } catch {} // Removed unused variable _
     console.error('AI service error:', response.status, errorBody);
     return NextResponse.json(
       { error: 'AI service request failed.', details: errorBody || response.statusText },
@@ -121,13 +120,12 @@ try { // Added error handling for fetch
 
 // 5. Extract values and construct PromptPackage
 const { prompt, imageDataUri, stylePreset } = validatedInput;
-const userId = 'anonymous_user';
 const promptPackageId: string = uuidv4();
 
 const parseShotList = (shotListString: string): Shot[] => {
   if (!shotListString) return [];
   return shotListString.trim().split('\n').map((line, index) => {
-    const [num, lens, move, ...notes] = line.split(',').map(str => str.trim());
+    const [num, lens, move, ...notes]: string[] = line.split(',').map(str => str.trim());
     const shotNumber = parseInt(num, 10) || index + 1;
     return {
       shotNumber,
@@ -145,7 +143,7 @@ const moodBoardCells = flowOutput.moodBoardCells.map(cell => ({
 
 const newPromptPackage: PromptPackage = {
   id: promptPackageId,
-  userId: 'anonymous_user', // Using literal string as userId is not derived from auth yet
+  userId: 'anonymous_user', // Keep as literal string for now
   prompt,
   stylePreset,
   originalImageURL: flowOutput.originalUserImageURL || imageDataUri,

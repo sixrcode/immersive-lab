@@ -279,7 +279,7 @@ describe('ProductionBoardPage', () => {
 function within(element: HTMLElement) {
   return {
     getByText: (text: string | RegExp) => screen.getByText(text, { selector: `#${element.id} *`, exact: false }),
-    getByRole: (role: string, options?: any) => screen.getByRole(role, { ...options, container: element }),
+    getByRole: (role: string, options?: { name?: TextMatch }) => screen.getByRole(role, { ...options, container: element }),
     // Add other queries as needed
   };
 }

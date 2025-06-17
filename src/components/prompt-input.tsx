@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, ChangeEvent, FormEvent, useCallback } from 'react';
+import React, { useState, ChangeEvent, FormEvent } from 'react';
 import Image from 'next/image';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';

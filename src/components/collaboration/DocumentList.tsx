@@ -38,7 +38,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ projectId, onSelectDocument
         }
         const data = await response.json();
         setDocuments(data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(err.message || 'An unknown error occurred.');
         console.error(`Error fetching documents for project ${projectId}:`, err);
       } finally {

@@ -68,13 +68,20 @@ MockedSelect.SelectValue.displayName = 'MockSelectValue';
 describe('PromptInput Component', () => {
   const mockOnSubmit = jest.fn();
 
+  // Define a type for the mocked FileReader
+  interface MockedFileReader extends EventTarget {
+    readAsDataURL: jest.Mock;
+    onloadend: ((this: MockedFileReader, ev: ProgressEvent<MockedFileReader>) => any) | null;
+    result: string | ArrayBuffer | null;
+  }
+
   beforeEach(() => {
     mockOnSubmit.mockClear();
     // Mock FileReader
     global.FileReader = jest.fn(() => ({
       readAsDataURL: jest.fn(),
       onloadend: jest.fn(),
-      result: 'data:image/png;base64,mockedimagedata',
+      result: 'data:image/png;base64,mockedimagedata', // Add result property
     })) as any;
   });
 

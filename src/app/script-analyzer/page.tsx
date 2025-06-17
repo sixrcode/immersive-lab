@@ -14,8 +14,6 @@ import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle, Copy } from 
 import { useState, useEffect } from "react"; // Added useEffect
 import { useForm } from "react-hook-form";
 // Import Firebase auth to get ID token
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { User } from "firebase/auth";
 import { firebaseApp } from "@/lib/firebase/client";
 import { z } from "zod";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -47,16 +45,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ScriptAnalyzerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<AnalyzeScriptOutput | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null); // To store user
   const { toast } = useToast();
-  const auth = getAuth(firebaseApp);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe(); // Cleanup subscription
-  }, [auth]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),

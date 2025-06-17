@@ -1,16 +1,22 @@
 
 "use client";
-import { type ReactNode } from "react";
 import { useEffect, useState } from "react";
 import type { PortfolioItemType } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { Film, PlayCircle, Share2, CalendarDays, Clock, Loader2, AlertTriangle } from "lucide-react";
+import {
+ Badge,
+ Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { Root } from "react-dom/client";
 // mockPortfolioItems array removed
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 function PortfolioCard({ item }: { item: PortfolioItemType }) {
   return (
@@ -82,7 +88,7 @@ export default function PortfolioPage() {
         let data = await response.json();
         // Map _id to id for frontend consistency if PortfolioItemType expects 'id'
         // Also ensure all essential fields for PortfolioCard are present, providing fallbacks if necessary.
-        data = data.map((item: any) => ({
+        data = data.map((item: Record<string, any>) => ({
  // Explicitly cast item to PortfolioItemType
           ...item,
           id: item._id || item.id, // Use _id from mongo, or id if already present
@@ -91,7 +97,7 @@ export default function PortfolioPage() {
           datePublished: item.datePublished ? new Date(item.datePublished).toISOString().split('T')[0] : "N/A",
         }));
         setPortfolioItems(data);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error("Failed to fetch portfolio items:", e);
         setError(e.message || "Failed to load portfolio items. Please try again later.");
       } finally {

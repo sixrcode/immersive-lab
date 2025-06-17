@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { StoryboardGeneratorInputSchema, StoryboardGeneratorInput, StoryboardPanelWithImage as Panel } from '@/lib/ai-types'; // Updated import
 import { firebaseAdminApp } from '@/lib/firebase/admin';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp, Firestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, Firestore, DocumentData } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { v4 as uuidv4 } from 'uuid';
 // import { StoryboardPackage } from '../../../../../../types/src/storyboard.types'; // Adjust path as necessary
@@ -16,7 +16,7 @@ if (!firebaseAdminApp) {
 }
 
 const adminAuth = getAuth(firebaseAdminApp);
-const adminFirestore: Firestore = getFirestore(firebaseAdminApp);
+const adminFirestore: Firestore = getFirestore();
 const adminStorage = getStorage(firebaseAdminApp);
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -87,7 +87,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const aiStoryboardResult = await microserviceResponse.json(); // This is the data from the AI
+    // TODO: Replace 'any' with a specific type definition when the AI service output structure is known.
+    const aiStoryboardResult: any = await microserviceResponse.json(); // This is the data from the AI (currently leaving as any)
 
     // 3. Generate new storyboard ID
     const newStoryboardId = adminFirestore.collection('storyboards').doc().id;
@@ -148,7 +149,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             imageDataUri: undefined, // Remove original data URI
           });
 
-        } catch (uploadError: unknown) {
+        } catch (uploadError: unknown) { // Ensure uploadError is typed as unknown
           console.error(`Error processing/uploading image for panel ${panel.id || 'unknown'}:`, uploadError);
           // Decide if to fail all or just skip this panel's image
           // For now, we'll add the panel without the image URL if upload fails
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // 5. Construct StoryboardPackage
     const now = Timestamp.now();
-    const storyboardPackageData: any = {
+    const storyboardPackageData: DocumentData = { // Use DocumentData for Firestore data
       id: newStoryboardId,
       userId: userId,
       projectId: projectId, // Include projectId from the request
