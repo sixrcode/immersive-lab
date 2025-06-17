@@ -1,8 +1,9 @@
 
 "use client";
 
+// Keep type imports, remove function import
 import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/ai/flows/ai-script-analyzer";
-import { analyzeScript } from "@/ai/flows/ai-script-analyzer";
+// import { analyzeScript } from "@/ai/flows/ai-script-analyzer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -10,8 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle, Copy } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import { useForm } from "react-hook-form";
+// Import Firebase auth to get ID token
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import firebaseApp from "@/lib/firebase"; // Assuming firebaseApp is initialized and exported from here
 import { z } from "zod";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,7 +33,16 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ScriptAnalyzerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<AnalyzeScriptOutput | null>(null);
+  const [currentUser, setCurrentUser] = useState<firebase.default.User | null>(null); // To store user
   const { toast } = useToast();
+  const auth = getAuth(firebaseApp);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe(); // Cleanup subscription
+  }, [auth]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -41,20 +54,46 @@ export default function ScriptAnalyzerPage() {
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
     setResults(null);
+
+    if (!currentUser) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to analyze scripts.",
+        variant: "destructive",
+        action: <XCircle className="text-red-500" />,
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const input: AnalyzeScriptInput = { script: values.script };
-      const output = await analyzeScript(input);
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch("/api/analyzeScript", { // Using relative path for API endpoint
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ script: values.script } as AnalyzeScriptInput),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Unknown error occurred" }));
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+      }
+
+      const output: AnalyzeScriptOutput = await response.json();
       setResults(output);
       toast({
         title: "Script Analysis Complete!",
         description: "Review the analysis and suggestions below.",
         action: <CheckCircle className="text-green-500" />,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error analyzing script:", error);
       toast({
         title: "Error Analyzing Script",
-        description: "Failed to analyze script. Please try again.",
+        description: error.message || "Failed to analyze script. Please try again.",
         variant: "destructive",
         action: <XCircle className="text-red-500" />,
       });
