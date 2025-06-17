@@ -11,12 +11,12 @@ ISL.SIXR.tv is the digital home of the Immersive Storytelling Lab, a project by 
 The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools designed to support creators through every stage of the immersive storytelling process. Key features include:
 
 -   **Tutorial Discovery Engine:** A curated database of tutorials and learning materials focused on VR, XR, AI filmmaking, and open-source creative tools. (Vision as per documentation)
--   **Community Showcase:** A space for creators to share their projects, get feedback, and connect with peers. (Basic portfolio functionality currently present)
+-   **Community Showcase:** A space for creators to share their projects, get feedback, and connect with peers. (Basic portfolio functionality currently present, supported by the Portfolio Microservice. See Microservices Architecture section for details.)
 -   **Resources Hub:** A collection of links to essential tools, assets, and documentation for immersive content creation. (Vision as per documentation)
--   **AI Script Analyzer:** Analyzes scripts to provide insights on pacing, character arcs, and potential plot holes. This feature is implemented as a microservice using Firebase Functions (see `functions/index.js` for the endpoint and `functions/src_copy/ai/flows/ai-script-analyzer.ts` for the core logic). The user interface for this tool is located at `src/app/script-analyzer/page.tsx`, which communicates with the microservice.
+-   **AI Script Analyzer:** Provides insights on script pacing, character arcs, and potential plot holes. (Detailed in Microservices Architecture section)
 -   **Prompt-to-Prototype Studio (Phase 1: Core Generation):** Generates a comprehensive set of creative assets (loglines, mood board, shot list, animatic description, pitch summary) from a user's prompt, optional image, and style preset. Results are stored in Firestore and Firebase Storage, with a JSON download option. (Actively developed/present in UI)
 -   **Production Board (Production-Gate Board):** Helps manage the production workflow, from pre-production to final output. (Actively developed/present in UI)
--   **Real-Time Collaboration:** Allows multiple users to work together on creative projects in real-time.
+-   **Real-Time Collaboration:** Allows multiple users to work together on creative projects in real-time. (Supported by the Collaboration Service. See Microservices Architecture section for details.)
 -   **Authentication and User Profiles:** Secure user accounts and personalized profiles for managing projects and contributions.
 
 ## System Architecture
@@ -24,18 +24,6 @@ The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools de
 The ISL.SIXR.tv platform employs a modern web architecture:
 
 -   **Frontend & BFF (Backend-For-Frontend):** The primary application is built with Next.js, serving both as the user interface and a backend layer that handles user authentication, data management with Firestore, and orchestration of calls to other services.
-AI Microservice (prompt-gen-service):
-To support the computationally intensive "Prompt-to-Prototype" feature, a dedicated Node.js microservice—prompt-gen-service—has been introduced. Located in the services/prompt-gen-service directory, this service is responsible for all AI-driven generation and image processing tasks.
-
-This architectural separation ensures:
-
-The main Next.js application remains responsive and lightweight.
-
-The AI microservice can be deployed, monitored, and scaled independently.
-
-Clear boundaries between user interface/backend logic and AI model orchestration.
-
-Communication between the frontend and this service is handled via HTTP requests from the Next.js backend, which also manages authentication, Firestore storage, and user session context.
 
 ## Getting Started
 
@@ -106,53 +94,57 @@ ISL.SIXR.tv is built with a modern tech stack designed for scalability and a ric
 -   **TypeScript:** A typed superset of JavaScript that enhances code quality and maintainability.
 -   **Vercel:** Used for deployment and managing serverless functions, ensuring high availability and performance.
 
-AI Microservices Architecture
-The ISL.SIXR.tv platform is evolving to adopt a microservices-based architecture. This modular approach enables focused development, independent deployment, and scalable resource management—especially for AI-intensive workflows.
+## Microservices Architecture
 
-🧠 Prompt Generation Service (services/prompt-gen-service)
-Purpose: Handles the core AI-driven generation of creative assets such as loglines, mood boards, shot lists, and pitch summaries based on user prompts.
+The ISL.SIXR.tv platform employs a modular, microservices-based architecture to ensure scalability, focused development, and independent deployment of its diverse functionalities. This approach is particularly beneficial for managing AI-intensive workflows and real-time collaborative features. Below is an overview of the key microservices:
 
-Implementation: Built with Node.js, Express, and Genkit.
+### Prompt Generation Service (`services/prompt-gen-service/`)
 
-Location: services/prompt-gen-service
+*   **Purpose:** Handles the core AI-driven generation of creative assets such as loglines, mood boards, shot lists, and pitch summaries based on user prompts. It is responsible for all AI-driven content generation and image processing tasks related to the Prompt-to-Prototype Studio.
+*   **Key Technologies:** Node.js, Express, Genkit
+*   **Location:** `services/prompt-gen-service/`
+*   **Notes:**
+    *   This service operates independently from the main web application.
+    *   Its architectural separation ensures the main Next.js application remains responsive and lightweight, allows the AI microservice to be deployed, monitored, and scaled independently, and maintains clear boundaries between user interface/backend logic and AI model orchestration.
+    *   Communication with the frontend is handled via HTTP requests from the Next.js backend, which also manages authentication, Firestore storage, and user session context.
+    *   For detailed setup, environment variables, and API reference, see the `README.md` within its directory.
 
-Documentation: See README.md for setup instructions, environment variables, and API reference.
+### Centralized AI Microservice (`ai-microservice/`)
 
-This service operates independently from the main web application, enabling robust performance and flexible scaling for AI tasks.
+*   **Purpose:** Acts as a primary API gateway for a range of AI functionalities beyond prompt generation. It manages Genkit flows, orchestrates communication with various AI models (e.g., Gemini via Google AI), and processes structured input from different frontend features.
+*   **Key Technologies:** Firebase Function, Node.js, Express
+*   **Location:** `ai-microservice/`
+*   **Authentication:** All endpoints require a valid Firebase ID token (Authorization: Bearer <token>).
+*   **Endpoints:**
+    *   Base URL: `https://<region>-<project-id>.cloudfunctions.net/aiApi`
+    *   `POST /analyzeScript`: Accepts script content and returns a `ScriptAnalysisPackage`. Powers the AI Script Analyzer tool.
+    *   `POST /promptToPrototype`: Generates a `PromptPackage` from a user prompt (with optional image/style). Used by the Prompt-to-Prototype Studio.
+    *   `POST /generateStoryboard`: Returns a `StoryboardPackage` from a scene description. Intended for the Storyboard Studio.
+*   **Deployment:**
+    *   Deploy using the command: `firebase deploy --only functions:aiApi`
+    *   The resulting URL should be set as the `NEXT_PUBLIC_AI_MICROSERVICE_URL` environment variable in the Next.js application.
+*   **Note:** This service centralizes common AI tasks and model interactions, providing a consistent interface for the frontend.
 
-🚀 Centralized AI Microservice (ai-microservice/)
-To centralize broader AI functionalities, the platform also includes a Firebase-based AI microservice.
+### AI Script Analyzer (`functions/`)
 
-Purpose: Manages Genkit flows, communicates with AI models (e.g., Gemini via Google AI), and processes structured input from frontend features.
+*   **Purpose:** Analyzes textual scripts to provide users with insights on narrative elements such as pacing, character development, and potential plot inconsistencies.
+*   **Key Technologies:** Firebase Function
+*   **Location:** The core logic resides in `functions/src_copy/ai/flows/ai-script-analyzer.ts`, with the endpoint defined in `functions/index.js`. It is invoked via the Centralized AI Microservice's `/analyzeScript` endpoint.
+*   **Note:** This microservice provides specialized AI analysis for scriptwriting, integrating with the Centralized AI Microservice for API exposure.
 
-Implementation: Deployed as a Firebase Function using Node.js and Express. It acts as an API gateway for all AI interactions.
+### Collaboration Service (`collaboration-service/`)
 
-Authentication: All endpoints require a valid Firebase ID token (Authorization: Bearer <token>).
+*   **Purpose:** Enables real-time collaboration features for users working concurrently on creative projects. This can include functionalities like shared document editing, synchronized project states, and potentially real-time chat or presence indicators.
+*   **Key Technologies:** Node.js, Express, Docker (containerization for deployment)
+*   **Location:** `collaboration-service/`
+*   **Note:** This service is crucial for team-based projects, allowing multiple creators to contribute and interact seamlessly.
 
-Location: ai-microservice/ directory in the root of the repository.
+### Portfolio Microservice (`portfolio-microservice/`)
 
-🔗 Available API Endpoints
-Base URL:
-
-php-template
-Copy
-Edit
-https://<region>-<project-id>.cloudfunctions.net/aiApi
-Endpoint	Description
-POST /analyzeScript	Accepts script content and returns a ScriptAnalysisPackage.
-POST /promptToPrototype	Generates a PromptPackage from a user prompt (with optional image/style).
-POST /generateStoryboard	Returns a StoryboardPackage from a scene description.
-
-These endpoints power frontend features like the Prompt-to-Prototype Studio, AI Script Analyzer, and Storyboard Studio.
-
-🔧 Deployment Instructions
-To deploy the centralized AI microservice:
-
-bash
-Copy
-Edit
-firebase deploy --only functions:aiApi
-After deployment, set the resulting URL as the value of the NEXT_PUBLIC_AI_MICROSERVICE_URL environment variable in your Next.js .env.local file or CI/CD secrets.
+*   **Purpose:** Manages user portfolios and project showcases. It allows creators to publish their work (both completed and in-progress), receive feedback from the community, and build their public profiles on the ISL.SIXR.tv platform.
+*   **Key Technologies:** Node.js, Express
+*   **Location:** `portfolio-microservice/`
+*   **Note:** This service supports the community aspect of the platform, enabling users to share and discover creative projects.
 
 ## Deployment: Firebase Hosting & Cloud Run Strategy
 
@@ -241,6 +233,77 @@ This lets Hosting handle static assets, CDN, SSL, and rewrites `/api` to your co
 
 Mixing Firebase Hosting with Cloud Run gives you the best of both worlds—fast static delivery, global SSL/CDN, and backend flexibility in containers. If that aligns with SIXR’s mission—empowering creators with style and scale—this combo is a strong play.
 
+## Future Improvements
+
+The ISL.SIXR.tv platform is envisioned as an evolving ecosystem for immersive storytellers. Future enhancements will focus on deepening AI capabilities, broadening integrations, and enriching the community experience, all while ensuring robust performance and accessibility. Key areas for future development include:
+
+### Enhanced AI Capabilities
+*   **Advanced Content Generation:** Explore more sophisticated AI models to generate richer content, such as short video snippets beyond animatics, dynamic 3D scene prototyping, or even AI-composed musical scores to match moods.
+*   **Iterative AI Assistance:** Introduce AI-powered feedback loops for refining generated content. This could include suggestions for improving logline impact, diversifying shot compositions based on cinematic principles, or enhancing dialogue authenticity.
+*   **Personalized Learning Paths:** Leverage AI to analyze a creator's skill progression and suggest personalized tutorial paths or resources from the Tutorial Discovery Engine.
+*   **Predictive Script Insights:** Expand the AI Script Analyzer to offer predictive insights, such as potential audience reception for different narrative choices or suggestions for aligning a script with specific genre conventions.
+
+### Broader Platform Integrations
+*   **XR/VR Authoring Tools:** Develop deeper, more seamless integrations with popular XR/VR authoring tools (e.g., Unity, Unreal Engine), allowing for direct export/import of assets and scene data.
+*   **Open-Source Creative Ecosystem:** Connect with other open-source creative tools (e.g., Blender for 3D modeling, Krita for concept art) and asset libraries to create a more comprehensive workflow.
+*   **Version Control Systems:** Integrate with systems like Git for managing versions of creative projects, especially text-based assets like scripts or interactive narratives.
+*   **Educational Platforms:** Explore APIs for connecting with Learning Management Systems (LMS) to better serve educational users and institutions.
+
+### Performance and Scalability
+*   **Microservice Optimization:** Continuously optimize all microservices, particularly AI-intensive ones like the Prompt Generation Service and Centralized AI Microservice, for faster response times, improved resource efficiency, and enhanced scalability.
+*   **Edge Computing for AI:** Investigate the feasibility of deploying certain AI inference tasks to edge devices to reduce latency for real-time feedback and interactive AI tools.
+*   **Optimized Asset Pipelines:** Refine asset management and processing pipelines (e.g., image/video transcoding, 3D model optimization) for smoother and faster handling of creative media.
+
+### Expanded Community Features
+*   **Peer Review & Mentorship Workflows:** Implement structured peer review systems for shared projects, and facilitate mentorship connections within the community.
+*   **Versioned Feedback & Annotation:** Allow users to provide version-specific feedback on shared creative works, potentially with on-asset annotation tools (e.g., commenting directly on a script or storyboard panel).
+*   **Collaborative Project Spaces:** Enhance collaborative environments with more granular permission controls, role assignments, and integrated project management tools.
+*   **Skill-Sharing & Workshops:** Facilitate community-led skill-sharing sessions or virtual workshops directly within the platform.
+
+### User Experience (UX) and Accessibility
+*   **Intuitive Workflow Refinement:** Continuously gather user feedback to refine the user interface (UI) and overall workflow, making the platform more intuitive and reducing the learning curve.
+*   **Enhanced Accessibility:** Proactively implement and improve accessibility features based on WCAG standards to ensure the platform is usable by creators with diverse abilities.
+*   **Mobile & Tablet Responsiveness:** Improve responsiveness and usability of the platform on a wider range of devices, including tablets and mobile for certain review/feedback functionalities.
+*   **Customizable Dashboards:** Allow users to personalize their dashboards to prioritize tools and information relevant to their current projects and learning goals.
+
+## Development Phases
+
+This section outlines the general phased development approach for the ISL.SIXR.tv platform and its constituent microservices. The platform evolves iteratively, with features maturing through these stages.
+
+### Overall Platform Development Phases
+
+*   **Phase 1: Foundation & Core Features (Current/Recent Past)**
+    *   *Description:* Focus on establishing the core platform infrastructure, essential user-facing features, and initial versions of key AI tools. This includes the development of the Next.js frontend, Firebase backend (Auth, Firestore, Storage), the initial Prompt-to-Prototype Studio (core generation), the AI Script Analyzer (basic analysis), and foundational elements for collaboration and portfolio functionalities.
+*   **Phase 2: Expansion & Integration (Ongoing/Near Future)**
+    *   *Description:* Enhancing existing features with more depth, improving integration between platform tools, expanding AI capabilities based on user feedback and model advancements, and growing community functionalities. Examples include implementing the detailed future phases of the Prompt-to-Prototype Studio, refining the AI Script Analyzer for more nuanced feedback, maturing collaboration tools with richer features, and building out a more interactive community showcase and portfolio system.
+*   **Phase 3: Maturity & Ecosystem Growth (Future)**
+    *   *Description:* Transition towards a highly scalable, robust platform with advanced AI/XR integrations, broader third-party tool connections, and fostering a self-sustaining creator ecosystem. This phase might include introducing more complex XR content generation/editing capabilities, offering API access for external developers, implementing advanced platform analytics for users and administrators, and establishing robust governance models for community content and contributions.
+
+### Microservice Development Phases
+
+*General Note: Each microservice generally aligns with the overall platform phases but with a specific focus relevant to its domain. Development is iterative, and features within each microservice will evolve through these phases.*
+
+*   **Prompt Generation Service (`services/prompt-gen-service/`)**
+    *   *Phase 1:* Core AI model integration for generating initial creative assets (loglines, mood boards, shot lists, pitch summaries). Establish stable API for internal use.
+    *   *Phase 2:* Expansion of supported AI models, improvement in the quality and diversity of generated assets, introduction of more fine-grained style controls and options.
+    *   *Phase 3:* Exploration of advanced generative capabilities (e.g., basic 3D assets, interactive narrative elements), significant optimization for high-volume usage, and potential for customizable model fine-tuning.
+*   **Centralized AI Microservice (`ai-microservice/`)**
+    *   *Phase 1:* Establish the API gateway structure, implement initial Genkit flows for core platform AI features like script analysis (`/analyzeScript`) and prototype generation (`/promptToPrototype`).
+    *   *Phase 2:* Add more AI-driven endpoints as new features require, refine existing Genkit flows for robustness, improve error handling, logging, and monitoring capabilities.
+    *   *Phase 3:* Support for more complex, multi-step AI workflows, potential integration with MLOps pipelines for model management and deployment, and enhanced security measures for sensitive AI operations.
+*   **AI Script Analyzer (`functions/` - via Centralized AI Microservice)**
+    *   *Phase 1:* Basic script parsing, scene detection, and initial analysis (e.g., tone, pacing estimates, keyword extraction).
+    *   *Phase 2:* More nuanced analysis (e.g., character dialogue patterns, plot structure visualization), and providing actionable suggestions for improvement.
+    *   *Phase 3:* Deeper understanding of cinematic conventions and genre-specific feedback, potential integration with other writing or pre-production tools.
+*   **Collaboration Service (`collaboration-service/`)**
+    *   *Phase 1:* Core real-time features such as shared document co-editing for scripts or project notes, and basic real-time presence indicators.
+    *   *Phase 2:* Enhanced collaboration tools including version history for shared documents, commenting and annotation features, and basic project management integrations (e.g., task tracking).
+    *   *Phase 3:* Highly scalable infrastructure for large concurrent collaborative projects, integration with external communication and project management tools, and advanced permissioning models.
+*   **Portfolio Microservice (`portfolio-microservice/`)**
+    *   *Phase 1:* Basic user portfolio creation and display, ability to share links to projects, simple project descriptions.
+    *   *Phase 2:* Advanced portfolio customization options, structured feedback mechanisms (likes, comments), integration with community showcase features for better discoverability.
+    *   *Phase 3:* Introduction of social networking aspects (following creators, project updates), enhanced discoverability algorithms, and personal analytics for creators on how their work is viewed.
+
 ## Contributing
 
 Contributions are welcome! We appreciate any help in improving this project and empowering more creators.
@@ -266,7 +329,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Prompt-to-Prototype Studio
 
-The Prompt-to-Prototype Studio is a key feature of ISL.SIXR.tv, designed to rapidly convert initial ideas into a tangible set of creative assets. Users can input a text prompt, optionally upload a reference image, and select a style preset. The backend logic for generating these assets is handled by the **AI Microservice**. The studio then receives and displays:
+The Prompt-to-Prototype Studio is a key feature of ISL.SIXR.tv, designed to rapidly convert initial ideas into a tangible set of creative assets. Users can input a text prompt, optionally upload a reference image, and select a style preset. The backend logic for generating these assets is handled by the **Centralized AI Microservice (`ai-microservice/`)**. The studio then receives and displays:
 
 -   Multiple loglines (targeting different tones, influenced by the style preset).
 -   An AI-generated mood board image (inspired by the prompt, image, and style).
@@ -275,7 +338,7 @@ The Prompt-to-Prototype Studio is a key feature of ISL.SIXR.tv, designed to rapi
 -   An animatic description for a 4-second proxy clip, outlining key visuals and pacing, influenced by the style.
 -   A concise pitch summary, capturing the core concept and tone.
 
-All generated data is bundled into a `PromptPackage`, which is created and stored in Firestore by the AI microservice. Images (user-uploaded and AI-generated) are also handled by the microservice and saved to Firebase Cloud Storage, with their URLs included in the `PromptPackage`. The Next.js application receives this package and allows users to view the content and download it as a JSON file.
+All generated data is bundled into a `PromptPackage`, which is created and stored in Firestore by the Centralized AI Microservice. Images (user-uploaded and AI-generated) are also handled by the Centralized AI Microservice and saved to Firebase Cloud Storage, with their URLs included in the `PromptPackage`. The Next.js application receives this package and allows users to view the content and download it as a JSON file.
 
 This feature is under active development. For detailed documentation on the current Phase 1 implementation, please see [Core Generation Pipeline Documentation](./docs/v1.1/core.md). The AI logic itself resides in the `ai-microservice/src/flows/prompt-to-prototype.ts` flow.
 
@@ -300,13 +363,13 @@ This phased approach ensures that the Prompt-to-Prototype Studio becomes a deepl
 ### Prompt-to-Prototype Studio Handoff Features
 
 #### ➤ Storyboard Studio Integration
-- Converts generated shot lists into visual storyboard panels. (Handled by the AI Microservice's `/generateStoryboard` endpoint)
+- Converts generated shot lists into visual storyboard panels. (Handled by the Centralized AI Microservice's `/generateStoryboard` endpoint)
 - Auto-fills style and panel details from prototype data.
-- Generates storyboard images using Genkit-powered AI functions within the AI Microservice.
+- Generates storyboard images using Genkit-powered AI functions within the Centralized AI Microservice.
 
 #### ➤ Script & Dialogue Analyzer Integration
 - Transforms logline, shot list, and animatic description into a script draft.
-- AI analyzes tone, clarity, and dialogue strength. (Handled by the AI Microservice's `/analyzeScript` endpoint)
+- AI analyzes tone, clarity, and dialogue strength. (Handled by the Centralized AI Microservice's `/analyzeScript` endpoint)
 - Editable script interface with in-line suggestions.
 
 ### Workflow Example
