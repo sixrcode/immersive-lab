@@ -1,68 +1,77 @@
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, MessageSquare, Edit, Share2 } from "lucide-react";
-import Image from "next/image";
+import React, { useState, useEffect } from 'react';
+import ProjectList from '@/components/collaboration/ProjectList';
+import DocumentEditor from '@/components/collaboration/DocumentEditor';
+import ChatWindow from '@/components/collaboration/ChatWindow';
+// A new component to list documents for a selected project
+import DocumentList from '@/components/collaboration/DocumentList';
+
+
+// Mock current user (replace with actual authentication context)
+const MOCK_USER = {
+  id: 'user_123abc', // Example user ID
+  name: 'Dev User',   // Example user display name
+};
 
 export default function CollaborationPage() {
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+
+  // Effect to clear document selection when project changes
+  useEffect(() => {
+    setSelectedDocumentId(null); // Clear document when project changes
+  }, [selectedProjectId]);
+
   return (
-    <div className="container mx-auto py-8">
-      <Card className="max-w-3xl mx-auto shadow-xl overflow-hidden">
-        <CardHeader className="bg-primary text-primary-foreground p-8">
-          <div className="flex items-center gap-3">
-            <Users className="h-10 w-10" />
-            <div>
-              <CardTitle className="text-3xl">Real-Time Collaboration Hub</CardTitle>
-              <CardDescription className="text-primary-foreground/80 text-lg mt-1">
-                Work together seamlessly with your team.
-              </CardDescription>
+    <div className="flex flex-col md:flex-row h-[calc(100vh-var(--header-height,4rem))] bg-gray-900 text-white">
+      {/* Left Sidebar: Project List */}
+      <aside className="w-full md:w-1/4 xl:w-1/5 p-4 bg-gray-850 overflow-y-auto shadow-lg">
+        <ProjectList
+          onSelectProject={setSelectedProjectId}
+          selectedProjectId={selectedProjectId}
+        />
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col md:flex-row p-1 md:p-4 gap-1 md:gap-4 overflow-hidden">
+        {/* Document Area: List and Editor */}
+        <div className="w-full md:w-2/3 flex flex-col gap-1 md:gap-4">
+          {selectedProjectId && (
+            <div className="bg-gray-800 p-1 md:p-4 rounded-lg shadow-md h-1/3 md:h-auto md:min-h-[200px] overflow-y-auto">
+              <DocumentList
+                projectId={selectedProjectId}
+                onSelectDocument={setSelectedDocumentId}
+                selectedDocumentId={selectedDocumentId}
+              />
             </div>
+          )}
+          <div className="flex-grow bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            {selectedProjectId && selectedDocumentId ? (
+              <DocumentEditor documentId={selectedDocumentId} projectId={selectedProjectId} />
+            ) : (
+              <div className="p-6 text-center text-gray-400 h-full flex items-center justify-center">
+                {selectedProjectId ? "Select a document to start editing." : "Select a project to see documents and chat."}
+              </div>
+            )}
           </div>
-        </CardHeader>
-        <CardContent className="p-8">
-          <div className="relative aspect-video mb-8 rounded-lg overflow-hidden border shadow-inner">
-             <Image 
-              src="https://placehold.co/800x450.png" 
-              alt="Collaboration illustration" 
-              layout="fill" 
-              objectFit="cover" 
-              data-ai-hint="team collaboration"
+        </div>
+
+        {/* Right Sidebar: Chat Window */}
+        <aside className="w-full md:w-1/3 p-1 md:p-0 h-1/2 md:h-full">
+          {selectedProjectId ? (
+            <ChatWindow
+              projectId={selectedProjectId}
+              currentUserId={MOCK_USER.id}
+              currentUserName={MOCK_USER.name}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent flex items-center justify-center">
-              <p className="text-2xl font-semibold text-white bg-black/50 px-4 py-2 rounded">Coming Soon!</p>
+          ) : (
+            <div className="p-6 text-center text-gray-400 bg-gray-800 rounded-lg shadow-md h-full flex items-center justify-center">
+              Select a project to enable chat.
             </div>
-          </div>
-          
-          <p className="text-lg text-muted-foreground mb-6">
-            Our real-time collaboration features are currently under development. Soon, you&apos;ll be able to:
-          </p>
-          <ul className="space-y-4">
-            <li className="flex items-start gap-3">
-              <MessageSquare className="h-6 w-6 text-accent flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="font-semibold text-foreground">Live Chat & Discussions</h3>
-                <p className="text-muted-foreground text-sm">Communicate instantly with your team members within projects.</p>
-              </div>
-            </li>
-            <li className="flex items-start gap-3">
-              <Edit className="h-6 w-6 text-accent flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="font-semibold text-foreground">Simultaneous Document Editing</h3>
-                <p className="text-muted-foreground text-sm">Co-edit scripts, storyboards, and notes with multi-cursor support.</p>
-              </div>
-            </li>
-            <li className="flex items-start gap-3">
-              <Share2 className="h-6 w-6 text-accent flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="font-semibold text-foreground">Shared Project Spaces</h3>
-                <p className="text-muted-foreground text-sm">Organize all your collaborative efforts in one central place.</p>
-              </div>
-            </li>
-          </ul>
-          <p className="mt-8 text-center text-foreground font-medium">
-            We&apos;re excited to bring these powerful tools to the Immersive Storytelling Lab to help you create amazing stories together!
-          </p>
-        </CardContent>
-      </Card>
+          )}
+        </aside>
+      </main>
     </div>
   );
 }
