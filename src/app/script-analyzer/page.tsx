@@ -1,10 +1,9 @@
 
 "use client";
 
-
-import type { AnalyzeScriptInput, AnalyzeScriptOutput } from "@/lib/ai-types"; // Updated import
-// import { analyzeScript } from "@/ai/flows/ai-script-analyzer"; // Removed direct import
-
+// Type-only import for AI script analysis input/output
+import type { AnalyzeScriptInput, AnalyzeScriptOutput } from '@/lib/ai-types';
+// Note: `analyzeScript` function intentionally not imported here.
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -69,11 +68,16 @@ export default function ScriptAnalyzerPage() {
     setIsLoading(true);
     setResults(null);
 
-    const idToken = await getCurrentUserIdToken();
-    if (!idToken) {
-      toast({
-        title: "Authentication Error",
-        description: "Could not get user token. Please ensure you are logged in.",
+const idToken = await getCurrentUserIdToken();
+
+if (!idToken) {
+  toast({
+    title: "Authentication Error",
+    description: "You must be logged in to analyze scripts.",
+    variant: "destructive", // optional if using variant-based styling
+  });
+  return;
+}
         variant: "destructive",
         action: <XCircle className="text-red-500" />,
       });
@@ -82,21 +86,23 @@ export default function ScriptAnalyzerPage() {
     }
 
     try {
-      const input: AnalyzeScriptInput = { script: values.script };
-      const response = await fetch('/api/script-analyzer/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-        body: JSON.stringify(input),
-      });
+const input: AnalyzeScriptInput = { script: values.script };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
-        // Use errorData.details from microservice if available, else errorData.error, else generic message
-        const errorMessage = errorData.details || errorData.error || `Request failed with status ${response.status}`;
-        throw new Error(errorMessage);
+const response = await fetch('/api/script-analyzer/analyze', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${idToken}`,
+  },
+  body: JSON.stringify(input),
+});
+
+if (!response.ok) {
+  const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+  const errorMessage =
+    errorData.details || errorData.error || `Request failed with status ${response.status}`;
+  throw new Error(errorMessage);
+}
       }
 
       const output: AnalyzeScriptOutput = await response.json();
@@ -106,12 +112,17 @@ export default function ScriptAnalyzerPage() {
         description: "Review the analysis and suggestions below.",
         action: <CheckCircle className="text-green-500" />,
       });
-
-    } catch (error) {
-      console.error("Error analyzing script via API:", error);
-      toast({
-        title: "Error Analyzing Script",
-        description: error instanceof Error ? error.message : "Failed to analyze script. Please try again.",
+} catch (error) {
+  console.error("Error analyzing script:", error);
+  toast({
+    title: "Error Analyzing Script",
+    description:
+      error instanceof Error
+        ? error.message
+        : "Failed to analyze script. Please try again.",
+    variant: "destructive", // optional: for styling if supported
+  });
+}
         variant: "destructive",
         action: <XCircle className="text-red-500" />,
       });
