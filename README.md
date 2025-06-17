@@ -4,6 +4,10 @@
 
 Forge the Future, One Story at a Time.
 
+## 🌐 Live Demo / Preview
+
+-   You can access a live version of the platform at: [https://ISL.SIXR.tv](https://ISL.SIXR.tv)
+
 ## Table of Contents
 
 - [Features](#features)
@@ -421,32 +425,59 @@ Mixing Firebase Hosting with Cloud Run gives you the best of both worlds—fast 
 
 This section outlines the continuous integration, continuous delivery (CI/CD), and deployment pipeline for the ISL.SIXR.tv platform. The goal is to automate testing and deployment processes to ensure reliability and efficiency.
 
--   **Automation Tool:**
-    -   **GitHub Actions:** The project plans to use GitHub Actions for automating CI/CD workflows. This includes running tests on pull requests to the main branch and orchestrating deployments upon merges to the main branch. (Note: Full configuration is currently in progress or "coming soon").
+### Automation with GitHub Actions
 
--   **Environments:**
-    -   **Development:** Local developer setups and feature branches.
-    -   **Staging (Planned/To Be Detailed):** A staging or pre-production environment is typically used to test features in a production-like setting before deploying to live users. Specifics for this project are yet to be detailed.
-    -   **Production:** The live environment accessible to all users, deployed from the main branch.
+-   **Core Tool:** GitHub Actions is the primary tool planned for automating CI/CD workflows. While specific workflow files (e.g., under `/.github/workflows/`) are yet to be fully implemented or made visible, the strategy is to use them extensively. (Note: Full configuration is 'coming soon' as per project status).
+-   **Triggers:** Workflows are typically configured to trigger on:
+    -   Push events to main branches (e.g., `main`, `develop`).
+    -   Pull requests targeting the `main` branch to ensure code quality before merging.
+-   **Common Jobs:** Automated jobs within the workflows will likely include:
+    -   **Linting:** Checking code for style consistency and potential errors.
+    -   **Testing:** Running unit, integration, and potentially other tests (see "🧪 Testing" section).
+    -   **Building:** Compiling the Next.js application and building Docker images for containerized microservices.
+    -   **Deployment:** Pushing built assets and images to their respective hosting/registry services and deploying to various environments.
 
--   **Deployment Tools & Processes:**
-    -   **Next.js Frontend (Vercel/Firebase Hosting):** The Next.js application is deployed using Vercel for its frontend hosting capabilities, or alternatively via Firebase Hosting. Deployments are expected to be automated via GitHub Actions.
-    -   **Firebase Services (Functions, Firestore Rules, Hosting Config):** The Firebase CLI (`firebase deploy`) is used for deploying Firebase Functions, Firestore security rules, and Firebase Hosting configurations. This is often integrated into CI/CD scripts. For example, the Centralized AI Microservice is deployed using `firebase deploy --only functions:aiApi`.
-    -   **Microservices (Cloud Run):**
-        -   **Containerization:** Microservices designed for Cloud Run (like the Collaboration Service, which mentions Docker) are containerized using Docker.
-        -   **Deployment:** Deployment to Cloud Run is typically handled via `gcloud` CLI commands, which can be scripted in GitHub Actions. This involves building the Docker image, pushing it to a container registry (like Google Container Registry - GCR), and then deploying a new revision to Cloud Run.
+### Environments
 
--   **General Workflow (Anticipated):**
-    1.  Developers work on features in separate branches.
-    2.  Pull requests are created to merge features into the main branch.
-    3.  GitHub Actions automatically run tests (unit, integration) on these PRs.
-    4.  Upon successful tests and code review, PRs are merged into `main`.
-    5.  (Future) GitHub Actions trigger deployment scripts:
-        *   Builds and deploys the Next.js frontend to Vercel/Firebase Hosting.
-        *   Deploys Firebase Functions and configurations.
-        *   Builds Docker images for relevant microservices and deploys them to Cloud Run.
+-   **Development:** Local developer setups and feature branches.
+-   **Staging (Planned/To Be Detailed):** A dedicated staging or pre-production environment is crucial for testing features in a production-like setting before deploying to live users. Details on its setup and refresh cycle are to be defined.
+-   **Production:** The live environment accessible to all users, deployed from a stable main branch (e.g., `main`).
 
-This setup aims to provide a robust pipeline for delivering updates and new features to the ISL.SIXR.tv platform.
+### Deployment Tools & Strategies
+
+-   **Next.js Frontend (Vercel & Firebase Hosting):**
+    -   The Next.js frontend is primarily deployed using **Vercel**, leveraging its optimizations for Next.js applications (e.g., serverless functions, edge network, CI/CD integration).
+    -   Alternatively, **Firebase Hosting** can serve the Next.js application, especially when tighter integration with other Firebase services is a priority for certain parts of the app or during specific development phases.
+    -   Deployments to both platforms are intended to be automated via GitHub Actions.
+
+-   **Firebase Services (Functions, Firestore Rules, Hosting Config):**
+    -   The **Firebase CLI** (`firebase deploy`) is the standard tool for deploying Firebase Functions (like the Centralized AI Microservice), Firestore security rules, and Firebase Hosting configurations.
+    -   These deployments are typically scripted within GitHub Actions workflows for automation. For example, `firebase deploy --only functions:aiApi` is used for the Centralized AI Microservice.
+
+-   **Containerized Microservices (Docker & Google Cloud Run):**
+    -   **Design:** Microservices like the 'Collaboration Service' or other custom backend APIs are designed to be containerized using **Docker**.
+    -   **Dockerfile:** Each containerized microservice should include a `Dockerfile` in its root directory (e.g., `collaboration-service/Dockerfile`) that defines its build environment.
+    -   **Image Registry:** During the CI/CD process, Docker images are built and pushed to a container registry. **Google Artifact Registry** is the recommended choice within the Google Cloud ecosystem, though Docker Hub is also an option.
+    -   **Cloud Run Deployment:** Deployment to **Google Cloud Run** is managed via `gcloud run deploy` commands. These commands specify the image URL from the registry, target region, environment variables, and other service configurations.
+    -   **Scalability:** Each Cloud Run service is configured for auto-scaling, allowing it to handle varying loads efficiently, including scaling down to zero instances to save costs when not in use.
+
+### General Workflow (Anticipated)
+
+1.  Developers work on features in separate branches.
+2.  Pull requests (PRs) are created to merge features into a main development branch (e.g., `develop`) or directly to `main` for smaller changes.
+3.  GitHub Actions automatically trigger on PRs to:
+    *   Run linters and format checkers.
+    *   Execute test suites across the application and relevant microservices.
+    *   Optionally, build the application to catch build errors early.
+4.  Upon successful tests, code review, and PR approval, changes are merged.
+5.  Merging to a designated deployment branch (e.g., `main` for production, `develop` for staging) triggers further GitHub Actions workflows:
+    *   Builds the Next.js frontend and deploys to Vercel/Firebase Hosting.
+    *   Deploys Firebase Functions and related configurations.
+    *   Builds Docker images for containerized microservices, pushes them to Google Artifact Registry.
+    *   Deploys the new images to Google Cloud Run services.
+
+This structured CI/CD pipeline aims to provide a robust, automated pathway for developing, testing, and deploying updates and new features to the ISL.SIXR.tv platform, ensuring stability and rapid iteration.
+
 
 ## Future Improvements
 
@@ -521,22 +552,18 @@ This section outlines the general phased development approach for the ISL.SIXR.t
 
 ## Contributing
 
-Contributions are welcome! We appreciate any help in improving this project and empowering more creators.
+Contributions are welcome! We appreciate any help in improving this project and empowering more creators. Our goal is to make contributing to ISL.SIXR.tv a positive and rewarding experience.
 
-Before submitting your contribution, please ensure your code adheres to our linting and type-checking standards by running:
+Please see our detailed **[Contributing Guidelines](CONTRIBUTING.md)** for information on:
+- Setting up your development environment
+- Coding standards (linting, formatting)
+- Testing expectations
+- The Pull Request (PR) process
+- Our branching strategy
+- How to report bugs and suggest enhancements
+- Our Code of Conduct
 
-```bash
-npm run lint
-npm run typecheck
-```
-
-### Contribution Process
-
-1.  **Fork** the repository.
-2.  Create a new **branch** for your feature or bug fix (e.g., `feature/your-feature-name` or `fix/issue-number`).
-3.  Make your **commits** with clear and concise messages.
-4.  Push your changes to your forked repository.
-5.  Open a **Pull Request** to the main repository, detailing the changes you've made.
+Before submitting your contribution, please ensure your code adheres to our linting standards by running \`npm run lint\` and that all tests pass (\`npm run test\`).
 
 ## License
 
@@ -591,5 +618,37 @@ This phased approach ensures that the Prompt-to-Prototype Studio becomes a deepl
 1. Input prompt and style in Prompt-to-Prototype Studio.
 2. Generate moodboard, logline, shot list, and animatic.
 3. Click “Generate Storyboard” or “Analyze Script” to continue.
+
+## 🎓 For Educators / Workshop Use
+
+This section provides guidance for educators, workshop facilitators, or anyone looking to use the ISL.SIXR.tv platform in an educational setting with groups or cohorts of learners.
+
+### Setting Up for a Cohort
+
+-   **Fresh Firebase Instance:** It is highly recommended to deploy a fresh, dedicated Firebase instance for each new cohort or workshop group. This ensures a clean data environment (Firestore, Storage, Auth users) for each group, preventing data overlaps and simplifying management.
+-   **Firebase Project Configuration:** Ensure your new Firebase project's configuration (API keys, project ID, etc.) is correctly set up in the Next.js application's environment variables (`.env.local` or deployment environment variables).
+
+### Pre-filling Example Content (Seeding)
+
+-   **Seed Data (Suggestion):** To provide students with a starting point or illustrative examples, consider creating a `seeds/` directory in the project root. This directory could contain:
+    -   Example JSON files for prompts to be used with the Prompt-to-Prototype Studio.
+    -   Sample scripts (e.g., plain text or Fountain format) that can be analyzed by the AI Script Analyzer.
+    -   Example storyboard descriptions or structures.
+-   **Seeding Mechanism (To Be Developed):** A script or manual process would need to be established to populate the Firestore database with this seed data. This might involve writing simple Node.js scripts that use the Firebase Admin SDK to create initial documents.
+
+### Managing Student Accounts
+
+-   **Firebase Authentication Users:** Create individual Firebase Authentication accounts for each student. You can do this manually via the Firebase console or programmatically using the Firebase Admin SDK.
+    -   Using a consistent email pattern (e.g., `student{id}@workshop.com`) can simplify management.
+-   **Assigning Roles:** Assign the `youth` role to student accounts (likely via Firebase custom claims) to ensure they have the appropriate permissions. Mentors or facilitators could be assigned the `mentor` role.
+
+### Workshop Facilitation Tips
+
+-   **Mentors Group in Firestore:** To manage review permissions or group students under specific mentors, consider creating a `mentors` collection in Firestore. Each document could represent a mentor and store a list of student UIDs they are responsible for. This can be used in Firestore security rules or application logic to control access.
+-   **Utilize Portfolio Mode:** Encourage students to use the Portfolio microservice/feature to showcase their projects. This can be a great way for them to share their work, receive peer feedback, and build a collection of their creative outputs from the workshop.
+-   **Introduce Tools Incrementally:** Depending on the workshop's focus, introduce the platform's tools (Prompt-to-Prototype, Storyboard Studio, Script Analyzer) incrementally to avoid overwhelming learners.
+-   **Dedicated Q&A/Support Channel:** Set up a dedicated channel (e.g., Slack, Discord, or forum) for students to ask questions and receive support during the workshop.
+
+By following these guidelines, educators can create a more structured and effective learning experience using the ISL.SIXR.tv platform.
 
 ```
