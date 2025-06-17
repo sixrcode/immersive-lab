@@ -47,6 +47,7 @@
     "geist": "^1.4.2",
     "genkit": "^1.8.0",
     "lucide-react": "^0.475.0",
+    "markdown-toc": "^1.2.0",
     "next": "^15.3.3",
     "patch-package": "^8.0.0",
     "react": "^18.3.1",
