@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { StoryboardGeneratorInputSchema, StoryboardGeneratorInput, Panel } from '@/lib/ai-types'; // Updated import
 import { firebaseAdminApp } from '@/lib/firebase/admin';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, Firestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { StoryboardPackage } from '../../../../../../types/src/storyboard.types'; // Adjust path as necessary
@@ -16,7 +16,7 @@ if (!firebaseAdminApp) {
 }
 
 const adminAuth = getAuth(firebaseAdminApp);
-const adminFirestore = getFirestore(firebaseAdminApp);
+const adminFirestore: Firestore = getFirestore(firebaseAdminApp);
 const adminStorage = getStorage(firebaseAdminApp);
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -189,10 +189,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   } catch (error: unknown) {
     console.error('Error in storyboard generation and persistence process:', error);
-    if (error instanceof Error && (error as any).code === 'auth/id-token-expired') {
+    if (error instanceof Error && 'code' in error && error.code === 'auth/id-token-expired') {
       return NextResponse.json({ error: 'Firebase ID token has expired. Please re-authenticate.' }, { status: 401 });
     }
-    if (error instanceof Error && (error as any).code === 'auth/argument-error') {
+    if (error instanceof Error && 'code' in error && error.code === 'auth/argument-error') {
       return NextResponse.json({ error: 'Invalid Firebase ID token.' }, { status: 401 });
     }
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error during storyboard processing.' }, { status: 500 });

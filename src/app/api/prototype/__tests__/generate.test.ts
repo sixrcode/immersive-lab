@@ -2,16 +2,8 @@ import { POST } from '../generate/route'; // Assuming generate.ts exports POST
 import { NextRequest } from 'next/server';
 import { createMocks, RequestMethod } from 'node-mocks-http'; // Add this import at the top
 
-// import { promptToPrototype as mockPromptToPrototype } from '@/ai/flows/prompt-to-prototype';
 import { db as mockDb, storage as mockStorage } from '@/lib/firebase/admin';
 import { v4 as mockUuidv4 } from 'uuid';
-
-// --- Mocks ---
-// jest.mock('@/ai/flows/prompt-to-prototype', () => ({
-//   ...jest.requireActual('@/ai/flows/prompt-to-prototype'), // Import and retain default exports
-//   promptToPrototype: jest.fn(),
-//   PromptToPrototypeInputSchema: jest.requireActual('@/ai/flows/prompt-to-prototype').PromptToPrototypeInputSchema, // Use actual schema
-// }));
 
 jest.mock('@/lib/firebase/admin', () => ({
   db: {
@@ -68,7 +60,7 @@ describe('/api/prototype/generate API Endpoint', () => {
 
 
   const mockUserId = 'test-user-id';
-  const mockPromptPackageId = 'test-prompt-package-id';
+  const mockPromptPackageId: string = 'test-prompt-package-id';
   const mockGeneratedImageSignedUrl = 'https://firebasestorage.googleapis.com/mock-moodboard-url';
   const mockUserImageSignedUrl = 'https://firebasestorage.googleapis.com/mock-user-upload-url';
 
@@ -94,27 +86,15 @@ describe('/api/prototype/generate API Endpoint', () => {
     );
 
     // Setup default mock implementations for clarity, though they are also set in jest.mock
-    (mockUuidv4 as jest.Mock).mockReturnValue(mockPromptPackageId);
-    // (mockPromptToPrototype as jest.Mock).mockResolvedValue({
-    //   // Mock the expected output structure of the flow
-    //   loglines: [{ tone: 'Test Tone', text: 'Test logline' }],
-    //   moodBoardImage: 'data:image/png;base64,testmoodboardimagedata',
-    //   moodBoardCells: Array(9).fill({ title: 'Test Cell', description: 'Test cell description' }),
-    //   shotList: '1,35mm,Test move,Test notes', // Assuming shotList is initially a string before parsing
-    //   proxyClipAnimaticDescription: 'Test animatic description',
-    //   pitchSummary: 'Test pitch summary',
-    // });
+    (mockUuidv4 as jest.Mock<string, []>).mockReturnValue(mockPromptPackageId);
     (mockStorage.bucket().file('').getSignedUrl as jest.Mock).mockResolvedValue([mockGeneratedImageSignedUrl]);
     (mockDb.collection('').doc('').set as jest.Mock).mockResolvedValue({});
   });
 
   async function createMockRequest(body: object | null, method: string = 'POST'): Promise<NextRequest> {
     const { req } = createMocks({ method: method as RequestMethod });
-    // NextRequest needs a URL, even if it's a dummy one for API routes
-    // The as unknown as NextRequest is necessary because node-mocks-http doesn't fully replicate NextRequest
-    // Ensure body is passed correctly for NextRequest, typically stringified JSON
     return new NextRequest(new URL(req.url || '/', 'http://localhost').toString(), {
-        // Pass the body as a string or ReadableStream if simulating real request more closely
+        // Passing the body as a string here matches the typical NextRequest behavior when handling JSON
         method: req.method as any, // Cast to any to satisfy NextRequest type
  headers: new Headers(req.headers as Record<string, string>),
         body: body ? JSON.stringify(body) : null, //node-mocks-http doesn't stringify
@@ -143,16 +123,6 @@ describe('/api/prototype/generate API Endpoint', () => {
     const responseJson = await response.json();
 
     expect(response.status).toBe(200);
-    // expect(mockPromptToPrototype).toHaveBeenCalledWith(requestBody);
-
-    // Check user image upload
-    // With fetch mock, direct image upload to GCS is not happening in this test's scope for user image.
-    // The microservice is assumed to handle it and return a URL.
-    // So, these specific GCS mocks for user image might not be directly relevant unless testing that part specifically.
-    // For now, let's assume the microservice returns originalUserImageURL if an image was part of input.
-    // expect(mockStorage.bucket).toHaveBeenCalledTimes(2); // Once for user, once for AI
-    // expect(mockStorage.bucket().file).toHaveBeenCalledWith(expect.stringContaining(`prototypes/${mockUserId}/${mockPromptPackageId}/user-upload`));
-    // expect(mockStorage.bucket().file).toHaveBeenCalledWith(expect.stringContaining(`prototypes/${mockUserId}/${mockPromptPackageId}/moodboard`));
 
     expect(mockDb.collection).toHaveBeenCalledWith('prompt-packages'); // Collection name from route
     expect(mockDb.doc).toHaveBeenCalledWith(mockPromptPackageId);
@@ -185,7 +155,6 @@ describe('/api/prototype/generate API Endpoint', () => {
     expect(response.status).toBe(400);
     expect(responseJson.error).toBe('Invalid input');
     expect(responseJson.details).toBeDefined(); // Zod errors
-    // expect(mockPromptToPrototype).not.toHaveBeenCalled();
   });
 
   it('should return 503 if AI microservice fetch fails', async () => {
@@ -214,16 +183,6 @@ describe('/api/prototype/generate API Endpoint', () => {
     expect(responseJson.details).toBe('Firestore unavailable');
   });
 
-  // This test might need to be re-evaluated as image uploading is now part of the microservice.
-  // The API route itself doesn't handle file operations with GCS directly anymore.
-  // It just passes imageDataUri to the microservice.
-  // it('should handle user image upload failure gracefully', async () => { ... });
-
-  // This test also needs re-evaluation for similar reasons.
-  // The fallback URL logic was in the old promptToPrototype flow.
-  // If the microservice fails to produce an image, it should handle that,
-  // or this API should handle the microservice's error response for that case.
-  // it('should handle AI moodboard image upload failure gracefully', async () => { ... });
 
 
   // Test case for when no imageDataUri is provided
