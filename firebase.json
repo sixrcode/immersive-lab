@@ -14,8 +14,14 @@
       }
     ]
   },
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs18"
-  }
+  "functions": [
+    {
+      "source": "functions",
+      "runtime": "nodejs18"
+    },
+    {
+      "source": "ai-microservice",
+      "runtime": "nodejs18"
+    }
+  ]
 }
