@@ -74,7 +74,6 @@ export default function ScriptAnalyzerPage() {
       toast({
         title: "Authentication Error",
         description: "Could not get user token. Please ensure you are logged in.",
-
         variant: "destructive",
         action: <XCircle className="text-red-500" />,
       });
@@ -98,7 +97,6 @@ export default function ScriptAnalyzerPage() {
         // Use errorData.details from microservice if available, else errorData.error, else generic message
         const errorMessage = errorData.details || errorData.error || `Request failed with status ${response.status}`;
         throw new Error(errorMessage);
-
       }
 
       const output: AnalyzeScriptOutput = await response.json();
