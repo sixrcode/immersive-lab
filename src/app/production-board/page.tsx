@@ -311,7 +311,7 @@ export default function ProductionBoardPage() {
 
     // Optimistic update
     setColumns(prevColumns => {
-      const cardToMove: KanbanCardType | undefined;
+      let cardToMove: KanbanCardType | undefined;
       const newColumns = [...prevColumns]; // Create a mutable copy
  
       // Find and remove card from source column

@@ -5,8 +5,6 @@ import type { PortfolioItemType } from "@/lib/types";
 import Image from "next/image";
 import { Film, PlayCircle, Share2, CalendarDays, Clock, Loader2, AlertTriangle } from "lucide-react";
 import {
- Badge,
- Button,
   Card,
   CardContent,
   CardDescription,
@@ -15,8 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 // mockPortfolioItems array removed
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button"; // Correct import
+import { Badge } from "@/components/ui/badge";   // Correct import
 
 function PortfolioCard({ item }: { item: PortfolioItemType }) {
   return (
@@ -99,7 +97,11 @@ export default function PortfolioPage() {
         setPortfolioItems(data);
       } catch (e: unknown) {
         console.error("Failed to fetch portfolio items:", e);
-        setError(e.message || "Failed to load portfolio items. Please try again later.");
+        if (e instanceof Error) {
+          setError(e.message);
+        } else {
+          setError("An unexpected error occurred. Please try again later.");
+        }
       } finally {
         setIsLoading(false);
       }
