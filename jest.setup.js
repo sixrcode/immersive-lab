@@ -1,6 +1,9 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Polyfill fetch for Jest
+import 'whatwg-fetch';
+
 // Mock next/font before any components that might use it are imported
 // This is a common workaround for Jest environments.
 jest.mock('next/font/google', () => ({
@@ -41,3 +44,8 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
     })),
   });
 }
+
+// Polyfill TextEncoder and TextDecoder for Jest
+import { TextEncoder, TextDecoder } from 'util';
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
