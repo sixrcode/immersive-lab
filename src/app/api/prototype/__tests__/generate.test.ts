@@ -6,16 +6,16 @@ import { v4 as mockUuidv4, type V4Options } from 'uuid';
 
 // Define types for the mocked Firestore and Storage
 type MockFirestore = {
-  collection: jest.Mock;
-  doc: jest.Mock;
-  set: jest.Mock;
+  collection: jest.Mock<any, any, any>; // Updated to jest.Mock<any, any, any> for broader compatibility
+  doc: jest.Mock<any, any, any>;
+  set: jest.Mock<any, any, any>;
 };
 
 jest.mock('@/lib/firebase/admin', () => ({
   db: {
-    collection: jest.fn().mockReturnThis(),
-    doc: jest.fn().mockReturnThis(),
-    set: jest.fn().mockResolvedValue(undefined), // Default mock for set
+    collection: jest.fn().mockReturnThis(), // Returns the mock itself for chaining
+    doc: jest.fn().mockReturnThis(), // Returns the mock itself for chaining
+    set: jest.fn().mockResolvedValue(undefined), // Simulates a Firestore set operation
   },
   storage: {
     bucket: jest.fn(() => ({
@@ -64,21 +64,21 @@ jest.mock('@/lib/utils', () => ({
 describe('/api/prototype/generate API Endpoint', () => {
   // Use Partial<NextRequest> or a specific mock request type if neededgit add
   // For now, relying on the createMockRequest return type
-  let mockRequest: any; // Keeping as any for now due to complex NextRequest mocking
+  let mockRequest: NextRequest;
 
   const mockPromptPackageId: string = 'test-prompt-package-id';
   const mockGeneratedImageSignedUrl = 'https://firebasestorage.googleapis.com/mock-moodboard-url';
   const mockUserImageSignedUrl = 'https://firebasestorage.googleapis.com/mock-user-upload-url';
 
   // Type the mocked db and storage for better type safety in tests
-  const typedMockDb = mockDb as MockFirestore;
+  const typedMockDb = mockDb as unknown as MockFirestore; // Use unknown first for safer casting
   const typedMockStorage = mockStorage as typeof mockStorage;
 
   beforeEach(() => {
     jest.clearAllMocks(); // Clear mocks before each test
 
     // Type assertion for the mocked fetch function
-    global.fetch = jest.fn(() => 
+    global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
         status: 200,
@@ -90,9 +90,9 @@ describe('/api/prototype/generate API Endpoint', () => {
           shotList: '1,35mm,Test move,Test notes from fetch',
           proxyClipAnimaticDescription: 'Test animatic description from fetch',
           pitchSummary: 'Test pitch summary from fetch',
- originalUserImageURL: undefined, // Default, can be overridden in specific tests
+          originalUserImageURL: undefined, // Default, can be overridden in specific tests
         }), // Type assertion for the AI microservice response
- text: () => Promise.resolve('{}'), // Default text method
+        text: () => Promise.resolve('{}'), // Default text method
       } as Response) // Type assertion for Response
     );
 
@@ -102,14 +102,20 @@ describe('/api/prototype/generate API Endpoint', () => {
     (typedMockDb.collection('').doc('').set as jest.Mock).mockResolvedValue({});
   });
 
-  async function createMockRequest(body: object | null, method: string = 'POST'): Promise<NextRequest> {
-    return new NextRequest(new URL(req.url || '/', 'http://localhost').toString(), {
-        // Passing the body as a string here matches the typical NextRequest behavior when handling JSON
-        method: req.method as string, // Cast to string to satisfy NextRequest type
- headers: new Headers(req.headers as Record<string, string>),
-        body: body ? JSON.stringify(body) : null, //node-mocks-http doesn't stringify
-    }) as unknown as NextRequest;
-}
+  async function createMockRequest(
+    body: object | null,
+    options: { method?: string; url?: string; headers?: Record<string, string> } = {}
+  ): Promise<NextRequest> {
+    const { method = 'POST', url = '/', headers = {} } = options;
+    // Ensure a full URL is provided to the NextRequest constructor
+    const fullUrl = url.startsWith('http') ? url : `http://localhost${url.startsWith('/') ? '' : '/'}${url}`;
+
+    return new NextRequest(fullUrl, {
+      method: method,
+      headers: new Headers(headers),
+      body: body ? JSON.stringify(body) : null,
+    });
+  }
 
 
   it('should successfully generate a prototype and save to Firebase', async () => {
