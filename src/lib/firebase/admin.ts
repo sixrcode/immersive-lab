@@ -38,8 +38,7 @@ if (!admin.apps.length) {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during Firebase Admin SDK initialization';
       console.error('Firebase Admin SDK initialization error:', errorMessage);
-      // Re-throw the error to make the failure explicit
-      throw new Error(`Firebase Admin SDK initialization failed: ${errorMessage}`);
+      // app will remain undefined, and db/storage will not be initialized later
     }
   } else {
     console.warn(
