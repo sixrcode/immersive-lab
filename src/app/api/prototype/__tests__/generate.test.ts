@@ -2,13 +2,13 @@ import { POST } from '../generate/route'; // Assuming generate.ts exports POST
 import { NextRequest } from 'next/server';
  
 import { db as mockDb, storage as mockStorage } from '@/lib/firebase/admin';
-import { v4 as mockUuidv4, type V4Options } from 'uuid';
+import { v4 as mockUuidv4 } from 'uuid';
 
 // Define types for the mocked Firestore and Storage
 type MockFirestore = {
-  collection: jest.Mock<any, any, any>; // Updated to jest.Mock<any, any, any> for broader compatibility
-  doc: jest.Mock<any, any, any>;
-  set: jest.Mock<any, any, any>;
+  collection: jest.Mock<MockFirestore, [string]>;
+  doc: jest.Mock<MockFirestore, [string]>;
+  set: jest.Mock<Promise<void>, [object, object?]>;
 };
 
 jest.mock('@/lib/firebase/admin', () => ({

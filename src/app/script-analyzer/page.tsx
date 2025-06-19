@@ -11,10 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, ScanText, Lightbulb, Edit3, CheckCircle, XCircle, Copy } from "lucide-react";
-import { useState, useEffect } from "react"; // Added useEffect
+import { useState } from "react"; // Added useEffect
 import { useForm } from "react-hook-form";
 // Import Firebase auth to get ID token
-import { firebaseApp } from "@/lib/firebase/client";
 import { z } from "zod";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";

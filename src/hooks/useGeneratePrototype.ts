@@ -21,14 +21,14 @@ import type { PromptToPrototypeInput } from "@/ai/flows/prompt-to-prototype"; //
 export interface GeneratePrototypeHookInput {
   inputs: {
     prompt: string; // The main textual prompt for generation.
-    params?: Record<string, any>; // Additional parameters, not directly used by this hook's transformation logic but available.
+    params?: Record<string, unknown>; // Additional parameters, not directly used by this hook's transformation logic but available.
   }[];
   params?: {
     imageDataUri?: string; // Optional base64 encoded image data URI.
     stylePreset?: string;  // Optional style preset for generation.
     // Allows other parameters that might not be directly used by the API call
     // but could be part of the hook's input for other reasons or future use.
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

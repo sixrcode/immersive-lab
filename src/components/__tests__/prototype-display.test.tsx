@@ -33,12 +33,23 @@ jest.mock('@/components/ui/button', () => {
   return { Button: MockButton };
 });
 jest.mock('@/components/ui/table', () => {
-  const MockTable = React.forwardRef<HTMLTableElement, any>((props, ref) => <table ref={ref} data-testid="table">{props.children}</table>); MockTable.displayName = "Table";
-  const MockTableBody = React.forwardRef<HTMLTableSectionElement, any>((props, ref) => <tbody ref={ref} data-testid="table-body">{props.children}</tbody>); MockTableBody.displayName = "TableBody";
-  const MockTableCell = React.forwardRef<HTMLTableCellElement, any>((props, ref) => <td ref={ref} data-testid="table-cell">{props.children}</td>); MockTableCell.displayName = "TableCell";
-  const MockTableHead = React.forwardRef<HTMLTableCellElement, any>((props, ref) => <th ref={ref} data-testid="table-head">{props.children}</th>); MockTableHead.displayName = "TableHead";
-  const MockTableHeader = React.forwardRef<HTMLTableSectionElement, any>((props, ref) => <thead ref={ref} data-testid="table-header">{props.children}</thead>); MockTableHeader.displayName = "TableHeader";
-  const MockTableRow = React.forwardRef<HTMLTableRowElement, any>((props, ref) => <tr ref={ref} data-testid="table-row">{props.children}</tr>); MockTableRow.displayName = "TableRow";
+  type MockTableProps = React.HTMLAttributes<HTMLTableElement> & { children?: React.ReactNode };
+  const MockTable = React.forwardRef<HTMLTableElement, MockTableProps>((props, ref) => <table ref={ref} data-testid="table" {...props}>{props.children}</table>); MockTable.displayName = "Table";
+
+  type MockTableBodyProps = React.HTMLAttributes<HTMLTableSectionElement> & { children?: React.ReactNode };
+  const MockTableBody = React.forwardRef<HTMLTableSectionElement, MockTableBodyProps>((props, ref) => <tbody ref={ref} data-testid="table-body" {...props}>{props.children}</tbody>); MockTableBody.displayName = "TableBody";
+
+  type MockTableCellProps = React.TdHTMLAttributes<HTMLTableCellElement> & { children?: React.ReactNode };
+  const MockTableCell = React.forwardRef<HTMLTableCellElement, MockTableCellProps>((props, ref) => <td ref={ref} data-testid="table-cell" {...props}>{props.children}</td>); MockTableCell.displayName = "TableCell";
+
+  type MockTableHeadProps = React.ThHTMLAttributes<HTMLTableCellElement> & { children?: React.ReactNode };
+  const MockTableHead = React.forwardRef<HTMLTableCellElement, MockTableHeadProps>((props, ref) => <th ref={ref} data-testid="table-head" {...props}>{props.children}</th>); MockTableHead.displayName = "TableHead";
+
+  type MockTableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement> & { children?: React.ReactNode };
+  const MockTableHeader = React.forwardRef<HTMLTableSectionElement, MockTableHeaderProps>((props, ref) => <thead ref={ref} data-testid="table-header" {...props}>{props.children}</thead>); MockTableHeader.displayName = "TableHeader";
+
+  type MockTableRowProps = React.HTMLAttributes<HTMLTableRowElement> & { children?: React.ReactNode };
+  const MockTableRow = React.forwardRef<HTMLTableRowElement, MockTableRowProps>((props, ref) => <tr ref={ref} data-testid="table-row" {...props}>{props.children}</tr>); MockTableRow.displayName = "TableRow";
   return {
     Table: MockTable,
     TableBody: MockTableBody,
@@ -49,7 +60,8 @@ jest.mock('@/components/ui/table', () => {
   };
 });
 jest.mock('@/components/ui/separator', () => {
-  const MockSeparator = React.forwardRef<HTMLHRElement, any>(
+  type MockSeparatorProps = React.HTMLAttributes<HTMLHRElement>; // Separator usually doesn't have children
+  const MockSeparator = React.forwardRef<HTMLHRElement, MockSeparatorProps>(
     (props, ref) => <hr ref={ref} data-testid="separator" {...props} />
   );
   MockSeparator.displayName = 'Separator';
@@ -102,7 +114,7 @@ describe('PrototypeDisplay Component', () => {
 
 
   it('renders null if no promptPackage is provided', () => {
-    const { container } = render(<PrototypeDisplay promptPackage={null as any} />);
+    const { container } = render(<PrototypeDisplay promptPackage={null} />);
     expect(container.firstChild).toBeNull();
   });
 

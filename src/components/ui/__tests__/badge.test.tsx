@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { render, screen } from '@testing-library/react';
-import { Badge, badgeVariants } from '../badge'; // Adjust path as necessary
+import { Badge } from '../badge'; // Adjust path as necessary
 
 describe('Badge Component', () => {
   test('renders with children', () => {
@@ -14,7 +14,6 @@ describe('Badge Component', () => {
     // We don't check all classes, just that it's not empty and contains some key parts if possible
     // or rely on a snapshot if visual regression is not a concern for class names.
     // For now, let's check if it has the base classes from cva.
-    const expectedDefaultClasses = badgeVariants({ variant: 'default' });
     const badgeElement = screen.getByTestId('badge');
 
     // Check if a substantial part of the expected classes are present.
@@ -27,7 +26,6 @@ describe('Badge Component', () => {
     render(<Badge variant="secondary" data-testid="badge-secondary">Secondary Badge</Badge>);
     expect(screen.getByText('Secondary Badge')).toBeInTheDocument();
     const badgeElement = screen.getByTestId('badge-secondary');
-    const expectedSecondaryClasses = badgeVariants({ variant: 'secondary' });
 
     expect(badgeElement.className).toContain('bg-secondary'); // from secondary variant
     expect(badgeElement.className).toContain('text-secondary-foreground');
@@ -37,7 +35,6 @@ describe('Badge Component', () => {
     render(<Badge variant="destructive" data-testid="badge-destructive">Destructive Badge</Badge>);
     expect(screen.getByText('Destructive Badge')).toBeInTheDocument();
     const badgeElement = screen.getByTestId('badge-destructive');
-    const expectedDestructiveClasses = badgeVariants({ variant: 'destructive' });
 
     expect(badgeElement.className).toContain('bg-destructive');
     expect(badgeElement.className).toContain('text-destructive-foreground');
@@ -47,7 +44,6 @@ describe('Badge Component', () => {
     render(<Badge variant="outline" data-testid="badge-outline">Outline Badge</Badge>);
     expect(screen.getByText('Outline Badge')).toBeInTheDocument();
     const badgeElement = screen.getByTestId('badge-outline');
-    const expectedOutlineClasses = badgeVariants({ variant: 'outline' });
 
     expect(badgeElement.className).toContain('text-foreground'); // From outline variant
     expect(badgeElement.className).not.toContain('bg-primary'); // Ensure it doesn't have default bg
