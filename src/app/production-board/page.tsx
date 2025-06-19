@@ -236,8 +236,8 @@ export default function ProductionBoardPage() {
       }
       setIsAddTaskDialogOpen(false);
       fetchBoardData(); // Refresh data
-    } catch (err: any) {
-      setAddTaskError(err.message);
+    } catch (err: unknown) {
+      setAddTaskError(err instanceof Error ? err.message : "An unknown error occurred");
     }
   };
 
@@ -267,8 +267,8 @@ export default function ProductionBoardPage() {
       }
       setIsAddStageDialogOpen(false);
       fetchBoardData(); // Refresh data
-    } catch (err: any) {
-      setAddStageError(err.message);
+    } catch (err: unknown) {
+      setAddStageError(err instanceof Error ? err.message : "An unknown error occurred");
     }
   };
 
@@ -292,9 +292,9 @@ export default function ProductionBoardPage() {
       }
       const data: KanbanColumnType[] = await response.json();
       setColumns(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Fetch error:", err);
-      setError(err.message || "An unknown error occurred while fetching data.");
+      setError(err instanceof Error ? err.message : "An unknown error occurred while fetching data.");
       setColumns([]);
     } finally {
       setLoading(false);
@@ -311,7 +311,6 @@ export default function ProductionBoardPage() {
 
     // Optimistic update
     setColumns(prevColumns => {
-      let cardToMove: KanbanCardType | undefined;
       const newColumns = [...prevColumns]; // Create a mutable copy
  
       // Find and remove card from source column
@@ -324,10 +323,10 @@ export default function ProductionBoardPage() {
       const cardIndexInSource = sourceCol.cards.findIndex(c => c.id === cardId);
       if (cardIndexInSource === -1) return prevColumns; // Card not found in source
 
-      [cardToMove] = sourceCol.cards.splice(cardIndexInSource, 1);
+      const [cardToMove]: (KanbanCardType | undefined)[] = sourceCol.cards.splice(cardIndexInSource, 1); // Changed here
       newColumns[sourceColIndex] = sourceCol;
 
-      if (!cardToMove) return prevColumns;
+      if (!cardToMove) return prevColumns; // This check remains valid
 
       // Add card to target column at newOrderInColumn
       const targetColIndex = newColumns.findIndex(col => col.id === targetColumnId);
@@ -372,9 +371,9 @@ export default function ProductionBoardPage() {
         // Alternatively, update state with response if API returns the full board or updated columns/card
         fetchBoardData();
         // You might want to show a success toast here
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to move card:", err);
-        setError(`Failed to move card: ${err.message}. Reverting.`);
+        setError(`Failed to move card: ${err instanceof Error ? err.message : "An unknown error occurred"}. Reverting.`);
         // Rollback optimistic update
         setColumns(previousColumns);
         // You might want to show an error toast here

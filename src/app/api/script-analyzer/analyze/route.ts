@@ -44,7 +44,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       let errorBody = null;
       try {
         errorBody = await microserviceResponse.json(); // Corrected variable name
-      } catch (e) { /* Ignore */ }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_e: unknown) { /* Ignore */ }
       console.error('Error from AI microservice (analyzeScript):', microserviceResponse.status, errorBody);
       return NextResponse.json(
         { error: 'AI service request failed (script analysis).', details: errorBody || microserviceResponse.statusText },

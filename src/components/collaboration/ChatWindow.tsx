@@ -20,6 +20,18 @@ interface ChatWindowProps {
   currentUserName?: string;
 }
 
+// Define the expected raw structure from the API for a chat message
+interface RawChatMessageFromAPI {
+  _id?: string;
+  message: string;
+  timestamp: string | Date;
+  projectId: string;
+  senderId: string | { _id: string; username?: string; [key: string]: unknown }; // senderId could be a string or a populated object
+  id?: string; // If API sends 'id'
+  [key: string]: unknown; // Allow other fields
+}
+
+
 const ChatWindow: React.FC<ChatWindowProps> = ({ projectId, currentUserId, currentUserName = 'User' }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -66,8 +78,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ projectId, currentUserId, curre
         if (!response.ok) {
           throw new Error(`Failed to fetch chat messages: ${response.statusText}`);
         }
-        const data = await response.json();
-        setMessages(data.map((msg:any) => ({...msg, senderName: msg.senderId?.username || 'User'}))); // Adjust if sender info is populated
+        const rawMessages: RawChatMessageFromAPI[] = await response.json();
+        setMessages(rawMessages.map((msg: RawChatMessageFromAPI): ChatMessage => ({
+          _id: msg._id,
+          // Client-side 'id' is usually for optimistic updates; server '_id' is the persistent one.
+          // If your API sends a specific 'id' that should be used client-side, map it here.
+          // id: msg.id,
+          senderId: typeof msg.senderId === 'string' ? msg.senderId : msg.senderId._id,
+          senderName: (typeof msg.senderId === 'object' && msg.senderId.username) ? msg.senderId.username : (currentUserId === (typeof msg.senderId === 'string' ? msg.senderId : msg.senderId._id) ? currentUserName : 'User'),
+          message: msg.message,
+          timestamp: msg.timestamp,
+          projectId: msg.projectId,
+        })));
       } catch (err) {
         console.error("Error fetching chat messages:", err);
       }
@@ -80,7 +102,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ projectId, currentUserId, curre
       newSocket.emit('leaveProject', projectId);
       newSocket.disconnect();
     };
-  }, [projectId, socket]);
+  }, [projectId, socket, currentUserId, currentUserName]);
 
   // Scroll to bottom of messages
   useEffect(() => {

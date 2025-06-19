@@ -31,9 +31,21 @@ const RegenerateButton = ({ onClick, sectionName }: { onClick?: () => void; sect
   </Button>
 );
 
+type OnRegenerateData = { index: number } | undefined;
+type SectionKey =
+  | "userInput"
+  | "loglines"
+  | "moodBoard"
+  | "shotList"
+  | "animaticDescription"
+  | "pitchSummary"
+  | "logline"
+  | "moodBoardCell"
+  | "shot";
+
 interface PrototypeDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
   promptPackage: PromptPackage;
-  onRegenerate?: (section: string, data?: any) => void; // For future use
+  onRegenerate?: (section: SectionKey, data?: OnRegenerateData) => void;
 }
 
 export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDisplayProps) {
