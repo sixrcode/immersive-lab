@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act, within as rtlWithin } from '@testing-library/react';
+import type { TextMatch } from '@testing-library/dom';
 import '@testing-library/jest-dom';
 import ProductionBoardPage from '../page'; // Adjust path as needed
 import { KanbanColumnType } from '@/lib/types';
@@ -10,20 +11,35 @@ global.fetch = jest.fn();
 
 // Mock IntersectionObserver, often needed for components that lazy load or use scroll effects
 class IntersectionObserverMock {
+  root: Element | null = null;
+  rootMargin: string = '';
+  thresholds: ReadonlyArray<number> = [];
   observe = jest.fn();
   unobserve = jest.fn();
   disconnect = jest.fn();
+  takeRecords = jest.fn(() => []); // Return an empty array or mock records
+
+  constructor(
+    public callback: IntersectionObserverCallback,
+    options?: IntersectionObserverInit
+  ) {
+    if (options) {
+      this.root = options.root || null;
+      this.rootMargin = options.rootMargin || '';
+      this.thresholds = Array.isArray(options.threshold) ? options.threshold : [options.threshold || 0];
+    }
+  }
 }
-global.IntersectionObserver = IntersectionObserverMock;
+global.IntersectionObserver = IntersectionObserverMock as any; // Cast to any if full type matching is hard.
 
 
 const mockInitialColumnsData: KanbanColumnType[] = [
   {
-    id: 'col1', title: 'To Do', createdAt: new Date().toISOString(), cardOrder: ['card1'],
-    cards: [{ id: 'card1', columnId: 'col1', title: 'Task 1: Initial', orderInColumn: 0, description: 'Desc 1' }]
+    id: 'col1', title: 'To Do', cardOrder: ['card1'], // Removed createdAt
+    cards: [{ id: 'card1', columnId: 'col1', stage: 'col1', title: 'Task 1: Initial', orderInColumn: 0, description: 'Desc 1' }] // Added stage
   },
   {
-    id: 'col2', title: 'In Progress', createdAt: new Date().toISOString(), cardOrder: [],
+    id: 'col2', title: 'In Progress', cardOrder: [], // Removed createdAt
     cards: []
   },
 ];
@@ -80,10 +96,10 @@ describe('ProductionBoardPage', () => {
 
       // Find the "Add Task" button in the "To Do" column.
       // This assumes the column title is unique enough or we select more specifically.
-      const toDoColumn = screen.getByText('To Do').closest('div[class*="rounded-lg"]'); // Adjust selector based on actual DOM
+      const toDoColumn = screen.getByText('To Do').closest('div[class*="rounded-lg"]') as HTMLElement; // Adjust selector based on actual DOM
       expect(toDoColumn).toBeInTheDocument();
 
-      const addTaskButton = within(toDoColumn!).getByRole('button', { name: /Add Task/i });
+      const addTaskButton = rtlWithin(toDoColumn).getByRole('button', { name: /Add Task/i });
       fireEvent.click(addTaskButton);
 
       // Dialog should appear
@@ -103,7 +119,7 @@ describe('ProductionBoardPage', () => {
       });
       // Mock the subsequent GET request (fetchBoardData)
       const updatedMockData = [
-        { ...mockInitialColumnsData[0], cards: [...mockInitialColumnsData[0].cards, { id: 'cardNew', columnId: 'col1', title: 'New Test Task', orderInColumn: 1 }] },
+        { ...mockInitialColumnsData[0], cards: [...mockInitialColumnsData[0].cards, { id: 'cardNew', columnId: 'col1', stage: 'col1', title: 'New Test Task', orderInColumn: 1 }] },
         mockInitialColumnsData[1]
       ];
       (fetch as jest.Mock).mockResolvedValueOnce({
@@ -167,8 +183,8 @@ describe('ProductionBoardPage', () => {
       });
       // Mock the subsequent GET request (fetchBoardData)
       const updatedMockDataWithNewStage = [
-        ...mockInitialColumnsData.map(col => ({...col, cards: [...col.cards]})), // Deep copy existing
-        { id: 'colNew', title: 'New Stage Title', createdAt: new Date().toISOString(), cardOrder: [], cards: [] }
+        ...mockInitialColumnsData.map(col => ({...col, cards: [...col.cards.map(c => ({...c}))]})), // Deep copy existing, ensure cards are also deep copied
+        { id: 'colNew', title: 'New Stage Title', cardOrder: [], cards: [] }
       ];
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
@@ -220,8 +236,8 @@ describe('ProductionBoardPage', () => {
 
       // Mock the subsequent GET request (fetchBoardData)
       const movedMockData = [
-        { ...mockInitialColumnsData[0], cards: [] }, // Task 1 moved from here
-        { ...mockInitialColumnsData[1], cards: [{ id: 'card1', columnId: 'col2', title: 'Task 1: Initial', orderInColumn: 0 }] } // Task 1 moved here
+        { ...mockInitialColumnsData[0], cardOrder: [], cards: [] }, // Task 1 moved from here
+        { ...mockInitialColumnsData[1], cardOrder: ['card1'], cards: [{ id: 'card1', columnId: 'col2', stage: 'col2', title: 'Task 1: Initial', orderInColumn: 0 }] } // Task 1 moved here, added stage
       ];
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
@@ -266,20 +282,11 @@ describe('ProductionBoardPage', () => {
 
       // Verify UI update (Task 1 should now be under "In Progress")
       // This requires the column component to correctly find its cards for display
-      const inProgressCol = screen.getByText('In Progress').closest('div[class*="rounded-lg"]');
-      expect(within(inProgressCol!).getByText('Task 1: Initial')).toBeInTheDocument();
+      const inProgressCol = screen.getByText('In Progress').closest('div[class*="rounded-lg"]') as HTMLElement;
+      expect(rtlWithin(inProgressCol).getByText('Task 1: Initial')).toBeInTheDocument();
 
-      const toDoCol = screen.getByText('To Do').closest('div[class*="rounded-lg"]');
-      expect(within(toDoCol!).queryByText('Task 1: Initial')).not.toBeInTheDocument();
+      const toDoCol = screen.getByText('To Do').closest('div[class*="rounded-lg"]') as HTMLElement;
+      expect(rtlWithin(toDoCol).queryByText('Task 1: Initial')).not.toBeInTheDocument();
     });
   });
 });
-
-// Helper from RTL to query within a specific element
-function within(element: HTMLElement) {
-  return {
-    getByText: (text: string | RegExp) => screen.getByText(text, { selector: `#${element.id} *`, exact: false }),
-    getByRole: (role: string, options?: { name?: TextMatch }) => screen.getByRole(role, { ...options, container: element }),
-    // Add other queries as needed
-  };
-}
