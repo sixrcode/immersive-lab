@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 interface Document {
@@ -89,8 +89,8 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
         const data: Document = await response.json();
         setDocument(data);
         setContent(data.content || ''); // Ensure content is string
-      } catch (err: any) {
-        setError(err.message || 'An unknown error occurred.');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
         console.error("Error fetching document:", err);
       } finally {
         setIsLoading(false);
@@ -101,17 +101,17 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
   }, [documentId]);
 
   // Debounced function to emit document changes
-  const debouncedEmitChange = useCallback<(...args: string[]) => void>(
+  const debouncedEmitChange = useMemo(() =>
     debounce((newContent: string) => {
       if (socket && documentId && projectId) {
         socket.emit('documentChange', {
           documentId,
-          projectId, // Send projectId for routing in the backend
+          projectId,
           newContent,
         });
       }
-    }, 500), // 500ms debounce time
-    [socket, documentId, projectId] // Removed debounce from dependencies
+    }, 500),
+    [socket, documentId, projectId]
   );
 
   const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {

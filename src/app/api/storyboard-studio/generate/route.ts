@@ -9,6 +9,26 @@ import { v4 as uuidv4 } from 'uuid';
 
 const AI_MICROSERVICE_URL = process.env.NEXT_PUBLIC_AI_MICROSERVICE_URL;
 
+// Define a more specific type for the expected AI service output
+interface AIServicePanelInput {
+  id?: string;
+  imageDataUri?: string;
+  panelNumber?: number; // Made optional as code defaults if not present in panel processing
+  description?: string; // Made optional
+  dialogue?: string;
+  action?: string;
+  cameraAngle?: string;
+  cameraShotSize?: string;
+  notes?: string;
+  [key: string]: unknown; // Allow other properties from AI
+}
+
+interface AIServiceStoryboardResult {
+  panels?: AIServicePanelInput[];
+  title?: string;
+  [key: string]: unknown; // Allow other top-level properties from AI
+}
+
 // Ensure Firebase Admin is initialized
 if (!firebaseAdminApp) {
   console.error('Firebase Admin SDK has not been initialized.');
@@ -88,7 +108,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // TODO: Replace 'any' with a specific type definition when the AI service output structure is known.
-    const aiStoryboardResult: any = await microserviceResponse.json(); // This is the data from the AI (currently leaving as any)
+    const aiStoryboardResult: AIServiceStoryboardResult = await microserviceResponse.json();
 
     // 3. Generate new storyboard ID
     const newStoryboardId = adminFirestore.collection('storyboards').doc().id;

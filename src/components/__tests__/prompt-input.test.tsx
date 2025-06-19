@@ -32,16 +32,16 @@ jest.mock('@/components/ui/select', () => {
   const Select = React.forwardRef<HTMLDivElement, { children?: React.ReactNode, value?: string, onValueChange?: (value: string) => void, disabled?: boolean }>(
     ({ children, value, onValueChange, disabled }, ref) => {
       const trigger = RealReact.Children.toArray(children).find(
-        (child: any) => child.type && child.type.displayName === 'SelectTrigger'
+        (child: React.ReactNode) => RealReact.isValidElement(child) && (child.type as React.FunctionComponent).displayName === 'SelectTrigger'
       );
       const content = RealReact.Children.toArray(children).find(
-        (child: any) => child.type && child.type.displayName === 'SelectContent'
+        (child: React.ReactNode) => RealReact.isValidElement(child) && (child.type as React.FunctionComponent).displayName === 'SelectContent'
       );
 
       let options: React.ReactNode[] = [];
       if (content && RealReact.isValidElement(content) && content.props.children) {
         options = RealReact.Children.toArray(content.props.children).filter(
-            (child: any) => child.type && child.type.displayName === 'SelectItem'
+            (child: React.ReactNode) => RealReact.isValidElement(child) && (child.type as React.FunctionComponent).displayName === 'SelectItem'
         );
       }
 
@@ -85,33 +85,44 @@ describe('PromptInput Component', () => {
 
   // Define a type for the mocked FileReader
   interface MockedFileReader extends EventTarget {
-    readAsDataURL: jest.Mock;
-    onloadend: ((this: MockedFileReader, ev: ProgressEvent<MockedFileReader>) => any) | null;
+    readAsDataURL: jest.Mock<void, [Blob]>;
+    onloadend: ((this: MockedFileReader, ev: ProgressEvent<MockedFileReader>) => void) | null;
     result: string | ArrayBuffer | null;
   }
 
   beforeEach(() => {
     mockOnSubmit.mockClear();
     // Mock FileReader
-    global.FileReader = jest.fn(() => {
-      let onloadendCallback: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-      const fr = {
-        readAsDataURL: jest.fn(function(this: any) {
+    global.FileReader = jest.fn((): MockedFileReader => {
+      let onloadendCallback: ((this: MockedFileReader, ev: ProgressEvent<MockedFileReader>) => void) | null = null;
+      const fr: MockedFileReader = {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        readAsDataURL: jest.fn(function(this: MockedFileReader, _file: Blob) {
           if (onloadendCallback) {
             // Simulate async behavior with a timeout
-            setTimeout(() => onloadendCallback.call(fr, new ProgressEvent('loadend')), 0);
+            // eslint-disable-next-line @typescript-eslint/no-this-alias
+            const self = this; // Store 'this' context
+            setTimeout(() => {
+              if (onloadendCallback) { // Check again inside timeout
+                 onloadendCallback.call(self, new ProgressEvent('loadend') as ProgressEvent<MockedFileReader>);
+              }
+            }, 0);
           }
-        }),
-        set onloadend(callback: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null) {
+        }) as jest.Mock<void, [Blob]>,
+        set onloadend(callback: ((this: MockedFileReader, ev: ProgressEvent<MockedFileReader>) => void) | null) {
           onloadendCallback = callback;
         },
         get onloadend() {
           return onloadendCallback;
         },
         result: 'data:image/png;base64,mockedimagedata',
+        // Required EventTarget methods
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
       };
       return fr;
-    }) as any;
+    }) as jest.Mock;
   });
 
   it('renders correctly with initial state', () => {
