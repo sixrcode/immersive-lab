@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { PortfolioItemType } from "@/lib/types";
 import Image from "next/image";
 import { Film, PlayCircle, Share2, CalendarDays, Clock, Loader2, AlertTriangle } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
 import {
   Card,
   CardContent,
@@ -83,18 +84,37 @@ export default function PortfolioPage() {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
-        let data = await response.json();
-        // Map _id to id for frontend consistency if PortfolioItemType expects 'id'
-        // Also ensure all essential fields for PortfolioCard are present, providing fallbacks if necessary.
-        data = data.map((item: Record<string, any>) => ({
- // Explicitly cast item to PortfolioItemType
-          ...item,
-          id: item._id || item.id, // Use _id from mongo, or id if already present
-          imageUrl: item.imageUrl || "https://placehold.co/600x900.png", // Fallback image
-          // Ensure datePublished is a string or can be parsed by Date constructor in PortfolioCard
-          datePublished: item.datePublished ? new Date(item.datePublished).toISOString().split('T')[0] : "N/A",
-        }));
-        setPortfolioItems(data);
+        const rawItems: unknown[] = await response.json(); // Data from API is unknown
+
+        const transformedItems: PortfolioItemType[] = rawItems.map((rawItem: unknown): PortfolioItemType => {
+          if (typeof rawItem !== 'object' || rawItem === null) {
+            console.error("Invalid raw item received:", rawItem);
+            return {
+              id: uuidv4(), title: "Invalid Item", description: "This item was not processed correctly.",
+              category: "Error", imageUrl: "https://placehold.co/600x900.png", datePublished: "N/A",
+              // Ensure all required fields from PortfolioItemType are present
+              tags: [], // Default for optional array
+            };
+          }
+          const item = rawItem as Record<string, unknown>; // Cast to unknown after check
+
+          return {
+            id: item._id || item.id || uuidv4(),
+            title: item.title || "Untitled Project",
+            description: item.description || "No description available.",
+            category: item.category || "General",
+            imageUrl: item.imageUrl || "https://placehold.co/600x900.png",
+            datePublished: item.datePublished ? new Date(item.datePublished).toISOString().split('T')[0] : "N/A",
+            duration: item.duration || "N/A",
+            tags: Array.isArray(item.tags) ? item.tags.map(String) : [], // Ensure tags are strings
+            videoUrl: typeof item.videoUrl === 'string' ? item.videoUrl : undefined,
+            client: typeof item.client === 'string' ? item.client : undefined,
+            role: typeof item.role === 'string' ? item.role : undefined,
+            softwareUsed: Array.isArray(item.softwareUsed) ? item.softwareUsed.map(String) : [], // Ensure softwareUsed are strings
+            dataAiHint: typeof item.dataAiHint === 'string' ? item.dataAiHint : undefined,
+          };
+        });
+        setPortfolioItems(transformedItems);
       } catch (e: unknown) {
         console.error("Failed to fetch portfolio items:", e);
         if (e instanceof Error) {

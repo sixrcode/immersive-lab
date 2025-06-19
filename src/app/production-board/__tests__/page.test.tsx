@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent, act, within as rtlWithin } from '@testing-library/react';
-import type { TextMatch } from '@testing-library/dom';
 import '@testing-library/jest-dom';
 import ProductionBoardPage from '../page'; // Adjust path as needed
 import { KanbanColumnType } from '@/lib/types';
@@ -30,7 +29,7 @@ class IntersectionObserverMock {
     }
   }
 }
-global.IntersectionObserver = IntersectionObserverMock as any; // Cast to any if full type matching is hard.
+global.IntersectionObserver = IntersectionObserverMock as typeof IntersectionObserverMock; // Cast to any if full type matching is hard.
 
 
 const mockInitialColumnsData: KanbanColumnType[] = [
