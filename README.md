@@ -18,12 +18,6 @@ Forge the Future, One Story at a Time.
   - [Running the Development Server](#running-the-development-server)
   - [Environment Variables Nextjs App](#environment-variables-nextjs-app)
 - [Tech Stack](#tech-stack)
-- [Microservices Architecture](#microservices-architecture)
-  - [Prompt Generation Service servicesprompt-gen-service](#prompt-generation-service-servicesprompt-gen-service)
-  - [Centralized AI Microservice ai-microservice](#centralized-ai-microservice-ai-microservice)
-  - [AI Script Analyzer functions](#ai-script-analyzer-functions)
-  - [Collaboration Service collaboration-service](#collaboration-service-collaboration-service)
-  - [Portfolio Microservice portfolio-microservice](#portfolio-microservice-portfolio-microservice)
 - [Deployment: Firebase Hosting & Cloud Run Strategy](#deployment-firebase-hosting--cloud-run-strategy)
   - [Feature Comparison](#feature-comparison)
   - [When to Use Which or Both](#when-to-use-which-or-both)
@@ -31,6 +25,12 @@ Forge the Future, One Story at a Time.
   - [Trade-offs--Tips](#trade-offs--tips)
   - [TLDR Choose Based On](#tldr-choose-based-on)
   - [What to Do Next](#what-to-do-next)
+- [Microservices Architecture](#microservices-architecture)
+  - [Prompt Generation Service servicesprompt-gen-service](#prompt-generation-service-servicesprompt-gen-service)
+  - [Centralized AI Microservice ai-microservice](#centralized-ai-microservice-ai-microservice)
+  - [AI Script Analyzer functions](#ai-script-analyzer-functions)
+  - [Collaboration Service collaboration-service](#collaboration-service-collaboration-service)
+  - [Portfolio Microservice portfolio-microservice](#portfolio-microservice-portfolio-microservice)
 - [Future Improvements](#future-improvements)
   - [Enhanced AI Capabilities](#enhanced-ai-capabilities)
   - [Broader Platform Integrations](#broader-platform-integrations)
@@ -76,8 +76,7 @@ Below is a textual representation of the system components and their interaction
 +-------------------------------------------------------------------------------------------------+
 |                                     User (Creator)                                              |
 +-------------------------------------------------------------------------------------------------+
-      |                                           ^
-      | (Interacts via Web Browser)               | (Views Content, Manages Projects)
+      | (Interacts via Web Browser)               ^ (Views Content, Manages Projects)
       v                                           |
 +-------------------------------------------------------------------------------------------------+
 |                                Next.js Frontend (Vercel/Firebase Hosting)                       |
@@ -85,23 +84,19 @@ Below is a textual representation of the system components and their interaction
 |  - User Authentication (Client-side)                                                            |
 |  - BFF (Backend-For-Frontend API Routes)                                                        |
 +---------------------------------|------------------------------^--------------------------------+
-      |                             |                              |
-      | (Firebase SDK)              | (API Calls)                  | (Serves Static Assets)
+      | (Firebase SDK)              | (API Calls, e.g., to aiApi)  | (Serves Static Assets)
       v                             v                              |
 +-----------------------------+  +---------------------------------------------------------------+
-| Firebase Services           |  |                            Microservices                      |
-|  - Authentication           |  | (Cloud Run / Firebase Functions)                              |
-|  - Firestore (Database)     |  +---------------------------------------------------------------+
-|  - Storage (File Uploads)   |        |               ^               |               ^
-|  - Hosting (Static Assets)  |        | (Data)        | (Requests)    | (Data)        | (Requests)
-+-----------------------------+        v               |               v               |
-                               +-------------------+  +-------------------+  +-------------------+
-                               | Prompt Generation |  | Storyboard        |  | Script Analyzer   |
-                               | (Genkit Flow)     |  | (Genkit Flow)     |  | (Genkit Flow)     |
-                               +--------|----------+  +--------|----------+  +--------|----------+
-                                        |                      |                      |
-                                        +--------->------------+--------->------------+
-                                                  (Creative Data Flow)
+| Firebase Services           |  |            Centralized AI Microservice (aiApi)                |
+|  - Authentication           |  |             (Firebase Function / Cloud Run)                   |
+|  - Firestore (Database)     |  |  - Orchestrates Genkit Flows:                                 |
+|  - Storage (File Uploads)   |  |    - Prompt-to-Prototype                                      |
+|  - Hosting (Static Assets)  |  |    - Storyboard Generation                                    |
++-----------------------------+  |    - Script Analysis                                          |
+                               +--|-----------------------------|-------------------------------+
+                                  | (Calls to Google AI Models) | (Data to/from Firestore, Storage)
+                                  v                             v
+                             (AI Models)                   (Databases/Storage)
 ```
 
 ## Getting Started
@@ -218,6 +213,93 @@ ISL.SIXR.tv is built with a modern tech stack designed for scalability and a ric
 -   **TypeScript:** A typed superset of JavaScript that enhances code quality and maintainability.
 -   **Vercel:** Used for deployment and managing serverless functions, ensuring high availability and performance.
 
+## Deployment: Firebase Hosting & Cloud Run Strategy
+
+This section provides a breakdown of **Firebase Hosting** vs. **Cloud Run**, including when it makes sense to use each—or both in tandem for the ISL.SIXR.tv platform.
+
+### 🔧 Feature Comparison
+
+#### Firebase Hosting
+
+*   Excellent for static sites and SPAs, with integrated global CDN + HTTPS + custom domains + previews + easy rollbacks ([Firebase App Hosting Comparison](https://firebase.google.com/docs/app-hosting/product-comparison?utm_source=chatgpt.com), [Cloud Run Custom Domains](https://cloud.google.com/run/docs/mapping-custom-domains?utm_source=chatgpt.com)).
+*   Includes generous free tier (Spark: 1 GB storage, 10 GB monthly bandwidth; custom domains and SSL included). Blaze adds usage-based costs as you grow .
+*   Integrates tightly with Firebase Auth, Firestore/Realtime DB, Functions, Analytics, etc.
+*   Best when you want simplicity, tight Firebase service integration, and minimal backend customization.
+
+#### Cloud Run
+
+*   Designed for running containerized, stateless services (Node, Go, Python, Java, etc.) ([Firebase Hosting with Cloud Run](https://firebase.google.com/docs/hosting/cloud-run?utm_source=chatgpt.com)).
+*   Auto-scales to zero or thousands of instances; billed per CPU/memory usage during active requests ([Firebase Hosting with Cloud Run](https://firebase.google.com/docs/hosting/cloud-run?utm_source=chatgpt.com)).
+*   Offers flexibility for custom backends, microservices, REST APIs, SSR, or complex compute.
+*   Can map custom domains via Firebase Hosting, Load Balancer, or Cloud Run domain mapping ([Cloud Run Custom Domains](https://cloud.google.com/run/docs/mapping-custom-domains?utm_source=chatgpt.com)).
+*   No built-in CDN; dynamic, container response only (and a \~60s timeout from Firebase proxy) ([Reddit Discussion](https://www.reddit.com/r/googlecloud/comments/g1wgzo/static_website_google_cloud_run_or_firebase/?utm_source=chatgpt.com)).
+
+---
+
+### 📊 When to Use Which (or Both)
+
+| Scenario                         | Firebase Hosting Only     | Cloud Run Only          | Firebase Hosting + Cloud Run                         |
+| -------------------------------- | ------------------------- | ----------------------- | ---------------------------------------------------- |
+| **Static site / SPA**            | ✅ Ideal                   | ❌ Overkill              | ❌ Not needed                                         |
+| **Backend APIs / SSR**           | 🚧 Possible via Functions | ✅ Ideal                 | ✅ Great option                                       |
+| **Custom runtimes / frameworks** | ❌ Restricted to Node.js   | ✅ Full control          | ✅ Use Hosting for static + rewrite APIs to Cloud Run |
+| **Minimal infra management**     | ✅ Very easy               | ⚙️ You manage images    | ✅ Balanced                                           |
+| **Tight Firebase integration**   | ✅ Full support            | ☑️ Possible, extra code | ✅ Best of both                                       |
+
+---
+
+### ⚙️ Example Setup: Combine Firebase Hosting + Cloud Run
+
+1.  Build your frontend and deploy via `firebase deploy`.
+2.  Package backend container, deploy it to Cloud Run via `gcloud build/ run`.
+3.  Add rewrite in `firebase.json`:
+
+    ```json
+    "hosting": {
+      "rewrites": [{
+        "source": "/api/**",
+        "run": { "serviceId": "your-service", "region": "us-west1" }
+      }]
+    }
+    ```
+4.  Deploy hosting config with `firebase deploy --only hosting` ([Stack Overflow](https://stackoverflow.com/questions/66198081/how-to-correctly-deploy-changes-after-pairing-google-cloud-run-with-firebase-hos?utm_source=chatgpt.com), [StackShare](https://stackshare.io/stackups/firebase-vs-google-cloud-run?utm_source=chatgpt.com)).
+
+This lets Hosting handle static assets, CDN, SSL, and rewrites `/api` to your containerized microservice. That’s the sweet-spot combo.
+
+---
+
+### 💡 Trade-offs & Tips
+
+*   **Latency**: Proxying through Hosting adds \~600ms overhead compared to direct Cloud Run endpoints ([Stack Overflow](https://stackoverflow.com/questions/59068532/high-latency-using-firebase-hosting-as-compared-to-native-cloud-run?utm_source=chatgpt.com)).
+*   **Cold starts**: Containers—particularly large Node.js ones—can take seconds to spin up. Optimize image size (Go works great) to avoid this ([Reddit Discussion](https://www.reddit.com/r/googlecloud/comments/g1wgzo/static_website_google_cloud_run_or_firebase/?utm_source=chatgpt.com)).
+*   **Timeouts**: Firebase proxy enforces a 60s limit—longer tasks need other solutions (e.g., App Engine Flex).
+*   **Deployment complexity**: Cloud Run involves Docker builds & CI/CD, compared to one-command Firebase deploys ([Firebase Hosting with Cloud Run](https://firebase.google.com/docs/hosting/cloud-run?utm_source=chatgpt.com), [Firebase Serverless Overview](https://firebase.google.com/docs/hosting/serverless-overview?utm_source=chatgpt.com)).
+
+---
+
+### 🛤️ TL;DR: Choose Based On:
+
+*   **Firebase Hosting alone**: Static/SPA site with minimal backend.
+*   **Cloud Run alone**: Massive backend services, custom logic, full control.
+*   **Combine them**: You want a fast static frontend from Hosting, plus a powerful, containerized backend—without building your own CDN or SSL.
+
+---
+
+### ✅ What to Do Next
+
+1.  **Define your app architecture**: static vs dynamic; what runtime you need.
+2.  **Choose your tool(s)**:
+    *   If you're a frontend-heavy project with light backend, go with Firebase Hosting (+ Cloud Functions).
+    *   Need full backend flexibility or language support beyond Node? Cloud Run is your friend.
+    *   Want both? Use Hosting + Cloud Run with proxies—balanced and elegant.
+3.  **Prototype a mini app**:
+    *   Deploy a SPA on Hosting.
+    *   Create a `/api/hello` Cloud Run service.
+    *   Test rewrite configuration.
+4.  **Watch latency & cold starts**; optimize container images (e.g. Alpine, Go, caching layers).
+
+Mixing Firebase Hosting with Cloud Run gives you the best of both worlds—fast static delivery, global SSL/CDN, and backend flexibility in containers. If that aligns with SIXR’s mission—empowering creators with style and scale—this combo is a strong play.
+
 ## 📦 API Contracts & Shared Types
 
 Maintaining clear API contracts and consistent data structures across the platform is crucial for interoperability between the frontend, backend (Next.js BFF), and various microservices.
@@ -333,93 +415,6 @@ These services provide tools and functionalities to aid in the planning, organiz
 *   **Key Technologies:** Utilizes Genkit-powered AI functions within the Centralized AI Microservice (via the `/generateStoryboard` endpoint) for image generation. Frontend components for displaying and managing storyboard panels.
 *   **Location:** Logic primarily handled by the Centralized AI Microservice, with UI components in the Next.js application.
 *   **Note:** This tool is designed to bridge the gap between textual descriptions/shot lists and visual storytelling, facilitating pre-visualization. It is a key part of the "Prompt-to-Prototype Studio Handoff Features".
-
-## Deployment: Firebase Hosting & Cloud Run Strategy
-
-This section provides a breakdown of **Firebase Hosting** vs. **Cloud Run**, including when it makes sense to use each—or both in tandem for the ISL.SIXR.tv platform.
-
-### 🔧 Feature Comparison
-
-#### Firebase Hosting
-
-*   Excellent for static sites and SPAs, with integrated global CDN + HTTPS + custom domains + previews + easy rollbacks ([Firebase App Hosting Comparison](https://firebase.google.com/docs/app-hosting/product-comparison?utm_source=chatgpt.com), [Cloud Run Custom Domains](https://cloud.google.com/run/docs/mapping-custom-domains?utm_source=chatgpt.com)).
-*   Includes generous free tier (Spark: 1 GB storage, 10 GB monthly bandwidth; custom domains and SSL included). Blaze adds usage-based costs as you grow.
-*   Integrates tightly with Firebase Auth, Firestore/Realtime DB, Functions, Analytics, etc.
-*   Best when you want simplicity, tight Firebase service integration, and minimal backend customization.
-
-#### Cloud Run
-
-*   Designed for running containerized, stateless services (Node, Go, Python, Java, etc.) ([Firebase Hosting with Cloud Run](https://firebase.google.com/docs/hosting/cloud-run?utm_source=chatgpt.com)).
-*   Auto-scales to zero or thousands of instances; billed per CPU/memory usage during active requests ([Firebase Hosting with Cloud Run](https://firebase.google.com/docs/hosting/cloud-run?utm_source=chatgpt.com)).
-*   Offers flexibility for custom backends, microservices, REST APIs, SSR, or complex compute.
-*   Can map custom domains via Firebase Hosting, Load Balancer, or Cloud Run domain mapping ([Cloud Run Custom Domains](https://cloud.google.com/run/docs/mapping-custom-domains?utm_source=chatgpt.com)).
-*   No built-in CDN; dynamic, container response only (and a \~60s timeout from Firebase proxy) ([Reddit Discussion](https://www.reddit.com/r/googlecloud/comments/g1wgzo/static_website_google_cloud_run_or_firebase/?utm_source=chatgpt.com)).
-
----
-
-### 📊 When to Use Which (or Both)
-
-| Scenario                         | Firebase Hosting Only     | Cloud Run Only          | Firebase Hosting + Cloud Run                         |
-| -------------------------------- | ------------------------- | ----------------------- | ---------------------------------------------------- |
-| **Static site / SPA**            | ✅ Ideal                   | ❌ Overkill              | ❌ Not needed                                         |
-| **Backend APIs / SSR**           | 🚧 Possible via Functions | ✅ Ideal                 | ✅ Great option                                       |
-| **Custom runtimes / frameworks** | ❌ Restricted to Node.js   | ✅ Full control          | ✅ Use Hosting for static + rewrite APIs to Cloud Run |
-| **Minimal infra management**     | ✅ Very easy               | ⚙️ You manage images    | ✅ Balanced                                           |
-| **Tight Firebase integration**   | ✅ Full support            | ☑️ Possible, extra code | ✅ Best of both                                       |
-
----
-
-### ⚙️ Example Setup: Combine Firebase Hosting + Cloud Run
-
-1.  Build your frontend and deploy via `firebase deploy`.
-2.  Package backend container, deploy it to Cloud Run via `gcloud build/ run`.
-3.  Add rewrite in `firebase.json`:
-
-    ```json
-    "hosting": {
-      "rewrites": [{
-        "source": "/api/**",
-        "run": { "serviceId": "your-service", "region": "us-west1" }
-      }]
-    }
-    ```
-4.  Deploy hosting config with `firebase deploy --only hosting` ([Stack Overflow](https://stackoverflow.com/questions/66198081/how-to-correctly-deploy-changes-after-pairing-google-cloud-run-with-firebase-hos?utm_source=chatgpt.com), [StackShare](https://stackshare.io/stackups/firebase-vs-google-cloud-run?utm_source=chatgpt.com)).
-
-This lets Hosting handle static assets, CDN, SSL, and rewrites `/api` to your containerized microservice. That’s the sweet-spot combo.
-
----
-
-### 💡 Trade-offs & Tips
-
-*   **Latency**: Proxying through Hosting adds \~600ms overhead compared to direct Cloud Run endpoints ([Stack Overflow](https://stackoverflow.com/questions/59068532/high-latency-using-firebase-hosting-as-compared-to-native-cloud-run?utm_source=chatgpt.com)).
-*   **Cold starts**: Containers—particularly large Node.js ones—can take seconds to spin up. Optimize image size (Go works great) to avoid this ([Reddit Discussion](https://www.reddit.com/r/googlecloud/comments/g1wgzo/static_website_google_cloud_run_or_firebase/?utm_source=chatgpt.com)).
-*   **Timeouts**: Firebase proxy enforces a 60s limit—longer tasks need other solutions (e.g., App Engine Flex).
-*   **Deployment complexity**: Cloud Run involves Docker builds & CI/CD, compared to one-command Firebase deploys ([Firebase Hosting with Cloud Run](https://firebase.google.com/docs/hosting/cloud-run?utm_source=chatgpt.com), [Firebase Serverless Overview](https://firebase.google.com/docs/hosting/serverless-overview?utm_source=chatgpt.com)).
-
----
-
-### 🛤️ TL;DR: Choose Based On:
-
-*   **Firebase Hosting alone**: Static/SPA site with minimal backend.
-*   **Cloud Run alone**: Massive backend services, custom logic, full control.
-*   **Combine them**: You want a fast static frontend from Hosting, plus a powerful, containerized backend—without building your own CDN or SSL.
-
----
-
-### ✅ What to Do Next
-
-1.  **Define your app architecture**: static vs dynamic; what runtime you need.
-2.  **Choose your tool(s)**:
-    *   If you're a frontend-heavy project with light backend, go with Firebase Hosting (+ Cloud Functions).
-    *   Need full backend flexibility or language support beyond Node? Cloud Run is your friend.
-    *   Want both? Use Hosting + Cloud Run with proxies—balanced and elegant.
-3.  **Prototype a mini app**:
-    *   Deploy a SPA on Hosting.
-    *   Create a `/api/hello` Cloud Run service.
-    *   Test rewrite configuration.
-4.  **Watch latency & cold starts**; optimize container images (e.g. Alpine, Go, caching layers).
-
-Mixing Firebase Hosting with Cloud Run gives you the best of both worlds—fast static delivery, global SSL/CDN, and backend flexibility in containers. If that aligns with SIXR’s mission—empowering creators with style and scale—this combo is a strong play.
 
 ## 🚀 CI/CD & Deployment Pipeline
 
@@ -650,5 +645,3 @@ This section provides guidance for educators, workshop facilitators, or anyone l
 -   **Dedicated Q&A/Support Channel:** Set up a dedicated channel (e.g., Slack, Discord, or forum) for students to ask questions and receive support during the workshop.
 
 By following these guidelines, educators can create a more structured and effective learning experience using the ISL.SIXR.tv platform.
-
-```
