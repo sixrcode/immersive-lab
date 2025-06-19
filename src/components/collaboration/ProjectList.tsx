@@ -31,8 +31,12 @@ const ProjectList: React.FC<ProjectListProps> = ({ onSelectProject, selectedProj
         const data = await response.json();
         setProjects(data);
       } catch (err: unknown) {
-        setError(err.message || 'An unknown error occurred.');
-        console.error("Error fetching projects:", err);
+        console.error("Failed to fetch projects:", err);
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unexpected error occurred while fetching projects.");
+        }
       } finally {
         setIsLoading(false);
       }
