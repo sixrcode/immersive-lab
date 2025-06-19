@@ -17,6 +17,7 @@ export default function PromptToPrototypePage() {
     mutate: generatePrototypeMutate, // Renamed to avoid conflict if a handleGenerate function wrapper is kept
     data: generatedPrototypePackage, // This will be PromptPackageAPIOutput | undefined from the hook
     error: hookError, // This is Error | null
+    isPending, // Correctly destructure isPending
   } = useGeneratePrototype();
 
   const handleFormSubmit = (submissionData: { prompt: string; imageDataUri?: string; stylePreset?: string }) => {
