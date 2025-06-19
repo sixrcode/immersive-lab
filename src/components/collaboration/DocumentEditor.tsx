@@ -101,7 +101,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
   }, [documentId]);
 
   // Debounced function to emit document changes
-  const debouncedEmitChange = useCallback(
+  const debouncedEmitChange = useCallback<(...args: string[]) => void>(
     debounce((newContent: string) => {
       if (socket && documentId && projectId) {
         socket.emit('documentChange', {
@@ -111,7 +111,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
         });
       }
     }, 500), // 500ms debounce time
-    [socket, documentId, projectId, debounce]
+    [socket, documentId, projectId] // Removed debounce from dependencies
   );
 
   const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
