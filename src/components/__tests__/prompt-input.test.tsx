@@ -7,63 +7,78 @@ import { PromptInput } from '../prompt-input'; // Adjust path as necessary
 jest.mock('@/components/ui/textarea', () => {
   const MockTextarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (props) => <textarea data-testid="textarea" {...props} />;
   MockTextarea.displayName = 'MockTextarea';
-  return MockTextarea;
+  return { Textarea: MockTextarea };
 });
 jest.mock('@/components/ui/input', () => {
   const MockInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => <input data-testid="input-file" {...props} />;
   MockInput.displayName = 'MockInput';
-  return MockInput;
+  return { Input: MockInput };
 });
 jest.mock('@/components/ui/button', () => {
   const MockButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (props) => <button data-testid="button" {...props} />;
-  MockButton.displayName = 'MockButton';
-  return MockButton;
+  MockButton.displayName = 'Button'; // Corrected displayName to match exported component
+  return { Button: MockButton };
 });
-jest.mock('@/components/ui/select', () => ({
-  Select: ((props: { value?: string; onValueChange?: (value: string) => void; disabled?: boolean; children?: React.ReactNode }) => (
-    <select data-testid="select" value={props.value} onChange={(e) => props.onValueChange?.(e.target.value)} disabled={props.disabled}>{props.children}</select>
-  )) as React.FC<{ value?: string; onValueChange?: (value: string) => void; disabled?: boolean; children?: React.ReactNode }> & { displayName?: string },
-  SelectContent: ((props: { children?: React.ReactNode }) => (
-    <div data-testid="select-content">{props.children}</div>
-  )) as React.FC<{ children?: React.ReactNode }> & { displayName?: string },
-  SelectItem: ((props: { value: string; children?: React.ReactNode }) => (
-    <option data-testid={`select-item-${props.value}`} value={props.value}>{props.children}</option>
-  )) as React.FC<{ value: string; children?: React.ReactNode }> & { displayName?: string },
-  SelectTrigger: ((props: { children?: React.ReactNode }) => (
-    <div data-testid="select-trigger">{props.children}</div>
-  )) as React.FC<{ children?: React.ReactNode }> & { displayName?: string },
-  SelectValue: ((props: { placeholder?: string }) => (
-    <div data-testid="select-value">{props.placeholder}</div>
-  )) as React.FC<{ placeholder?: string }> & { displayName?: string },
-}));
 
-// Add display names to mocked Select sub-components explicitly outside the mock call
-// This is a workaround because adding it directly inside the mock returns can be tricky
-// and might not be correctly inferred by TypeScript or Jest's module system.
-// However, adding displayName to the component function directly is the preferred way.
-// Let's try to add types to the component functions instead of using `as React.FC<any>`.
 jest.mock('@/components/ui/label', () => {
   const MockLabel: React.FC<React.LabelHTMLAttributes<HTMLLabelElement>> = (props) => <label {...props} />;
-  MockLabel.displayName = 'MockLabel';
-  return MockLabel;
+  MockLabel.displayName = 'Label'; // Corrected displayName to match exported component
+  return { Label: MockLabel };
 });
 
-// Update the mock to use specific types for props
-jest.mock('@/components/ui/select', () => ({
-  Select: ((props: { value?: string; onValueChange?: (value: string) => void; disabled?: boolean; children?: React.ReactNode }) => <select data-testid="select" value={props.value} onChange={(e) => props.onValueChange?.(e.target.value)} disabled={props.disabled}>{props.children}</select>) as React.FC<{ value?: string; onValueChange?: (value: string) => void; disabled?: boolean; children?: React.ReactNode }> & { displayName?: string },
-  SelectContent: ((props: { children?: React.ReactNode }) => <div data-testid="select-content">{props.children}</div>) as React.FC<{ children?: React.ReactNode }> & { displayName?: string },
-  SelectItem: ((props: { value: string; children?: React.ReactNode }) => <option data-testid={`select-item-${props.value}`} value={props.value}>{props.children}</option>) as React.FC<{ value: string; children?: React.ReactNode }> & { displayName?: string },
-  SelectTrigger: ((props: { children?: React.ReactNode }) => <div data-testid="select-trigger">{props.children}</div>) as React.FC<{ children?: React.ReactNode }> & { displayName?: string },
-  SelectValue: ((props: { placeholder?: string }) => <div data-testid="select-value">{props.placeholder}</div>) as React.FC<{ placeholder?: string }> & { displayName?: string },
-}));
+jest.mock('@/components/ui/select', () => {
+  const RealReact = jest.requireActual('react');
 
-// Add display names to mocked Select sub-components
-import * as MockedSelect from '@/components/ui/select';
-MockedSelect.Select.displayName = 'MockSelect';
-MockedSelect.SelectContent.displayName = 'MockSelectContent';
-MockedSelect.SelectItem.displayName = 'MockSelectItem';
-MockedSelect.SelectTrigger.displayName = 'MockSelectTrigger';
-MockedSelect.SelectValue.displayName = 'MockSelectValue';
+  const Select = React.forwardRef<HTMLDivElement, { children?: React.ReactNode, value?: string, onValueChange?: (value: string) => void, disabled?: boolean }>(
+    ({ children, value, onValueChange, disabled }, ref) => {
+      const trigger = RealReact.Children.toArray(children).find(
+        (child: any) => child.type && child.type.displayName === 'SelectTrigger'
+      );
+      const content = RealReact.Children.toArray(children).find(
+        (child: any) => child.type && child.type.displayName === 'SelectContent'
+      );
+
+      let options: React.ReactNode[] = [];
+      if (content && RealReact.isValidElement(content) && content.props.children) {
+        options = RealReact.Children.toArray(content.props.children).filter(
+            (child: any) => child.type && child.type.displayName === 'SelectItem'
+        );
+      }
+
+      return (
+        <div ref={ref}> {/* Main container for the mock */}
+          {trigger} {/* Render the trigger part (which includes SelectValue for placeholder) */}
+          <select data-testid="select" value={value} onChange={e => onValueChange?.(e.target.value)} disabled={disabled} style={{ display: 'none' }}> {/* Hidden select for interaction */}
+            {options}
+          </select>
+        </div>
+      );
+    }
+  );
+  Select.displayName = 'Select';
+
+  const SelectItem = React.forwardRef<HTMLOptionElement, { children?: React.ReactNode, value: string }>(
+    ({ value, children }, ref) => <option ref={ref} value={value} data-testid={`select-item-${value}`}>{children}</option>
+  );
+  SelectItem.displayName = 'SelectItem';
+
+  const SelectTrigger = React.forwardRef<HTMLDivElement, { children?: React.ReactNode }>(
+    ({ children }, ref) => <div ref={ref} data-testid="select-trigger">{children}</div>
+  );
+  SelectTrigger.displayName = 'SelectTrigger';
+
+  const SelectValue = React.forwardRef<HTMLSpanElement, { children?: React.ReactNode, placeholder?: string }>(
+    ({ placeholder, children }, ref) => <span ref={ref} data-testid="select-value">{children || placeholder}</span>
+  );
+  SelectValue.displayName = 'SelectValue';
+
+  const SelectContent = React.forwardRef<HTMLDivElement, { children?: React.ReactNode }>( // Effectively a passthrough for options for the hidden select
+    ({ children }, ref) => <div ref={ref} data-testid="select-content" style={{display: 'none'}}>{children}</div>
+  );
+  SelectContent.displayName = 'SelectContent';
+
+  return { Select, SelectItem, SelectTrigger, SelectValue, SelectContent };
+});
 
 describe('PromptInput Component', () => {
   const mockOnSubmit = jest.fn();
@@ -78,11 +93,25 @@ describe('PromptInput Component', () => {
   beforeEach(() => {
     mockOnSubmit.mockClear();
     // Mock FileReader
-    global.FileReader = jest.fn(() => ({
-      readAsDataURL: jest.fn(),
-      onloadend: jest.fn(),
-      result: 'data:image/png;base64,mockedimagedata', // Add result property
-    })) as any;
+    global.FileReader = jest.fn(() => {
+      let onloadendCallback: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+      const fr = {
+        readAsDataURL: jest.fn(function(this: any) {
+          if (onloadendCallback) {
+            // Simulate async behavior with a timeout
+            setTimeout(() => onloadendCallback.call(fr, new ProgressEvent('loadend')), 0);
+          }
+        }),
+        set onloadend(callback: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null) {
+          onloadendCallback = callback;
+        },
+        get onloadend() {
+          return onloadendCallback;
+        },
+        result: 'data:image/png;base64,mockedimagedata',
+      };
+      return fr;
+    }) as any;
   });
 
   it('renders correctly with initial state', () => {

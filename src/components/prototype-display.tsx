@@ -84,7 +84,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
     <div className="space-y-8 mt-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-2 border-b">
         <h2 className="text-2xl font-semibold">Generated Prototype</h2>
-        <Button onClick={handleDownloadJson} variant="default" size="sm" className="mt-2 sm:mt-0 print:hidden">
+        <Button onClick={handleDownloadJson} variant="default" size="sm" className="mt-2 sm:mt-0 print:hidden" data-testid="download-json-button">
           <DownloadIcon />
           Download JSON
         </Button>
