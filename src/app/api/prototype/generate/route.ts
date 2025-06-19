@@ -16,6 +16,41 @@ interface PromptGenServiceOutput {
   originalUserImageURL?: string; // Firebase Storage URL of the user-uploaded image (if applicable)
 }
 
+// Helper function to extract serializable error details
+function extractSerializableErrorDetails(errorBody: any): string {
+  if (typeof errorBody === 'string') {
+    return errorBody;
+  }
+  if (typeof errorBody === 'object' && errorBody !== null) {
+    if (typeof errorBody.details === 'string') {
+      return errorBody.details;
+    }
+    if (typeof errorBody.error === 'string') {
+      return errorBody.error;
+    }
+    // Attempt to stringify a limited subset or return a generic message
+    // This is a simplified example; you might want to be more selective
+    // or add more checks depending on common error structures.
+    try {
+      // Only include specific, known-safe properties if necessary
+      // For now, let's try a generic stringify and catch if it's too complex or circular
+      const simpleError = {
+        message: errorBody.message,
+        code: errorBody.code,
+        type: errorBody.type
+      };
+      const details = JSON.stringify(simpleError);
+      if (details.length > 500) { // Limit length
+        return "Error details from microservice are too verbose.";
+      }
+      return details;
+    } catch (e) {
+      return "Error details from microservice are not in expected string format or are too complex to serialize.";
+    }
+  }
+  return "Error details from microservice are not in expected string format.";
+}
+
 /**
  * @fileoverview Next.js API route for generating prototype assets.
  *
@@ -35,10 +70,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage
   // 1. Check Firebase Admin SDK
   if (!firebaseAdminApp) {
     console.error('Firebase Admin SDK not initialized. Cannot process request.');
-    return NextResponse.json(
-      { error: 'Firebase Admin SDK not initialized. Check server logs.' },
-      { status: 500 }
-    );
+    const errorPayload = { error: 'Firebase Admin SDK not initialized. Check server logs.' };
+    console.log('Returning error response to client (Firebase Admin SDK not initialized):', JSON.stringify(errorPayload, null, 2));
+    return NextResponse.json(errorPayload, { status: 500 });
   }
 
   // 2. Validate input using Zod
@@ -103,19 +137,23 @@ try { // Added error handling for fetch
       errorBody = await response.json(); // Parse error body if available
     } catch {} // Removed unused variable _
     console.error('AI service error:', response.status, errorBody);
-    return NextResponse.json(
-      { error: 'AI service request failed.', details: errorBody || response.statusText },
-      { status: response.status }
-    );
+    const errorResponsePayload = {
+      error: 'AI service request failed.',
+      details: extractSerializableErrorDetails(errorBody) || response.statusText,
+    };
+    console.log('Returning error response to client:', JSON.stringify(errorResponsePayload, null, 2));
+    return NextResponse.json(errorResponsePayload, { status: response.status });
   }
 
   flowOutput = await response.json() as PromptGenServiceOutput; // Type assertion
 } catch (error: unknown) { // Catching unknown error type
   console.error('Failed to call AI microservice:', error);
-  return NextResponse.json( // Return specific error message
-    { error: 'Failed to contact prompt generation service.', details: error instanceof Error ? error.message : String(error) },
-    { status: 503 }
-  );
+  const errorResponsePayload = {
+    error: 'Failed to contact prompt generation service.',
+    details: error instanceof Error ? error.message : String(error),
+  };
+  console.log('Returning error response to client (fetch failed):', JSON.stringify(errorResponsePayload, null, 2));
+  return NextResponse.json(errorResponsePayload, { status: 503 });
 }
 
 // 5. Extract values and construct PromptPackage
@@ -172,17 +210,15 @@ if (db) {
         : 'Unknown Firestore error';
     console.error('Failed to save PromptPackage to Firestore:', message, firestoreError
     );
-    return NextResponse.json(
-      { error: 'Failed to save data to database.', details: message },
-      { status: 500 }
-    );
+    const errorPayload = { error: 'Failed to save data to database.', details: message };
+    console.log('Returning error response to client (Firestore save error):', JSON.stringify(errorPayload, null, 2));
+    return NextResponse.json(errorPayload, { status: 500 });
   }
 } else {
   console.warn('Firestore (db) is not initialized. PromptPackage was not saved.');
- return NextResponse.json(
-    { error: 'Database service unavailable. Data not saved.' },
-    { status: 500 }
-  );
+  const errorPayload = { error: 'Database service unavailable. Data not saved.' };
+  console.log('Returning error response to client (Firestore db not initialized):', JSON.stringify(errorPayload, null, 2));
+  return NextResponse.json(errorPayload, { status: 500 });
 }
 
   // 7. Return the created `PromptPackage` to the client.
