@@ -2,7 +2,7 @@ import { POST } from '../generate/route'; // Assuming generate.ts exports POST
 import { NextRequest } from 'next/server';
  
 import { db as mockDb, storage as mockStorage } from '@/lib/firebase/admin';
-import { v4 as mockUuidv4 } from 'uuid';
+import { v4 as mockUuidv4, type V4Options } from 'uuid';
 
 // Define types for the mocked Firestore and Storage
 type MockFirestore = {
@@ -62,7 +62,7 @@ jest.mock('@/lib/utils', () => ({
 
 
 describe('/api/prototype/generate API Endpoint', () => {
-  // Use Partial<NextRequest> or a specific mock request type if needed
+  // Use Partial<NextRequest> or a specific mock request type if neededgit add
   // For now, relying on the createMockRequest return type
   let mockRequest: any; // Keeping as any for now due to complex NextRequest mocking
 
@@ -90,9 +90,9 @@ describe('/api/prototype/generate API Endpoint', () => {
           shotList: '1,35mm,Test move,Test notes from fetch',
           proxyClipAnimaticDescription: 'Test animatic description from fetch',
           pitchSummary: 'Test pitch summary from fetch',
-          originalUserImageURL: undefined, // Default, can be overridden in specific tests
-        } as any), // Type assertion for the AI microservice response
-        text: () => Promise.resolve('{}'), // Default text method
+ originalUserImageURL: undefined, // Default, can be overridden in specific tests
+        }), // Type assertion for the AI microservice response
+ text: () => Promise.resolve('{}'), // Default text method
       } as Response) // Type assertion for Response
     );
 
@@ -102,10 +102,10 @@ describe('/api/prototype/generate API Endpoint', () => {
     (typedMockDb.collection('').doc('').set as jest.Mock).mockResolvedValue({});
   });
 
-  async function createMockRequest(body: object | null, method: string = 'POST'): Promise<any> {
+  async function createMockRequest(body: object | null, method: string = 'POST'): Promise<NextRequest> {
     return new NextRequest(new URL(req.url || '/', 'http://localhost').toString(), {
         // Passing the body as a string here matches the typical NextRequest behavior when handling JSON
-        method: req.method as any, // Cast to any to satisfy NextRequest type
+        method: req.method as string, // Cast to string to satisfy NextRequest type
  headers: new Headers(req.headers as Record<string, string>),
         body: body ? JSON.stringify(body) : null, //node-mocks-http doesn't stringify
     }) as unknown as NextRequest;
