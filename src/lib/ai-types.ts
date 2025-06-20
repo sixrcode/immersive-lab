@@ -82,6 +82,7 @@ export type StoryboardPanel = z.infer<typeof StoryboardPanelSchema>;
 
 export const StoryboardPanelWithImageSchema = StoryboardPanelSchema.extend({
   imageDataUri: z.string().describe("The generated image for this panel, as a data URI. Expected format: 'data:image/png;base64,<encoded_data>'."),
+  alt: z.string().describe("Descriptive alt text for the panel image, derived from its visual description."),
 });
 export type StoryboardPanelWithImage = z.infer<typeof StoryboardPanelWithImageSchema>;
 
