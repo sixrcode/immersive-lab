@@ -58,6 +58,7 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.test
 
 # VSCode settings specific to user, but allow project settings
 .vscode/*
@@ -79,4 +80,3 @@ out/
 # Other
 *.pem
 *.key
-.env.test
