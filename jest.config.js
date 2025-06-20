@@ -5,7 +5,8 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleDirectories: ["node_modules", "<rootDir>"],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/components/ui/use-toast$': '<rootDir>/src/components/ui/toast.tsx', // More specific mapping
+    '^@/(.*)$': '<rootDir>/src/$1', // Keep the general one as fallback
   },
   transform: {
     '^.+\\.(ts|tsx|js|jsx)$': ['ts-jest', {

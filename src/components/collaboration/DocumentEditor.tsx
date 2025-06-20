@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { io, Socket } from 'socket.io-client';
+import io, { type Socket } from 'socket.io-client';
 
 interface Document {
   _id: string;
@@ -41,9 +41,16 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
     // For direct connection: process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL (without /api part for socket)
     // e.g. http://localhost:3001
     // If your socket server is at the root of the collaboration service URL:
-    const socketServiceUrl = (process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || '').startsWith('http')
+    const rawSocketServiceUrl = (process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || '').startsWith('http')
       ? process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL?.replace('/api', '') // if it's a full URL
       : window.location.origin; // if it's a path like /api/collaboration, use current origin
+
+    if (!rawSocketServiceUrl) {
+      console.error("DocumentEditor: socketServiceUrl is not defined, cannot connect socket.");
+      return;
+    }
+
+    const socketServiceUrl = rawSocketServiceUrl; // Ensure it's a string now
 
     const newSocket = io(socketServiceUrl, {
       path: (process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || '').startsWith('/api/collaboration')
