@@ -26,7 +26,6 @@ Forge the Future, One Story at a Time.
   - [TLDR Choose Based On](#tldr-choose-based-on)
   - [What to Do Next](#what-to-do-next)
 - [Microservices Architecture](#microservices-architecture)
-  - [Prompt Generation Service servicesprompt-gen-service](#prompt-generation-service-servicesprompt-gen-service)
   - [Centralized AI Microservice ai-microservice](#centralized-ai-microservice-ai-microservice)
   - [AI Script Analyzer functions](#ai-script-analyzer-functions)
   - [Collaboration Service collaboration-service](#collaboration-service-collaboration-service)
@@ -351,18 +350,6 @@ The ISL.SIXR.tv platform employs a modular, microservices-based architecture to 
 
 These services are responsible for the core AI-driven functionalities of the platform, including content generation, analysis, and AI model orchestration.
 
-#### Prompt Generation Service (`services/prompt-gen-service/`)
-
-*   **Status: DEPRECATED for Prompt-to-Prototype functionality.** All responsibilities for prompt-to-prototype generation (including asset creation like loglines, mood boards, shot lists, and associated image processing/storage) have been **consolidated into the Centralized AI Microservice (`ai-microservice/`)**.
-*   **Original Purpose:** This service was initially designed to handle the core AI-driven generation of creative assets for the Prompt-to-Prototype Studio. It is no longer actively used for this purpose.
-*   **Key Technologies:** Node.js, Express, Genkit (Historically)
-*   **Location:** `services/prompt-gen-service/`
-*   **Notes:**
-    *   This service is **not called** by the Next.js application for any prompt generation tasks.
-    *   All its former prompt-to-prototype duties are now managed by `ai-microservice/`.
-    *   The codebase is retained for historical context and potential future reuse of non-core utility functions if any.
-    *   For historical reference on its original design, see the [Prompt Generation Service README](./services/prompt-gen-service/README.md).
-
 #### Centralized AI Microservice (`ai-microservice/`)
 
 *   **Purpose:** Acts as the **primary API gateway and backend orchestrator for all core AI functionalities**. It manages Genkit flows, communicates with various AI models (e.g., Gemini via Google AI), and processes structured input from frontend features. It is responsible for and serves as the backend for:
@@ -498,7 +485,7 @@ The ISL.SIXR.tv platform is envisioned as an evolving ecosystem for immersive st
 *   **Educational Platforms:** Explore APIs for connecting with Learning Management Systems (LMS) to better serve educational users and institutions.
 
 ### Performance and Scalability
-*   **Microservice Optimization:** Continuously optimize all microservices, particularly AI-intensive ones like the Prompt Generation Service and Centralized AI Microservice, for faster response times, improved resource efficiency, and enhanced scalability.
+*   **Microservice Optimization:** Continuously optimize all microservices, particularly AI-intensive ones like the Centralized AI Microservice, for faster response times, improved resource efficiency, and enhanced scalability.
 *   **Edge Computing for AI:** Investigate the feasibility of deploying certain AI inference tasks to edge devices to reduce latency for real-time feedback and interactive AI tools.
 *   **Optimized Asset Pipelines:** Refine asset management and processing pipelines (e.g., image/video transcoding, 3D model optimization) for smoother and faster handling of creative media.
 
@@ -548,15 +535,10 @@ This section outlines the general phased development approach for the ISL.SIXR.t
 
 *General Note: Each microservice generally aligns with the overall platform phases but with a specific focus relevant to its domain. Development is iterative, and features within each microservice will evolve through these phases.*
 
-*   **Prompt Generation Service (`services/prompt-gen-service/`)**
-    *   *Phase 1 (Historical/Consolidated):* Core AI model integration for generating initial creative assets.
-    *   *Phase 2 (Historical/Consolidated):* Expansion of supported AI models, improvement in quality.
-    *   *Phase 3 (Historical/Consolidated):* All prompt-to-prototype development was focused within this service.
-    *   *Note:* This service is deprecated. All active and future development for prompt-to-prototype functionality is part of the Centralized AI Microservice.
 *   **Centralized AI Microservice (`ai-microservice/`)**
     *   *Phase 1 (Completed):* Establish the API gateway, implement initial Genkit flows for core features:
         *   Script analysis (`/analyzeScript`).
-        *   Prompt-to-Prototype (`/promptToPrototype`), including logic consolidated from the deprecated `prompt-gen-service`.
+        *   Prompt-to-Prototype (`/promptToPrototype`).
         *   Storyboard Studio MVP (`/generateStoryboard` - initial Genkit flow for storyboard generation with mocked images, basic panel structure).
     *   *Phase 2 (Ongoing/Upcoming):*
         *   Refine Genkit flows for robustness, new features (e.g., real storyboard image generation, variant generation for Prompt Studio).
@@ -580,7 +562,7 @@ This section outlines the general phased development approach for the ISL.SIXR.t
 ### Roadmap Considerations
 
 *   **Storyboard Studio Integration:** The Storyboard Studio MVP was developed and delivered as part of Phase 1 (within the `ai-microservice`). Phase 2 will focus on its full implementation with real AI image generation, deeper integration with other platform tools (e.g., importing shot lists from Prompt-to-Prototype), and UI enhancements for panel management.
-*   **AI Service Architecture:** The platform has successfully consolidated its primary AI generation tasks (including Prompt-to-Prototype, Script Analysis, and Storyboard Generation) into the `ai-microservice`. The `services/prompt-gen-service` is now deprecated to streamline development and avoid redundancy.
+*   **AI Service Architecture:** The platform has successfully consolidated its primary AI generation tasks (including Prompt-to-Prototype, Script Analysis, and Storyboard Generation) into the `ai-microservice`.
 *   **Data Storage Strategy:** The Collaboration Service currently utilizes MongoDB, while other core services (via Next.js BFF and `ai-microservice`) primarily use Firestore. For Phase 2 and beyond, the project will evaluate strategies for data management to ensure scalability, maintainability, and data consistency where beneficial. This may include exploring options for greater alignment or defining clear boundaries for data ownership and access patterns.
 *   **Third-Party AI Dependencies:** The platform's AI capabilities heavily rely on Genkit and underlying Google AI models. Future development will include robust monitoring of these services, contingency planning for API changes or deprecations, and evaluating alternative models or providers if necessary to ensure feature continuity and performance.
 *   **Resource Allocation:** Successful execution of the ambitious Phase 2 goals requires careful resource management and prioritization to support parallel development across multiple features (Storyboard Studio full implementation, Prompt-to-Prototype enhancements, Production Board, Collaboration features) and microservices (primarily `ai-microservice` and `collaboration-service`).

@@ -46,14 +46,14 @@ function extractSerializableErrorDetails(errorBody: any): string {
  * This route handles POST requests to `/api/prompt-to-prototype/generate`.
  * It serves as a gateway that:
  * 1. Validates the client's input.
- * 2. Calls a dedicated microservice (`prompt-gen-service`) to perform the AI generation.
+ * 2. Calls a dedicated microservice to perform the AI generation.
  * 3. Receives the generated assets from the microservice.
  * 4. Constructs a `PromptPackage` object with those assets.
  * 5. Saves the `PromptPackage` to Firestore.
  * 6. Returns the `PromptPackage` to the client.
  *
  * Note: Local AI flows and direct image processing (e.g., uploadImageToStorage, dataUriToBuffer) have been removed.
- *       This API route now delegates all such logic to the prompt-gen-service microservice.
+ *       This API route now delegates all such logic to the microservice.
  */
 export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage | { error: string; details?: unknown }>> {
   // 1. Validate input using Zod
@@ -134,7 +134,7 @@ try { // Added error handling for fetch
 } catch (error: unknown) { // Catching unknown error type
   console.error('Failed to call AI microservice:', error);
   const errorResponsePayload = {
-    error: 'Failed to contact prompt generation service.',
+    error: 'Failed to contact AI generation service.',
     details: error instanceof Error ? error.message : String(error),
   };
   console.log('Returning error response to client (fetch failed):', JSON.stringify(errorResponsePayload, null, 2));

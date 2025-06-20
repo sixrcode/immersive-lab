@@ -6,14 +6,8 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const logger = require("firebase-functions/logger");
 
-// Optional: Set global options like region and concurrency
-setGlobalOptions({ region: "us-central1" }); // Adjust region as needed
-
 const express = require('express');
 const cors = require('cors');
-// Import for analyzeScript. Assuming the build process handles TypeScript to JS transpilation
-// and path resolution (e.g., from tsconfig.json paths if src is mapped).
-// If functions/index.js is in the same directory as src/ after build, this path might need adjustment.
 // For now, assuming a common root or that the build places it correctly.
 // MODIFIED: Path updated to point to the copied files within functions directory
 
@@ -517,13 +511,6 @@ app.patch('/production-board/cards/:cardId/move', async (req, res) => {
 });
 
 // Expose Express app as a single Firebase Function
-const { onRequest } = require("firebase-functions/v2/https");
-const { setGlobalOptions } = require("firebase-functions/v2");
-const logger = require("firebase-functions/logger");
-const admin = require("firebase-admin");
-const app = require("./app"); // your Express app
-const { authenticate } = require("./middleware/authenticate"); // if used
-
 admin.initializeApp();
 setGlobalOptions({ region: "us-west1" });
 
