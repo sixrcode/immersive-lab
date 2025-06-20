@@ -585,6 +585,37 @@ This section outlines the general phased development approach for the ISL.SIXR.t
 *   **Third-Party AI Dependencies:** The platform's AI capabilities heavily rely on Genkit and underlying Google AI models. Future development will include robust monitoring of these services, contingency planning for API changes or deprecations, and evaluating alternative models or providers if necessary to ensure feature continuity and performance.
 *   **Resource Allocation:** Successful execution of the ambitious Phase 2 goals requires careful resource management and prioritization to support parallel development across multiple features (Storyboard Studio full implementation, Prompt-to-Prototype enhancements, Production Board, Collaboration features) and microservices (primarily `ai-microservice` and `collaboration-service`).
 
+## Automated Performance Benchmarking
+
+The platform includes an automated performance benchmarking process to ensure that code changes do not inadvertently introduce significant performance regressions.
+
+-   **CI Integration:** Performance benchmarks are run automatically via GitHub Actions on every pull request targeting the `main` or `develop` branches. This is part of the `pr-check.yml` workflow.
+-   **Benchmark Script:** The core script responsible for running these benchmarks is `benchmarking/run_benchmarks.js`.
+-   **Baseline Comparison:** This script compares the performance of key features (e.g., "promptToPrototype", "analyzeScript") against a predefined baseline stored in `benchmarking/benchmark_baseline.json`.
+-   **Regression Detection:** If the average response time for a benchmarked feature during a CI run is more than twice (2x) its baseline average, it's considered a significant performance regression. In such cases, the "Run Performance Benchmarks" step in the GitHub Actions workflow will fail, thus failing the overall PR check.
+-   **Archived Results:** The detailed JSON results from each benchmark run in CI are archived as downloadable artifacts in the GitHub Actions run summary. This allows developers to inspect the raw performance data if needed.
+
+### Updating the Baseline
+
+The `benchmark_baseline.json` file contains the reference performance figures (average response times) for various features. This baseline may need to be updated periodically, for example, if:
+
+-   Significant performance improvements have been intentionally made to a feature.
+-   The underlying infrastructure or dependencies have changed, impacting performance characteristics.
+-   The current baseline is no longer representative of acceptable performance.
+
+To update the baseline:
+
+1.  **Run Benchmarks Locally:** Execute the `benchmarking/run_benchmarks.js` script locally. Ensure you are running it against a stable and representative environment (e.g., a local setup that mirrors production or a dedicated staging environment).
+    ```bash
+    node benchmarking/run_benchmarks.js
+    ```
+    (You might need to set the `BENCHMARK_API_BASE_URL` environment variable if you are targeting a non-localhost API).
+2.  **Analyze Results:** After the script completes, it will save a new JSON results file in the `benchmarking/results/` directory. Review this file to understand the current average response times for the features.
+3.  **Update Baseline File:** If the new performance figures are deemed acceptable and representative of the new baseline, manually update the `avgResponseTime` values in the `benchmarking/benchmark_baseline.json` file for the relevant features.
+4.  **Commit Changes:** Commit the updated `benchmarking/benchmark_baseline.json` file to your branch and include it in your pull request. Explain the reason for the baseline update in your PR description.
+
+Regularly maintaining an accurate baseline ensures that the performance regression checks remain effective and relevant.
+
 ## Contributing
 
 Contributions are welcome! We appreciate any help in improving this project and empowering more creators. Our goal is to make contributing to ISL.SIXR.tv a positive and rewarding experience.
