@@ -3,7 +3,7 @@ module.exports = {
   testEnvironment: 'jest-environment-jsdom',
   globalSetup: '<rootDir>/jest.globalSetup.js',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleDirectories: ["node_modules", "<rootDir>"],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/jest.setup-env.js'], // Added jest.setup-env.js here
   moduleNameMapper: {
     '^@/components/ui/use-toast$': '<rootDir>/src/components/ui/toast.tsx', // More specific mapping
     '^@/(.*)$': '<rootDir>/src/$1', // Keep the general one as fallback
@@ -16,10 +16,10 @@ module.exports = {
     }],
   },
   // Automatically clear mock calls and instances between every test
-  testPathIgnorePatterns: ['<rootDir>/e2/'],
+ testPathIgnorePatterns: ['<rootDir>/e2e/'],
   clearMocks: true,
   transformIgnorePatterns: [
-    'node_modules/(?!(jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson)/)', // Added jose, jwks-rsa, firebase-admin, @firebase
+    'node_modules/(?!(@radix-ui|lucide-react|jose|bson|mongoose|whatwg-fetch|firebase-admin|firebase-functions|chai|sinon|jwks-rsa|react-day-picker|@firebase)/)'
   ],
   collectCoverage: true,
   coverageDirectory: "coverage",
