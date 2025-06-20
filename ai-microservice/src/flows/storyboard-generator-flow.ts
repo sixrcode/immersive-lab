@@ -18,6 +18,7 @@ const StoryboardPanelSchema = z.object({
 
 const StoryboardPanelWithImageSchema = StoryboardPanelSchema.extend({
   imageDataUri: z.string().describe("The generated image for this panel, as a data URI. Expected format: 'data:image/png;base64,<encoded_data>'."),
+  alt: z.string().describe("Descriptive alt text for the panel image, derived from its visual description."),
 });
 
 const StoryboardGeneratorInputSchema = z.object({
@@ -116,12 +117,14 @@ const storyboardGeneratorFlow = ai.defineFlow(
           return {
             ...panelTextData,
             imageDataUri: media.url,
+            alt: panelTextData.description,
           };
         } else {
            console.warn(`Image generation failed for panel ${panelTextData.panelNumber}. No media URL returned.`);
           return {
             ...panelTextData,
             imageDataUri: `https://placehold.co/512x384.png?text=Image+Gen+Failed+P${panelTextData.panelNumber}`,
+            alt: panelTextData.description, // Also add alt text for placeholder
           };
         }
       } catch (error) {
@@ -129,6 +132,7 @@ const storyboardGeneratorFlow = ai.defineFlow(
         return {
           ...panelTextData,
           imageDataUri: `https://placehold.co/512x384.png?text=Image+Error+P${panelTextData.panelNumber}`,
+          alt: panelTextData.description, // And for error placeholder
         };
       }
     });
