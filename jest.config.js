@@ -17,4 +17,15 @@ module.exports = {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
   transformIgnorePatterns: [], // Transform all node_modules
+  collectCoverage: true,
+  coverageDirectory: "coverage",
+  coverageReporters: ["text", "lcov"],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
 };

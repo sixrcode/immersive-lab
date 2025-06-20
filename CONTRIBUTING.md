@@ -23,12 +23,14 @@ Thank you for your interest in contributing to the Immersive Storytelling Lab Pl
 - We use Prettier for code formatting (often integrated with ESLint). Please ensure your code is formatted before committing. Configuration for ESLint can be found in `eslint.config.cjs`.
 - Follow common JavaScript/TypeScript best practices regarding code clarity, naming conventions, and comments.
 - Write modular and maintainable code.
+- The CI pipeline will also automatically check your code against these linting and type-checking standards on every pull request.
 
 ## Testing
 - All new features and bug fixes should include appropriate tests. This includes unit tests and, where applicable, integration tests.
 - Run tests using \`npm run test\` from the root directory for frontend tests and from within microservice directories for their specific tests.
 - Ensure all tests pass before submitting a pull request.
 - Aim for good test coverage for your contributions.
+- The CI pipeline automatically enforces test coverage requirements on every pull request.
 
 ## Pull Request Process
 1. Ensure your code lints and all tests pass.
