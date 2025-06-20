@@ -1,0 +1,24 @@
+coverage:
+  status:
+    project:
+      default:
+        # Target 100% coverage, but allow it to drop by up to 5%.
+        # This means if current coverage is 85%, a drop to 80% would fail.
+        # If it's 90%, a drop to 85% would fail.
+        target: 100% # Strive for high coverage
+        threshold: 5% # Fail if coverage drops by more than this percentage from the target
+        base: auto # Automatically compare with base of the PR or parent commit
+
+    patch:
+      default:
+        # Ensure that new code (patches) are well-tested.
+        # Target 90% coverage for new code, but allow it to be 0% if, for example,
+        # it's a very small change or non-testable code.
+        # The threshold here means it fails if patch coverage is X% *below* the target.
+        # So if target is 90, threshold 10 means 80% patch coverage is okay.
+        # Let's aim for a stricter patch coverage.
+        target: 90% # New code should be at least 90% covered
+        threshold: 10% # Allow patch coverage to be as low as 80% (90-10)
+        base: auto
+
+comment: false # Optional: disable comments on PRs from Codecov to reduce noise
