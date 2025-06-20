@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select'; // Assuming Select is available
 
 // This is the data structure expected by the onSubmit prop
-export interface FeedbackDialog FormData {
+export interface FeedbackDialogFormData {
   reason: string;
   category?: string;
   reportedContentPath: string;
