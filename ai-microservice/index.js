@@ -205,7 +205,7 @@ app.post('/generateStoryboard', async (req, res) => {
 });
 
 // Export the Express app as a single Firebase Function
-exports.aiApi = functions.https.onRequest(app);
+exports.aiApi = functions.region('us-west1').https.onRequest(app);
 
 // Export the raw app for testing purposes
 exports.app = app;
