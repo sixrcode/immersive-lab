@@ -9,7 +9,7 @@ import { Button } from './ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Separator } from './ui/separator';
 import { Flag } from 'lucide-react'; // Added Flag icon
-import { useToast } from './ui/use-toast'; // Added useToast
+import { useToast } from '@/hooks/use-toast'; // Added useToast
 import { FeedbackDialog, FeedbackDialogFormData } from './feedback/FeedbackDialog'; // Added FeedbackDialog
 import { useSubmitFeedback, SubmitFeedbackHookInput } from '@/hooks/useSubmitFeedback'; // Added useSubmitFeedback
 

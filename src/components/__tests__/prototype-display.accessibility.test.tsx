@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { PrototypeDisplay } from '../prototype-display';
 import type { PromptPackage, MoodBoardCell } from '@/lib/types';
@@ -97,10 +98,13 @@ const mockPromptPackage: PromptPackage = {
   version: 1,
 };
 
+const queryClient = new QueryClient();
+
 describe('PrototypeDisplay Accessibility', () => {
   it('should have no axe violations on initial render', async () => {
-    const { container } = render(<PrototypeDisplay promptPackage={mockPromptPackage} />);
+    const { container } = render(<QueryClientProvider client={queryClient}><PrototypeDisplay promptPackage={mockPromptPackage} /></QueryClientProvider>);
     const results = await axe(container);
+
     expect(results).toHaveNoViolations();
   });
 
@@ -108,6 +112,7 @@ describe('PrototypeDisplay Accessibility', () => {
     const pkgWithoutOriginalImage = { ...mockPromptPackage, originalImageURL: undefined };
     const { container } = render(<PrototypeDisplay promptPackage={pkgWithoutOriginalImage} />);
     const results = await axe(container);
+
     expect(results).toHaveNoViolations();
   });
 
@@ -116,5 +121,6 @@ describe('PrototypeDisplay Accessibility', () => {
     const { container } = render(<PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
+
   });
 });
