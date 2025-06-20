@@ -7,7 +7,6 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
@@ -34,6 +33,23 @@ jobs:
 
       - name: Run Accessibility Tests
         run: pnpm test:accessibility
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: pnpm exec playwright test
+
+      - name: Run Performance Benchmarks
+        run: node benchmarking/run_benchmarks.js
+        env:
+          BENCHMARK_API_BASE_URL: ${{ secrets.BENCHMARK_API_STAGING_URL }}
+
+      - name: Archive Benchmark Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: benchmarking/results/
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
