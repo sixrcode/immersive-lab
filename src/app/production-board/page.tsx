@@ -335,18 +335,52 @@ export default function ProductionBoardPage() {
       const targetCol = { ...newColumns[targetColIndex] }; // Copy target column
       targetCol.cards = [...(targetCol.cards || [])]; // Copy cards array
 
+      // Adjust newOrderInColumn for same-column drags
+      let adjustedNewOrderInColumn = newOrderInColumn;
+      if (sourceColumnId === targetColumnId) {
+        if (cardIndexInSource < newOrderInColumn) {
+          adjustedNewOrderInColumn = newOrderInColumn - 1;
+        }
+      }
+
       // Update card's stage (columnId) and orderInColumn for optimistic update
       cardToMove.stage = targetColumnId;
       cardToMove.columnId = targetColumnId; // Ensure columnId is also updated
-      cardToMove.orderInColumn = newOrderInColumn;
+      // Use adjustedNewOrderInColumn for the card's property
+      cardToMove.orderInColumn = adjustedNewOrderInColumn;
 
-      targetCol.cards.splice(newOrderInColumn, 0, cardToMove);
+      targetCol.cards.splice(adjustedNewOrderInColumn, 0, cardToMove);
       newColumns[targetColIndex] = targetCol;
 
       return newColumns;
     });
 
     // API Call
+    // Determine the order to send to the API
+    // This needs to be done outside the setColumns updater, using the state before this specific drop action
+    // For the API call, we need to calculate what the final newOrderInColumn would be if the operation is successful.
+    // The 'newOrderInColumn' passed to handleDropCard is the *visual* target position.
+    // The 'adjustedNewOrderInColumn' logic should also apply to what we send to the backend.
+
+    // Re-calculate cardIndexInSource based on the state *before* optimistic update for the API call.
+    // This is tricky because cardIndexInSource was derived from `prevColumns` inside `setColumns`.
+    // For simplicity, we'll assume the `adjustedNewOrderInColumn` calculated optimistically is what we want to send.
+    // A more robust solution might involve calculating this adjustment specifically for the API call
+    // based on the state of `columns` *before* the `setColumns` optimistic update began.
+    // However, the current structure means `cardIndexInSource` is from the `prevColumns` scope.
+
+    let finalApiOrderInColumn = newOrderInColumn;
+    const originalSourceCol = previousColumns.find((col: KanbanColumnType) => col.id === sourceColumnId);
+    if (originalSourceCol) {
+        const originalCardIndexInSource = originalSourceCol.cards.findIndex((c: KanbanCardType) => c.id === cardId);
+        if (originalCardIndexInSource !== -1 && sourceColumnId === targetColumnId) {
+            if (originalCardIndexInSource < newOrderInColumn) { // newOrderInColumn here is the visual target
+                finalApiOrderInColumn = newOrderInColumn - 1;
+            }
+        }
+    }
+
+
     (async () => {
       try {
         // TODO: Get token for Authorization header
@@ -358,7 +392,7 @@ export default function ProductionBoardPage() {
           },
           body: JSON.stringify({
             targetColumnId,
-            newOrderInColumn,
+            newOrderInColumn: finalApiOrderInColumn, // Use the adjusted order for the API
           }),
         });
 
