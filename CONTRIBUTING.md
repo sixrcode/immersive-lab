@@ -79,7 +79,7 @@ Please note that this project is released with a Contributor Code of Conduct. By
 To maintain a smooth development workflow and reduce the likelihood of merge conflicts, please consider the following best practices, especially when working on features that might touch shared areas of the codebase:
 
 1.  **AI Service Consolidation:**
-    *   The platform's AI functionalities, particularly for prompt-to-prototype, have been consolidated into the `ai-microservice`. The `services/prompt-gen-service` is deprecated. Ensure all new development targets the `ai-microservice` to prevent conflicting changes.
+    *   The platform's AI functionalities, particularly for prompt-to-prototype, have been consolidated into the `ai-microservice`. Ensure all new development targets the `ai-microservice` to prevent conflicting changes.
 
 2.  **Shared Data Schemas (`src/lib/ai-types.ts`, `packages/types/`):**
     *   Changes to core data structures (e.g., `PromptPackage`, `StoryboardPackage`) should be communicated early with the team.
