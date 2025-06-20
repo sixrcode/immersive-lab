@@ -32,6 +32,12 @@ jobs:
       - name: Test
         run: pnpm test --coverage
 
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: pnpm exec playwright test
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
