@@ -1,6 +1,7 @@
 // import { getIO, broadcastToRoom } from './socketService'; // If you need to emit socket events from here
-import ChatMessage, { IChatMessage } from '../models/ChatMessage';
+import { IChatMessage, ChatMessageModel } from '../models/ChatMessage'; // Changed import
 import mongoose from 'mongoose';
+import { getModels } from '../models'; // Added getModels import
 
 /**
  * Service for handling chat-related business logic.
@@ -16,7 +17,7 @@ export const ChatService = {
       if (before) {
         query.timestamp = { $lt: typeof before === 'string' ? new Date(before) : before };
       }
-      const messages = await ChatMessage.find(query)
+      const messages = await getModels().ChatMessage.find(query)
         .sort({ timestamp: -1 })
         .limit(limit)
         .populate('senderId', 'username email'); // Assuming 'username' and 'email' are fields in your User model
@@ -38,7 +39,7 @@ export const ChatService = {
       if (before) {
         query.timestamp = { $lt: typeof before === 'string' ? new Date(before) : before };
       }
-      const messages = await ChatMessage.find(query)
+      const messages = await getModels().ChatMessage.find(query)
         .sort({ timestamp: -1 })
         .limit(limit)
         .populate('senderId', 'username email');
@@ -57,7 +58,7 @@ export const ChatService = {
     documentId?: string | mongoose.Types.ObjectId | null
   ): Promise<IChatMessage> {
     try {
-      const chatMessage = new ChatMessage({
+      const chatMessage = new (getModels().ChatMessage)({ // Used getModels()
         projectId,
         senderId,
         message: messageText,

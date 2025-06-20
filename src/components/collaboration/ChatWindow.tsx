@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import io, { type Socket } from 'socket.io-client';
 
 interface ChatMessage {
   _id?: string; // Optional _id from backend
@@ -46,9 +46,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ projectId, currentUserId, curre
       return;
     }
     // Similar to DocumentEditor, adjust URL and path for socket.io
-    const socketServiceUrl = (process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || '').startsWith('http')
+    const rawSocketServiceUrl = (process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || '').startsWith('http')
       ? process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL?.replace('/api', '')
       : window.location.origin;
+
+    if (!rawSocketServiceUrl) {
+      console.error("ChatWindow: socketServiceUrl is not defined, cannot connect socket.");
+      return;
+    }
+
+    const socketServiceUrl = rawSocketServiceUrl; // Ensure it's a string now
 
     const newSocket = io(socketServiceUrl, {
        path: (process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || '').startsWith('/api/collaboration')

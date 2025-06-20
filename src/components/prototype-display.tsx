@@ -6,12 +6,21 @@ import type { PromptPackage, MoodBoardCell } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Separator } from './ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Aliased
+import { Separator } from '@/components/ui/separator'; // Aliased
 import { Flag } from 'lucide-react'; // Added Flag icon
-import { useToast } from '@/hooks/use-toast'; // Added useToast
-import { FeedbackDialog, FeedbackDialogFormData } from './feedback/FeedbackDialog'; // Added FeedbackDialog
-import { useSubmitFeedback, SubmitFeedbackHookInput } from '@/hooks/useSubmitFeedback'; // Added useSubmitFeedback
+'use client';
+import React, { useState } from 'react';
+
+import { useToast } from '@/components/ui/use-toast';
+import {
+  FeedbackDialog,
+  FeedbackDialogFormData,
+} from '@/components/feedback/FeedbackDialog';
+import {
+  useSubmitFeedback,
+  SubmitFeedbackHookInput,
+} from '@/hooks/useSubmitFeedback';
 
 // Placeholder for a Refresh Icon.
 const RefreshIcon = () => (

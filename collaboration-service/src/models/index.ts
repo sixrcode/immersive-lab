@@ -34,4 +34,4 @@ export const getModels = (): IModels => {
 };
 
 // Re-export main interfaces/types if needed
-export { IProject, ProjectModel, IDocument, DocumentModel, IChatMessage, ChatMessageModel };
+export type { IProject, ProjectModel, IDocument, DocumentModel, IChatMessage, ChatMessageModel };
