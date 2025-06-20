@@ -24,8 +24,9 @@ const DownloadIcon = () => (
   </svg>
 );
 
+// Added aria-label for better accessibility. The sectionName is used to create a descriptive label.
 const RegenerateButton = ({ onClick, sectionName }: { onClick?: () => void; sectionName: string }) => (
-  <Button variant="outline" size="sm" onClick={onClick} className="ml-auto print:hidden" title={`Regenerate ${sectionName}`}>
+  <Button variant="outline" size="sm" onClick={onClick} className="ml-auto print:hidden" title={`Regenerate ${sectionName}`} aria-label={`Regenerate ${sectionName}`}>
     <RefreshIcon />
     Regenerate
   </Button>
@@ -96,7 +97,8 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
     <div className="space-y-8 mt-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-2 border-b">
         <h2 className="text-2xl font-semibold">Generated Prototype</h2>
-        <Button onClick={handleDownloadJson} variant="default" size="sm" className="mt-2 sm:mt-0 print:hidden" data-testid="download-json-button">
+        {/* Added aria-label for enhanced clarity for assistive technologies. */}
+        <Button onClick={handleDownloadJson} variant="default" size="sm" className="mt-2 sm:mt-0 print:hidden" data-testid="download-json-button" aria-label="Download prototype data as JSON file">
           <DownloadIcon />
           Download JSON
         </Button>
@@ -111,7 +113,8 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
               <h3 className="font-medium mb-2">Uploaded Image:</h3>
               <Image
                 src={originalImageURL}
-                alt="User uploaded reference"
+                // Updated alt text to be more descriptive, incorporating the project prompt if available.
+                alt={`User-uploaded reference image for: ${prompt || 'user project'}`}
                 className="mt-2 rounded-md max-h-60 w-auto object-contain border p-1 shadow-sm bg-muted/20"
                 width={400} // Or appropriate width
                 height={300} // Or appropriate height
@@ -155,7 +158,8 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
             </div>
             <Image
               src={moodBoard.generatedImageURL!}
-              alt="AI Generated Mood Board"
+              // Updated alt text to be more dynamic, incorporating the project prompt if available.
+              alt={`AI-generated mood board for: ${prompt || 'AI generated content'}`}
               className="rounded-lg w-full max-w-2xl mx-auto object-contain border p-1 shadow-sm"
               width={800} // Or appropriate width
               height={600} // Or appropriate height
