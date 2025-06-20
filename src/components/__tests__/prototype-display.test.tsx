@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { PrototypeDisplay } from '../prototype-display'; // Adjust path
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PromptPackage, MoodBoardCell } from '@/lib/types';
 
 // Mock child UI components as needed, similar to prompt-input.test.tsx if they are complex
@@ -99,6 +100,7 @@ const mockPromptPackage: PromptPackage = {
 
 describe('PrototypeDisplay Component', () => {
   const mockOnRegenerate = jest.fn();
+  const queryClient = new QueryClient();
 
   beforeEach(() => {
     mockOnRegenerate.mockClear();
@@ -114,12 +116,20 @@ describe('PrototypeDisplay Component', () => {
 
 
   it('renders null if no promptPackage is provided', () => {
-    const { container } = render(<PrototypeDisplay promptPackage={null} />);
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <PrototypeDisplay promptPackage={null} />
+      </QueryClientProvider>
+    );
     expect(container.firstChild).toBeNull();
   });
 
   it('renders all sections with correct data from promptPackage', () => {
-    render(<PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />
+      </QueryClientProvider>
+    );
 
     // Check User Input section
     expect(screen.getByText(mockPromptPackage.prompt)).toBeInTheDocument();
@@ -157,7 +167,11 @@ describe('PrototypeDisplay Component', () => {
   });
 
   it('renders placeholder "Regenerate" buttons for sections', () => {
-    render(<PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />
+      </QueryClientProvider>
+    );
     // screen.debug(undefined, 100000); // Keep debug for now, will remove once stable
     // Example: Check a few regenerate buttons
     // Note: The button text/title might be dynamic based on sectionName
@@ -174,7 +188,11 @@ describe('PrototypeDisplay Component', () => {
     const originalClick = HTMLAnchorElement.prototype.click; // Save original
     HTMLAnchorElement.prototype.click = jest.fn(); // Mock for this test only
 
-    render(<PrototypeDisplay promptPackage={mockPromptPackage} />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <PrototypeDisplay promptPackage={mockPromptPackage} />
+      </QueryClientProvider>
+    );
 
     const downloadButton = screen.getByTestId('download-json-button'); // Use the explicit data-testid
     fireEvent.click(downloadButton);
@@ -194,7 +212,11 @@ describe('PrototypeDisplay Component', () => {
 
   it('does not render original image if URL is not provided', () => {
     const pkgWithoutOriginalImage = { ...mockPromptPackage, originalImageURL: undefined };
-    render(<PrototypeDisplay promptPackage={pkgWithoutOriginalImage} />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <PrototypeDisplay promptPackage={pkgWithoutOriginalImage} />
+      </QueryClientProvider>
+    );
     expect(screen.queryByAltText('User uploaded reference')).not.toBeInTheDocument();
   });
 
