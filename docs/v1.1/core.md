@@ -60,14 +60,20 @@ Relevant types from `@isl/types` (defined in `src/lib/types.ts`):
     -   AI-generated mood board images: `prototypes/{userId}/{promptPackageId}/moodboard-{uuid}.{ext}`
     (Note: `userId` is "anonymous_user" in Phase 1)
 
-## API Endpoint: `/api/prototype/generate`
+## API Endpoint: `/api/prototype/generate` (Next.js BFF Route)
 
-This endpoint is responsible for receiving user input, invoking the AI generation flow, handling image uploads, and saving the results.
+This Next.js API route serves as a Backend-For-Frontend (BFF). It is responsible for:
+1. Validating the client's input.
+2. Authenticating the user and forwarding the request along with the user's ID token to the `ai-microservice`.
+3. Receiving the generated `PromptPackage` from the `ai-microservice`.
+4. Returning this `PromptPackage` to the client.
 
--   **URL:** `/api/prototype/generate`
+It **delegates** the core processing (AI generation, image handling, Firestore saving) to the `ai-microservice`.
+
+-   **URL:** `/api/prototype/generate` (within the Next.js application)
 -   **Method:** `POST`
 -   **Request Body (JSON):**
-    Corresponds to the `PromptToPrototypeInput` schema (defined in `src/ai/flows/prompt-to-prototype.ts`).
+    Corresponds to the `PromptToPrototypeInput` schema. This is the data sent from the client to this Next.js API route.
 
     ```json
     {
@@ -80,8 +86,12 @@ This endpoint is responsible for receiving user input, invoking the AI generatio
     *   `imageDataUri?: string` (Optional. Base64 encoded data URI for an uploaded image)
     *   `stylePreset?: string` (Optional. A string identifying a style preset)
 
--   **Response (Success - 200 OK):**
-    Returns the complete `PromptPackage` object as JSON.
+-   **Interaction with `ai-microservice`:**
+    - This Next.js route makes a `POST` request to the `/promptToPrototype` endpoint of the `ai-microservice` (URL configured via `NEXT_PUBLIC_AI_MICROSERVICE_URL`).
+    - The `ai-microservice` is responsible for the actual AI flow execution, handling any image uploads (user-provided or AI-generated mood boards) to Firebase Storage, and saving the final `PromptPackage` to the `promptPackages` Firestore collection.
+
+-   **Response (Success - 200 OK from this Next.js route):**
+    Returns the complete `PromptPackage` object as JSON, which it received from the `ai-microservice`. The `ai-microservice` would have returned a 200 or 201 status to the Next.js route upon successful creation and storage of the `PromptPackage`.
 
     ```json
     {
