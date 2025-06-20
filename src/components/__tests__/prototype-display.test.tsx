@@ -5,25 +5,9 @@ import { PrototypeDisplay } from '../prototype-display'; // Adjust path
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PromptPackage, MoodBoardCell } from '@/lib/types';
 
-// Mock next/image
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props: any) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />;
-  },
-}));
-
 // Mock child UI components as needed, similar to prompt-input.test.tsx if they are complex
 // For simplicity, we'll assume they render content passed to them.
 // If specific UI components have complex logic that interferes, they should be mocked.
-// Mock useToast first
-jest.mock('@/components/ui/use-toast', () => ({
-  useToast: () => ({
-    toast: jest.fn(),
-  }),
-}));
-
 jest.mock('@/components/ui/card', () => {
   const MockCard = (props: { children: React.ReactNode }) => <div data-testid="card">{props.children}</div>; MockCard.displayName = 'MockCard';
   const MockCardContent = (props: { children: React.ReactNode }) => <div data-testid="card-content">{props.children}</div>; MockCardContent.displayName = 'MockCardContent';
@@ -150,7 +134,7 @@ describe('PrototypeDisplay Component', () => {
     // Check User Input section
     expect(screen.getByText(mockPromptPackage.prompt)).toBeInTheDocument();
     expect(screen.getByText(mockPromptPackage.stylePreset!)).toBeInTheDocument();
-    expect(screen.getByAltText(`User-uploaded reference image for: ${mockPromptPackage.prompt}`)).toHaveAttribute('src', mockPromptPackage.originalImageURL);
+    expect(screen.getByAltText('User uploaded reference')).toHaveAttribute('src', mockPromptPackage.originalImageURL);
     expect(screen.getByText(new RegExp(mockPromptPackage.id))).toBeInTheDocument();
 
 
@@ -161,7 +145,7 @@ describe('PrototypeDisplay Component', () => {
     });
 
     // Check Mood Board
-    expect(screen.getByAltText(`AI-generated mood board for: ${mockPromptPackage.prompt}`)).toHaveAttribute('src', mockPromptPackage.moodBoard.generatedImageURL);
+    expect(screen.getByAltText('AI Generated Mood Board')).toHaveAttribute('src', mockPromptPackage.moodBoard.generatedImageURL);
     mockPromptPackage.moodBoard.cells.forEach((cell: MoodBoardCell) => {
       expect(screen.getByText(cell.title)).toBeInTheDocument();
       expect(screen.getByText(cell.description)).toBeInTheDocument();
@@ -192,42 +176,38 @@ describe('PrototypeDisplay Component', () => {
     // Example: Check a few regenerate buttons
     // Note: The button text/title might be dynamic based on sectionName
     // These data-testids are added directly in the RegenerateButton component in prototype-display.tsx
-    expect(screen.getByTestId('button-Regenerate All Loglines')).toBeInTheDocument();
-    expect(screen.getByTestId('button-Regenerate Entire Mood Board')).toBeInTheDocument();
-    expect(screen.getByTestId('button-Regenerate Entire Shot List')).toBeInTheDocument();
+    expect(screen.getByTestId('button-Regenerate Loglines')).toBeInTheDocument();
+    expect(screen.getByTestId('button-Regenerate Mood Board')).toBeInTheDocument();
+    expect(screen.getByTestId('button-Regenerate Shot List')).toBeInTheDocument();
     // Could also count them if a more generic selector is feasible
   });
 
   it('handles "Download JSON" button click and triggers download', () => {
-    const originalClick = HTMLAnchorElement.prototype.click;
-    HTMLAnchorElement.prototype.click = jest.fn();
-    let appendChildSpy: jest.SpyInstance | undefined;
-    let removeChildSpy: jest.SpyInstance | undefined;
+    const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation((node: Node) => node);
+    const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation((node: Node) => node);
+    const originalClick = HTMLAnchorElement.prototype.click; // Save original
+    HTMLAnchorElement.prototype.click = jest.fn(); // Mock for this test only
 
-    try {
-      render(
-        <QueryClientProvider client={queryClient}>
-          <PrototypeDisplay promptPackage={mockPromptPackage} />
-        </QueryClientProvider>
-      );
+    render(
+      <QueryClientProvider client={queryClient}>
+        <PrototypeDisplay promptPackage={mockPromptPackage} />
+      </QueryClientProvider>
+    );
 
-      // Setup spies after initial render but before click
-      appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation((node: Node) => node);
-      removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation((node: Node) => node);
+    const downloadButton = screen.getByTestId('download-json-button'); // Use the explicit data-testid
+    fireEvent.click(downloadButton);
 
-      const downloadButton = screen.getByTestId('download-json-button');
-      fireEvent.click(downloadButton);
+    // expect(JSON.stringify).toHaveBeenCalledWith(mockPromptPackage, null, 2); // JSON.stringify is not a spy
+    expect(global.URL.createObjectURL).toHaveBeenCalled();
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
+    expect(global.URL.revokeObjectURL).toHaveBeenCalled();
 
-      expect(global.URL.createObjectURL).toHaveBeenCalled();
-      expect(HTMLAnchorElement.prototype.click).toHaveBeenCalled();
-      expect(global.URL.revokeObjectURL).toHaveBeenCalled();
-      expect(appendChildSpy!).toHaveBeenCalled(); // Assert non-null with !
-      expect(removeChildSpy!).toHaveBeenCalled(); // Assert non-null with !
-    } finally {
-      appendChildSpy?.mockRestore(); // Use optional chaining for restore
-      removeChildSpy?.mockRestore(); // Use optional chaining for restore
-      HTMLAnchorElement.prototype.click = originalClick;
-    }
+    expect(appendChildSpy).toHaveBeenCalled();
+    expect(removeChildSpy).toHaveBeenCalled();
+
+    appendChildSpy.mockRestore();
+    removeChildSpy.mockRestore();
+    HTMLAnchorElement.prototype.click = originalClick; // Restore original click
   });
 
   it('does not render original image if URL is not provided', () => {
@@ -237,7 +217,7 @@ describe('PrototypeDisplay Component', () => {
         <PrototypeDisplay promptPackage={pkgWithoutOriginalImage} />
       </QueryClientProvider>
     );
-    expect(screen.queryByAltText(`User-uploaded reference image for: ${pkgWithoutOriginalImage.prompt}`)).not.toBeInTheDocument();
+    expect(screen.queryByAltText('User uploaded reference')).not.toBeInTheDocument();
   });
 
 });
