@@ -1,11 +1,11 @@
-import { io as Client, Socket as ClientSocket } from 'socket.io-client';
+import ClientIO, { Socket as SocketIOClientSocket } from 'socket.io-client'; // Aliased Socket type
 import { Server as SocketIOServer, Socket as ServerSocket } from 'socket.io';
 import { server as httpServer, io as serverIOInstance, startServer, app } from '../../index'; // Import your HTTP server and Socket.IO instance
 import http from 'http';
 
 describe('Socket.IO Service Tests', () => {
-  let clientSocket: ClientSocket;
-  let anotherClientSocket: ClientSocket; // For room tests
+  let clientSocket: SocketIOClientSocket; // Use aliased type
+  let anotherClientSocket: SocketIOClientSocket; // Use aliased type
   const port = process.env.PORT || 3001; // Ensure it matches the server port
   const socketURL = `http://localhost:${port}`;
 
@@ -59,7 +59,7 @@ describe('Socket.IO Service Tests', () => {
         anotherClientSocket.disconnect();
     }
     // Connect a new client before each test
-    clientSocket = Client(socketURL, { reconnectionAttempts: 3, timeout: 5000 });
+    clientSocket = ClientIO(socketURL, { reconnectionAttempts: 3, timeout: 5000 }); // Use ClientIO for value
     clientSocket.on('connect', () => done());
     clientSocket.on('connect_error', (err) => {
         console.error('Client connection error in beforeEach:', err.message);
@@ -117,7 +117,7 @@ describe('Socket.IO Service Tests', () => {
     const eventData = { documentId, projectId, newContent: 'Test content update' };
 
     // Setup another client to join the same room
-    anotherClientSocket = Client(socketURL);
+    anotherClientSocket = ClientIO(socketURL); // Use ClientIO for value
     anotherClientSocket.on('connect', () => {
       anotherClientSocket.emit('joinProject', projectId);
 

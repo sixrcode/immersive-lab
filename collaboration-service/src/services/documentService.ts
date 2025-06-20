@@ -1,6 +1,7 @@
 // import { getIO } from './socketService'; // If you need to emit socket events from here
-import Document, { IDocument } from '../models/Document';
+import { IDocument, DocumentModel } from '../models/Document'; // Changed import
 import mongoose from 'mongoose';
+import { getModels } from '../models'; // Added getModels import
 
 /**
  * Service for handling document-related business logic.
@@ -8,7 +9,7 @@ import mongoose from 'mongoose';
 export const DocumentService = {
   async getDocumentById(documentId: string | mongoose.Types.ObjectId): Promise<IDocument | null> {
     try {
-      const document = await Document.findById(documentId)
+      const document = await getModels().Document.findById(documentId)
         .populate('createdBy', 'username email')
         .populate('lastModifiedBy', 'username email');
       return document;
@@ -20,7 +21,7 @@ export const DocumentService = {
 
   async getDocumentsByProjectId(projectId: string | mongoose.Types.ObjectId): Promise<IDocument[]> {
     try {
-      const documents = await Document.find({ projectId })
+      const documents = await getModels().Document.find({ projectId })
         .populate('createdBy', 'username email')
         .populate('lastModifiedBy', 'username email')
         .sort({ updatedAt: -1 });
@@ -38,7 +39,7 @@ export const DocumentService = {
     content: string = ''
   ): Promise<IDocument> {
     try {
-      const document = new Document({
+      const document = new (getModels().Document)({ // Used getModels()
         title,
         projectId,
         content,
@@ -61,7 +62,7 @@ export const DocumentService = {
     userId: string | mongoose.Types.ObjectId
   ): Promise<IDocument | null> {
     try {
-      const document = await Document.findById(documentId);
+      const document = await getModels().Document.findById(documentId);
       if (!document) {
         return null; // Or throw an error
       }
@@ -84,7 +85,7 @@ export const DocumentService = {
 
   async deleteDocument(documentId: string | mongoose.Types.ObjectId): Promise<IDocument | null> {
     try {
-      const document = await Document.findByIdAndDelete(documentId);
+      const document = await getModels().Document.findByIdAndDelete(documentId);
       if (document) {
         // Example: Emit an event after deleting a document
         // getIO().to(document.projectId.toString()).emit('documentDeleted', { documentId: document._id });
