@@ -11,6 +11,8 @@ type PromptItem = { text: string } | { media: { url: string } };
 
 import {ai} from '../genkit';
 import {z}from 'zod';
+import { uploadImageToStorage } from '../storage';
+import { v4 as uuidv4 } from 'uuid';
 
 export const PromptToPrototypeInputSchema = z.object({
   prompt: z.string().describe('A single prompt describing the desired project.'),
@@ -201,6 +203,34 @@ const promptToPrototypeFlow = ai.defineFlow(
         output.moodBoardImage = "https://placehold.co/600x400.png?text=Image+Gen+Failed";
     } else {
         output.moodBoardImage = imageResult.media.url;
+        // Check if moodBoardImage is a data URI and upload to storage if necessary
+        if (output.moodBoardImage.startsWith('data:')) {
+          try {
+            const match = output.moodBoardImage.match(/^data:(image\/[a-zA-Z+]+);base64,(.*)$/);
+            if (match && match[1] && match[2]) {
+              const mimeType = match[1];
+              const base64Data = match[2];
+              const buffer = Buffer.from(base64Data, 'base64');
+              const extension = mimeType.split('/')[1];
+
+              const publicUrl = await uploadImageToStorage({
+                buffer,
+                mimeType,
+                extension,
+                userId: "ai_prototype_system",
+                packageId: uuidv4(),
+                fileNamePrefix: "moodboard_output_",
+              });
+              output.moodBoardImage = publicUrl;
+            } else {
+              console.warn("Failed to parse data URI for mood board image. Using placeholder.");
+              output.moodBoardImage = "https://placehold.co/600x400.png?text=Image+Parse+Failed";
+            }
+          } catch (storageError) {
+            console.warn("Failed to upload mood board image to storage:", storageError);
+            output.moodBoardImage = "https://placehold.co/600x400.png?text=Image+Storage+Failed";
+          }
+        }
     }
     
     // Ensure moodBoardCells have titles if AI didn't provide them (as a fallback)
