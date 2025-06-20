@@ -1,3 +1,11 @@
+## [1.1.1] - 2025-06-17
+### Fixed
+- **Accessibility Improvement for Storyboard Images**:
+  - **Finding**: AI-generated storyboard panel images were missing `alt` text, negatively impacting accessibility for users relying on screen readers or assistive technologies.
+  - **Fix**: Modified the AI storyboard generation flow (`ai-microservice/src/flows/storyboard-generator-flow.ts`) to populate the `alt` attribute of each panel image. The `alt` text is now derived from the AI-generated textual description of the panel's visual content. This ensures that all storyboard images have meaningful alternative text. Shared types in `src/lib/ai-types.ts` were also updated for consistency.
+  - **Verification**: Changes were verified by inspecting the code flow from the AI service, through the Next.js API, to the frontend components. The `alt` field is correctly added to the `Panel` data structure and utilized by the `StoryboardGridPanel.tsx` component.
+  - **Note**: A broader accessibility audit for color contrast and keyboard navigation across the application is recommended as a next step.
+
 # ISL.SIXR.tv Documentation Changelog
 
 ## [1.1.0] - 2025-06-16
