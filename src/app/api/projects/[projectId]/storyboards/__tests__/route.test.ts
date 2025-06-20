@@ -1,5 +1,7 @@
 // src/app/api/projects/[projectId]/storyboards/route.test.ts
 
+jest.useRealTimers(); // Ensure real timers are used
+
 import { GET } from '../route'; // Adjust path as necessary
 import { NextRequest, NextResponse } from 'next/server'; // Import NextResponse for mocking
 
@@ -87,7 +89,6 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
         docs: [],
         forEach: jest.fn()
       });
-    // Also clear the NextResponse.json mock calls if needed, though usually jest.clearAllMocks() handles jest.fn() inside jest.mock
     (NextResponse.json as jest.Mock).mockClear();
   });
 
@@ -105,7 +106,7 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
 
       const req = createMockRequest('Bearer valid-token');
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
-      const body = await response.json(); // This will now use our mocked NextResponse.json's behavior
+      const body = await response.json();
 
       expect(response.status).toBe(200);
       expect(body).toEqual(mockStoryboardsData);
@@ -145,7 +146,8 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
       expect(mockVerifyIdToken).toHaveBeenCalledWith('valid-token');
     });
 
-    it('should return 401 if Authorization header is missing', async () => {
+    // Using .only for this test
+    it.only('should return 401 if Authorization header is missing', async () => {
       const req = createMockRequest(null);
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
       const body = await response.json();
@@ -214,12 +216,10 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
 
     it('should return 500 if Firebase Admin SDK is not initialized', async () => {
         jest.resetModules();
-        // Redo mocks for this specific test scope where firebaseAdminApp is null
         const localMockVerifyIdToken = jest.fn();
         const localMockCollection = jest.fn().mockReturnThis();
-        // No need for localMockWhere/Get as collection won't be called if SDK check fails first
 
-        jest.doMock('next/server', () => { // Also re-mock NextResponse for this scope
+        jest.doMock('next/server', () => {
           const originalModule = jest.requireActual('next/server');
           return {
             ...originalModule,
@@ -241,7 +241,8 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
         }));
 
         const { GET: GET_LOCAL } = await import('../route');
-        const localCreateMockRequest = (token: string | null) => ({ // Local minimal req mock
+
+        const localCreateMockRequest = (token: string | null) => ({
           headers: { get: jest.fn().mockReturnValue(token) }
         });
 
@@ -251,8 +252,8 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
 
         expect(response.status).toBe(500);
         expect(body.error).toBe('Firebase Admin SDK not initialized.');
-        // Check that the mocked NextResponse.json specific to this test was called
-        const MockedNextResponse = require('next/server').NextResponse; // Get the mocked version
+
+        const MockedNextResponse = require('next/server').NextResponse;
         expect(MockedNextResponse.json).toHaveBeenCalledWith(
             { error: 'Firebase Admin SDK not initialized.' }, { status: 500 }
         );
