@@ -49,7 +49,8 @@ if (process.env.NODE_ENV !== 'test' && !process.env.K_SERVICE) {
 
 // Export the Express app for potential use with Google Cloud Functions.
 // The name 'promptGenServiceHttp' should match the function name configured in Google Cloud.
-functions.http('promptGenServiceHttp', app);
+// Deprecated: HTTP trigger disabled as this service's functionality is now part of ai-microservice.
+// functions.http('promptGenServiceHttp', app);
 
 // Note on module.exports:
 // While `functions.http` is the primary export for Google Cloud Functions,

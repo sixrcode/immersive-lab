@@ -1,3 +1,14 @@
+# **⚠️ DEPRECATION NOTICE ⚠️**
+
+**This service (`services/prompt-gen-service/`) is DEPRECATED for Prompt-to-Prototype functionality.**
+
+All Prompt-to-Prototype operations are now handled by the **Centralized AI Microservice (`ai-microservice/`)**.
+
+Any new development or usage requiring Prompt-to-Prototype features should target the `ai-microservice/` via the `/api/prototype/generate` Next.js API route. This route utilizes the `NEXT_PUBLIC_AI_MICROSERVICE_URL` environment variable to communicate with the centralized service.
+
+The content below is preserved for historical context and for understanding the original architecture.
+
+---
 # Prompt Generation Microservice
 
 This service powers the "Prompt to Prototype" feature of the ISL.SIXR.tv platform. Originally part of the main application monolith, it has been refactored into a standalone microservice to encapsulate all core AI logic (via Genkit flows) and image processing (including Firebase Storage uploads).
