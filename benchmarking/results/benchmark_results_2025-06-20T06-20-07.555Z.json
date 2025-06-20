@@ -1,0 +1,122 @@
+[
+  {
+    "timestamp": "2025-06-20T06:20:07.536Z",
+    "featureName": "promptToPrototype",
+    "sampleId": "prompt_001_short_generic",
+    "responseTime": 28,
+    "successStatus": false,
+    "httpStatusCode": null,
+    "completenessCheck": false,
+    "responseData": null,
+    "errorDetails": {
+      "message": "connect ECONNREFUSED 127.0.0.1:5001",
+      "code": "ECONNREFUSED",
+      "response": null
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:20:07.541Z",
+    "featureName": "promptToPrototype",
+    "sampleId": "prompt_002_detailed_style",
+    "responseTime": 4,
+    "successStatus": false,
+    "httpStatusCode": null,
+    "completenessCheck": false,
+    "responseData": null,
+    "errorDetails": {
+      "message": "connect ECONNREFUSED 127.0.0.1:5001",
+      "code": "ECONNREFUSED",
+      "response": null
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:20:07.543Z",
+    "featureName": "promptToPrototype",
+    "sampleId": "prompt_003_short_style",
+    "responseTime": 2,
+    "successStatus": false,
+    "httpStatusCode": null,
+    "completenessCheck": false,
+    "responseData": null,
+    "errorDetails": {
+      "message": "connect ECONNREFUSED 127.0.0.1:5001",
+      "code": "ECONNREFUSED",
+      "response": null
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:20:07.545Z",
+    "featureName": "promptToPrototype",
+    "sampleId": "prompt_004_no_style_complex",
+    "responseTime": 2,
+    "successStatus": false,
+    "httpStatusCode": null,
+    "completenessCheck": false,
+    "responseData": null,
+    "errorDetails": {
+      "message": "connect ECONNREFUSED 127.0.0.1:5001",
+      "code": "ECONNREFUSED",
+      "response": null
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:20:07.547Z",
+    "featureName": "promptToPrototype",
+    "sampleId": "prompt_005_image_input",
+    "responseTime": 2,
+    "successStatus": false,
+    "httpStatusCode": null,
+    "completenessCheck": false,
+    "responseData": null,
+    "errorDetails": {
+      "message": "connect ECONNREFUSED 127.0.0.1:5001",
+      "code": "ECONNREFUSED",
+      "response": null
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:20:07.551Z",
+    "featureName": "analyzeScript",
+    "sampleId": "script_001_short_dialogue",
+    "responseTime": 3,
+    "successStatus": false,
+    "httpStatusCode": null,
+    "completenessCheck": false,
+    "responseData": null,
+    "errorDetails": {
+      "message": "connect ECONNREFUSED 127.0.0.1:5001",
+      "code": "ECONNREFUSED",
+      "response": null
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:20:07.553Z",
+    "featureName": "analyzeScript",
+    "sampleId": "script_002_scene_description",
+    "responseTime": 2,
+    "successStatus": false,
+    "httpStatusCode": null,
+    "completenessCheck": false,
+    "responseData": null,
+    "errorDetails": {
+      "message": "connect ECONNREFUSED 127.0.0.1:5001",
+      "code": "ECONNREFUSED",
+      "response": null
+    }
+  },
+  {
+    "timestamp": "2025-06-20T06:20:07.555Z",
+    "featureName": "analyzeScript",
+    "sampleId": "script_003_mixed_with_issues",
+    "responseTime": 2,
+    "successStatus": false,
+    "httpStatusCode": null,
+    "completenessCheck": false,
+    "responseData": null,
+    "errorDetails": {
+      "message": "connect ECONNREFUSED 127.0.0.1:5001",
+      "code": "ECONNREFUSED",
+      "response": null
+    }
+  }
+]
