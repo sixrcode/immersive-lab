@@ -60,6 +60,7 @@ The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools de
 -   **Resources Hub:** A collection of links to essential tools, assets, and documentation for immersive content creation. (Vision as per documentation)
 -   **AI Script Analyzer:** Provides insights on script pacing, character arcs, and potential plot holes. (Detailed in Microservices Architecture section)
 -   **Prompt-to-Prototype Studio (Phase 1: Core Generation):** Generates a comprehensive set of creative assets (loglines, mood board, shot list, animatic description, pitch summary) from a user's prompt, optional image, and style preset. Results are stored in Firestore and Firebase Storage, with a JSON download option. (Actively developed/present in UI)
+-   **AI Storyboarding Studio (Phase 1):** Enables creators to turn scene descriptions into storyboard panels using AI. (Phase 1 uses placeholder images and basic panel layouts; deeper Genkit integration in progress.) (Initial version available in UI)
 -   **Production Board (Production-Gate Board):** Helps manage the production workflow, from pre-production to final output. (Actively developed/present in UI)
 -   **Real-Time Collaboration:** Allows multiple users to work together on creative projects in real-time. (Supported by the Collaboration Service. See Microservices Architecture section for details.)
 -   **Authentication and User Profiles:** Secure user accounts and personalized profiles for managing projects and contributions.
@@ -350,19 +351,22 @@ These services are responsible for the core AI-driven functionalities of the pla
 
 #### Prompt Generation Service (`services/prompt-gen-service/`)
 
-*   **Status: Deprecated for Prompt-to-Prototype.** The functionality for prompt-to-prototype generation, including asset creation (loglines, mood boards, shot lists, etc.) and associated image processing, has been consolidated into the **Centralized AI Microservice (`ai-microservice/`)**.
-*   **Original Purpose:** This service was initially designed to handle the core AI-driven generation of creative assets for the Prompt-to-Prototype Studio.
-*   **Key Technologies:** Node.js, Express, Genkit
+*   **Status: DEPRECATED for Prompt-to-Prototype functionality.** All responsibilities for prompt-to-prototype generation (including asset creation like loglines, mood boards, shot lists, and associated image processing/storage) have been **consolidated into the Centralized AI Microservice (`ai-microservice/`)**.
+*   **Original Purpose:** This service was initially designed to handle the core AI-driven generation of creative assets for the Prompt-to-Prototype Studio. It is no longer actively used for this purpose.
+*   **Key Technologies:** Node.js, Express, Genkit (Historically)
 *   **Location:** `services/prompt-gen-service/`
 *   **Notes:**
-    *   This service is no longer called by the Next.js application for prompt generation.
-    *   Its original responsibilities for prompt-to-prototype are now handled by `ai-microservice/`.
-    *   If this service had other functionalities beyond prompt-to-prototype, those would be detailed here. Currently, it is largely unused.
-    *   For historical reference or details on its original design, see the [Prompt Generation Service README](./services/prompt-gen-service/README.md).
+    *   This service is **not called** by the Next.js application for any prompt generation tasks.
+    *   All its former prompt-to-prototype duties are now managed by `ai-microservice/`.
+    *   The codebase is retained for historical context and potential future reuse of non-core utility functions if any.
+    *   For historical reference on its original design, see the [Prompt Generation Service README](./services/prompt-gen-service/README.md).
 
 #### Centralized AI Microservice (`ai-microservice/`)
 
-*   **Purpose:** Acts as the primary API gateway for a range of AI functionalities. It manages Genkit flows, orchestrates communication with various AI models (e.g., Gemini via Google AI), and processes structured input from different frontend features. It is responsible for and serves as the backend for the **Prompt-to-Prototype Studio** (handling all asset generation and Firestore storage), the AI Script Analyzer, and the Storyboard Studio.
+*   **Purpose:** Acts as the **primary API gateway and backend orchestrator for all core AI functionalities**. It manages Genkit flows, communicates with various AI models (e.g., Gemini via Google AI), and processes structured input from frontend features. It is responsible for and serves as the backend for:
+    *   The **Prompt-to-Prototype Studio** (handling all asset generation, image processing, and Firestore/Firebase Storage interactions).
+    *   The **AI Script Analyzer**.
+    *   The **Storyboard Studio** (including AI image generation for panels).
 *   **Key Technologies:** Firebase Function, Node.js, Express, Genkit
 *   **Location:** `ai-microservice/`
 *   **Authentication:** All endpoints require a valid Firebase ID token (Authorization: Bearer <token>).
@@ -390,7 +394,7 @@ These services focus on enabling user interaction, project sharing, and collabor
 #### Collaboration Service (`collaboration-service/`)
 
 *   **Purpose:** Enables real-time collaboration features for users working concurrently on creative projects. This can include functionalities like shared document editing, synchronized project states, and potentially real-time chat or presence indicators.
-*   **Key Technologies:** Node.js, Express, Docker (containerization for deployment)
+*   **Key Technologies:** Node.js, Express, Socket.io (real-time communication), MongoDB (via Mongoose), Docker (containerized deployment)
 *   **Location:** `collaboration-service/`
 *   **Note:** This service is crucial for team-based projects, allowing multiple creators to contribute and interact seamlessly.
 
@@ -514,10 +518,27 @@ This section outlines the general phased development approach for the ISL.SIXR.t
 
 ### Overall Platform Development Phases
 
-*   **Phase 1: Foundation & Core Features (Current/Recent Past)**
-    *   *Description:* Focus on establishing the core platform infrastructure, essential user-facing features, and initial versions of key AI tools. This includes the development of the Next.js frontend, Firebase backend (Auth, Firestore, Storage), the initial Prompt-to-Prototype Studio (core generation), the AI Script Analyzer (basic analysis), and foundational elements for collaboration and portfolio functionalities.
+*   **Phase 1: Foundation & Core Features (Completed/Recent Past)**
+    *   *Description:* Focused on establishing the core platform infrastructure, essential user-facing features, and initial versions of key AI tools.
+    *   Key Completions:
+        *   Next.js frontend and Firebase backend (Auth, Firestore, Storage) established.
+        *   Prompt-to-Prototype Studio (Core generation pipeline delivered and completed).
+        *   AI Script Analyzer (Basic functionality delivered and completed).
+        *   Storyboard Studio (Phase 1 MVP with mocked image generation and basic panel layouts established) - Completed.
+        *   Rudimentary Portfolio/Community showcase feature (Initial version completed).
+        *   Basic real-time collaboration infrastructure (Initial setup completed).
 *   **Phase 2: Expansion & Integration (Ongoing/Near Future)**
-    *   *Description:* Enhancing existing features with more depth, improving integration between platform tools, expanding AI capabilities based on user feedback and model advancements, and growing community functionalities. Examples include implementing the detailed future phases of the Prompt-to-Prototype Studio, refining the AI Script Analyzer for more nuanced feedback, maturing collaboration tools with richer features, and building out a more interactive community showcase and portfolio system.
+    *   *Description:* Focus on enriching existing features, deeper integration between tools, significant expansion of AI capabilities, maturing collaboration, and growing community engagement.
+    *   Key Initiatives:
+        *   Enriching AI features (e.g., more in-depth script analysis feedback, variant generation tools for the Prompt Studio).
+        *   Implementing the next phases of Prompt-to-Prototype (e.g., creative block refinements, interactive editing, selective regeneration).
+        *   Full implementation of Storyboard Studio, including real AI image generation and integration with Prompt-to-Prototype outputs.
+        *   Building out Production Board functionality (workflow/kanban for projects).
+        *   Advancing Real-Time Collaboration features (e.g., version history, comments, unified presence system).
+        *   Growing portfolio and community features (e.g., project feedback mechanisms, enhanced discovery).
+        *   Ongoing performance and scalability improvements (e.g., profiling AI microservices, optimizing database usage, enabling streaming responses for storyboard generation, load testing critical pathways).
+        *   Continued architectural consolidation and simplification where appropriate (e.g., evaluating long-term data storage strategies for services like collaboration).
+        *   Introducing benchmarking, evaluation, monitoring, and logging for AI outputs and services.
 *   **Phase 3: Maturity & Ecosystem Growth (Future)**
     *   *Description:* Transition towards a highly scalable, robust platform with advanced AI/XR integrations, broader third-party tool connections, and fostering a self-sustaining creator ecosystem. This phase might include introducing more complex XR content generation/editing capabilities, offering API access for external developers, implementing advanced platform analytics for users and administrators, and establishing robust governance models for community content and contributions.
 
@@ -526,15 +547,23 @@ This section outlines the general phased development approach for the ISL.SIXR.t
 *General Note: Each microservice generally aligns with the overall platform phases but with a specific focus relevant to its domain. Development is iterative, and features within each microservice will evolve through these phases.*
 
 *   **Prompt Generation Service (`services/prompt-gen-service/`)**
-*   **Phase 1 (Historical):* Core AI model integration for generating initial creative assets.
-*   **Phase 2 (Historical):* Expansion of supported AI models, improvement in quality.
-*   **Phase 3 (Consolidated):* All prompt-to-prototype development is now focused within the `Centralized AI Microservice`.
+    *   *Phase 1 (Historical/Consolidated):* Core AI model integration for generating initial creative assets.
+    *   *Phase 2 (Historical/Consolidated):* Expansion of supported AI models, improvement in quality.
+    *   *Phase 3 (Historical/Consolidated):* All prompt-to-prototype development was focused within this service.
+    *   *Note:* This service is deprecated. All active and future development for prompt-to-prototype functionality is part of the Centralized AI Microservice.
 *   **Centralized AI Microservice (`ai-microservice/`)**
-    *   *Phase 1:* Establish the API gateway structure, implement initial Genkit flows for core platform AI features like script analysis (`/analyzeScript`) and prototype generation (`/promptToPrototype`). This now includes all logic previously in `prompt-gen-service` for prompt-to-prototype.
-    *   *Phase 2:* Add more AI-driven endpoints as new features require, refine existing Genkit flows for robustness, improve error handling, logging, and monitoring capabilities.
-    *   *Phase 3:* Support for more complex, multi-step AI workflows, potential integration with MLOps pipelines for model management and deployment, and enhanced security measures for sensitive AI operations.
-*   **AI Script Analyzer (`functions/` - via Centralized AI Microservice)**
-    *   *Phase 1:* Basic script parsing, scene detection, and initial analysis (e.g., tone, pacing estimates, keyword extraction).
+    *   *Phase 1 (Completed):* Establish the API gateway, implement initial Genkit flows for core features:
+        *   Script analysis (`/analyzeScript`).
+        *   Prompt-to-Prototype (`/promptToPrototype`), including logic consolidated from the deprecated `prompt-gen-service`.
+        *   Storyboard Studio MVP (`/generateStoryboard` - initial Genkit flow for storyboard generation with mocked images, basic panel structure).
+    *   *Phase 2 (Ongoing/Upcoming):*
+        *   Refine Genkit flows for robustness, new features (e.g., real storyboard image generation, variant generation for Prompt Studio).
+        *   Enhance error handling, logging, monitoring, and introduce benchmarking/evaluation for AI outputs.
+        *   Integrate additional AI capabilities as platform features expand (e.g., advanced script analysis, refined storyboard image generation with inputs from Prompt-to-Prototype like shot lists and styles).
+        *   Enable streaming responses for features like storyboard generation.
+    *   *Phase 3 (Future):* Support for more complex, multi-step AI workflows, potential integration with MLOps pipelines for model management and deployment, and enhanced security measures for sensitive AI operations.
+*   **AI Script Analyzer (`functions/` - logic now primarily within `ai-microservice`)**
+    *   *Phase 1 (Completed via `ai-microservice`):* Basic script parsing, scene detection, and initial analysis (e.g., tone, pacing estimates, keyword extraction).
     *   *Phase 2:* More nuanced analysis (e.g., character dialogue patterns, plot structure visualization), and providing actionable suggestions for improvement.
     *   *Phase 3:* Deeper understanding of cinematic conventions and genre-specific feedback, potential integration with other writing or pre-production tools.
 *   **Collaboration Service (`collaboration-service/`)**
@@ -545,6 +574,14 @@ This section outlines the general phased development approach for the ISL.SIXR.t
     *   *Phase 1:* Basic user portfolio creation and display, ability to share links to projects, simple project descriptions.
     *   *Phase 2:* Advanced portfolio customization options, structured feedback mechanisms (likes, comments), integration with community showcase features for better discoverability.
     *   *Phase 3:* Introduction of social networking aspects (following creators, project updates), enhanced discoverability algorithms, and personal analytics for creators on how their work is viewed.
+
+### Roadmap Considerations
+
+*   **Storyboard Studio Integration:** The Storyboard Studio MVP was developed and delivered as part of Phase 1 (within the `ai-microservice`). Phase 2 will focus on its full implementation with real AI image generation, deeper integration with other platform tools (e.g., importing shot lists from Prompt-to-Prototype), and UI enhancements for panel management.
+*   **AI Service Architecture:** The platform has successfully consolidated its primary AI generation tasks (including Prompt-to-Prototype, Script Analysis, and Storyboard Generation) into the `ai-microservice`. The `services/prompt-gen-service` is now deprecated to streamline development and avoid redundancy.
+*   **Data Storage Strategy:** The Collaboration Service currently utilizes MongoDB, while other core services (via Next.js BFF and `ai-microservice`) primarily use Firestore. For Phase 2 and beyond, the project will evaluate strategies for data management to ensure scalability, maintainability, and data consistency where beneficial. This may include exploring options for greater alignment or defining clear boundaries for data ownership and access patterns.
+*   **Third-Party AI Dependencies:** The platform's AI capabilities heavily rely on Genkit and underlying Google AI models. Future development will include robust monitoring of these services, contingency planning for API changes or deprecations, and evaluating alternative models or providers if necessary to ensure feature continuity and performance.
+*   **Resource Allocation:** Successful execution of the ambitious Phase 2 goals requires careful resource management and prioritization to support parallel development across multiple features (Storyboard Studio full implementation, Prompt-to-Prototype enhancements, Production Board, Collaboration features) and microservices (primarily `ai-microservice` and `collaboration-service`).
 
 ## Contributing
 
