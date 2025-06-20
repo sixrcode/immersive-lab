@@ -441,9 +441,9 @@ This section outlines the continuous integration, continuous delivery (CI/CD), a
 ### Deployment Tools & Strategies
 
 -   **Next.js Frontend (Vercel & Firebase Hosting):**
-    -   The Next.js frontend is primarily deployed using **Vercel**, leveraging its optimizations for Next.js applications (e.g., serverless functions, edge network, CI/CD integration).
-    -   Alternatively, **Firebase Hosting** can serve the Next.js application, especially when tighter integration with other Firebase services is a priority for certain parts of the app or during specific development phases.
-    -   Deployments to both platforms are intended to be automated via GitHub Actions.
+    -   The Next.js frontend is primarily deployed using **Firebase Hosting**, leveraging its optimizations for Next.js applications (e.g., serverless functions, edge network, CI/CD integration).
+    -   Alternatively, **Vercel** can serve the Next.js application during specific development phases or for exploring alternative deployment strategies, but Firebase Hosting is the main target for tighter integration with other Firebase services and the overall platform ecosystem.
+    -   Deployments to **Firebase Hosting** are automated via GitHub Actions.
 
 -   **Firebase Services (Functions, Firestore Rules, Hosting Config):**
     -   The **Firebase CLI** (`firebase deploy`) is the standard tool for deploying Firebase Functions (like the Centralized AI Microservice), Firestore security rules, and Firebase Hosting configurations.
