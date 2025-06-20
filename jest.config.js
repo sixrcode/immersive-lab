@@ -18,7 +18,9 @@ module.exports = {
   // Automatically clear mock calls and instances between every test
   testPathIgnorePatterns: ['<rootDir>/e2/'],
   clearMocks: true,
-  transformIgnorePatterns: ['node_modules/(?!(?:mongoose|bson)/.*.mjs$)'], // Transform all node_modules except mongoose and bson
+  transformIgnorePatterns: [
+    'node_modules/(?!(jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson)/)', // Added jose, jwks-rsa, firebase-admin, @firebase
+  ],
   collectCoverage: true,
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov"],
