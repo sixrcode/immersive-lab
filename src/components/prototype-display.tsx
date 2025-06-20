@@ -9,8 +9,6 @@ import { Button } from './ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Aliased
 import { Separator } from '@/components/ui/separator'; // Aliased
 import { Flag } from 'lucide-react'; // Added Flag icon
-'use client';
-import React, { useState } from 'react';
 
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -75,7 +73,7 @@ type SectionKey =
   | "shot";
 
 interface PrototypeDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
-  promptPackage: PromptPackage;
+  promptPackage: PromptPackage | null | undefined;
   onRegenerate?: (section: SectionKey, data?: OnRegenerateData) => void;
 }
 
@@ -154,7 +152,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
     createdAt,
   } = promptPackage;
 
-  const Section: FC<{ title: string; children: React.ReactNode; sectionKey: string; actions?: React.ReactNode, mainActionOverride?: React.ReactNode }> =
+  const Section: FC<{ title: string; children: React.ReactNode; sectionKey: SectionKey; actions?: React.ReactNode, mainActionOverride?: React.ReactNode }> =
     ({ title, children, sectionKey, actions, mainActionOverride }) => (
     <Card className="mb-6 print:shadow-none print:border-0">
       <CardHeader className="flex flex-row items-center">
