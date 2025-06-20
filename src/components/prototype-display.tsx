@@ -1,13 +1,17 @@
 'use client';
 
 import Image from 'next/image';
-import React, { FC } from 'react';
-import type { PromptPackage, MoodBoardCell } from '@/lib/types'; // Assuming types are in @/lib/types
+import React, { FC, useState } from 'react'; // Added useState
+import type { PromptPackage, MoodBoardCell } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button'; // Already imported
+import { Button } from './ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Separator } from './ui/separator';
+import { Flag } from 'lucide-react'; // Added Flag icon
+import { useToast } from './ui/use-toast'; // Added useToast
+import { FeedbackDialog, FeedbackDialogFormData } from './feedback/FeedbackDialog'; // Added FeedbackDialog
+import { useSubmitFeedback, SubmitFeedbackHookInput } from '@/hooks/useSubmitFeedback'; // Added useSubmitFeedback
 
 // Placeholder for a Refresh Icon.
 const RefreshIcon = () => (
@@ -16,12 +20,28 @@ const RefreshIcon = () => (
 );
 
 // Placeholder for Download Icon
+const ReportIcon = () => <Flag className="h-4 w-4" />; // Added ReportIcon using Flag
+
 const DownloadIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
     <polyline points="7 10 12 15 17 10"></polyline>
     <line x1="12" y1="15" x2="12" y2="3"></line>
   </svg>
+);
+
+// Report Button Component
+const ReportButton = ({ onClick, itemName }: { onClick: () => void; itemName: string }) => (
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={onClick}
+    className="ml-2 print:hidden"
+    title={`Report ${itemName}`}
+    aria-label={`Report ${itemName}`}
+  >
+    <ReportIcon />
+  </Button>
 );
 
 // Added aria-label for better accessibility. The sectionName is used to create a descriptive label.
@@ -36,6 +56,7 @@ type OnRegenerateData = { index: number } | undefined;
 type SectionKey =
   | "userInput"
   | "loglines"
+  // | "moodBoardImage" // Removed as it was commented out
   | "moodBoard"
   | "shotList"
   | "animaticDescription"
@@ -49,7 +70,50 @@ interface PrototypeDisplayProps extends React.HTMLAttributes<HTMLDivElement> {
   onRegenerate?: (section: SectionKey, data?: OnRegenerateData) => void;
 }
 
+interface ReportData {
+  path: string;
+  prototypeId: string;
+}
+
 export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDisplayProps) {
+  const { toast } = useToast();
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const [currentReportData, setCurrentReportData] = useState<ReportData | null>(null);
+
+  const { mutate: submitFeedbackMutate, isPending: isSubmittingFeedback } = useSubmitFeedback();
+
+  const openFeedbackDialog = (path: string, prototypeId: string) => {
+    setCurrentReportData({ path, prototypeId });
+    setIsFeedbackDialogOpen(true);
+  };
+
+  const handleFeedbackSubmit = (data: FeedbackDialogFormData) => {
+    const submissionData: SubmitFeedbackHookInput = {
+      prototypeId: data.prototypeId,
+      reportedContentPath: data.reportedContentPath,
+      reason: data.reason,
+      category: data.category,
+    };
+    submitFeedbackMutate(submissionData, {
+      onSuccess: () => {
+        toast({
+          title: 'Feedback Submitted',
+          description: 'Thank you for your feedback!',
+        });
+        setIsFeedbackDialogOpen(false);
+        setCurrentReportData(null);
+      },
+      onError: (error) => {
+        toast({
+          title: 'Error Submitting Feedback',
+          description: error.message || 'An unexpected error occurred.',
+          variant: 'destructive',
+        });
+      },
+    });
+  };
+
+
   if (!promptPackage) return null;
 
   const handleDownloadJson = () => {
@@ -81,13 +145,13 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
     createdAt,
   } = promptPackage;
 
-  const Section: FC<{ title: string; children: React.ReactNode; sectionKey: string; actions?: React.ReactNode }> =
-    ({ title, children, sectionKey, actions }) => (
+  const Section: FC<{ title: string; children: React.ReactNode; sectionKey: string; actions?: React.ReactNode, mainActionOverride?: React.ReactNode }> =
+    ({ title, children, sectionKey, actions, mainActionOverride }) => (
     <Card className="mb-6 print:shadow-none print:border-0">
       <CardHeader className="flex flex-row items-center">
         <CardTitle className="text-xl">{title}</CardTitle>
         {actions}
-        {sectionKey !== "mainHeader" && <RegenerateButton sectionName={title} onClick={() => onRegenerate?.(sectionKey)} />}
+        {mainActionOverride ? mainActionOverride : (sectionKey !== "mainHeader" && onRegenerate && <RegenerateButton sectionName={title} onClick={() => onRegenerate?.(sectionKey)} />)}
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
@@ -97,14 +161,16 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
     <div className="space-y-8 mt-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-2 border-b">
         <h2 className="text-2xl font-semibold">Generated Prototype</h2>
-        {/* Added aria-label for enhanced clarity for assistive technologies. */}
-        <Button onClick={handleDownloadJson} variant="default" size="sm" className="mt-2 sm:mt-0 print:hidden" data-testid="download-json-button" aria-label="Download prototype data as JSON file">
-          <DownloadIcon />
-          Download JSON
-        </Button>
+        <div className="flex items-center space-x-2">
+          {/* Added aria-label for enhanced clarity for assistive technologies. */}
+          <Button onClick={handleDownloadJson} variant="default" size="sm" className="mt-2 sm:mt-0 print:hidden" data-testid="download-json-button" aria-label="Download prototype data as JSON file">
+            <DownloadIcon />
+            Download JSON
+          </Button>
+        </div>
       </div>
 
-      <Section title="Original Input" sectionKey="userInput">
+      <Section title="Original Input" sectionKey="userInput" mainActionOverride={<div /> /* No regenerate for this section */}>
         <div className="space-y-3">
           {prompt && <p><strong className="font-medium">Prompt:</strong> {prompt}</p>}
           {stylePreset && <p><strong className="font-medium">Style Preset:</strong> <Badge variant="secondary">{stylePreset}</Badge></p>}
@@ -131,13 +197,16 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
 
       <Separator className="print:hidden" />
 
-      <Section title="Loglines" sectionKey="loglines">
+      <Section title="Loglines" sectionKey="loglines" mainActionOverride={onRegenerate ? <RegenerateButton sectionName="All Loglines" onClick={() => onRegenerate?.('loglines')} /> : <div />}>
         <div className="space-y-3">
           {loglines.map((logline, index) => (
             <Card key={index} className="bg-muted/30 print:shadow-none print:border">
               <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
                  <CardTitle className="text-md font-medium">{logline.tone}</CardTitle>
-                 <RegenerateButton sectionName={`Logline ${index + 1}: ${logline.tone}`} onClick={() => onRegenerate?.('logline', { index })} />
+                 <div className="flex items-center">
+                   {onRegenerate && <RegenerateButton sectionName={`Logline ${index + 1}: ${logline.tone}`} onClick={() => onRegenerate?.('logline', { index })} />}
+                   <ReportButton itemName={`Logline ${index + 1}`} onClick={() => openFeedbackDialog(`loglines[${index}].text`, id)} />
+                 </div>
               </CardHeader>
               <CardContent className="pb-4">
                 <p>{logline.text}</p>
@@ -149,26 +218,24 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
 
       <Separator />
 
-      <Section title="Mood Board" sectionKey="moodBoard">
+      <Section title="Mood Board" sectionKey="moodBoard" mainActionOverride={onRegenerate ? <RegenerateButton sectionName="Entire Mood Board" onClick={() => onRegenerate?.('moodBoard')} /> : <div />}>
         {moodBoard.generatedImageURL && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold">Generated Visual</h3>
-              {/* <RegenerateButton sectionName="Mood Board Image" onClick={() => onRegenerate?.('moodBoardImage')} /> */} {/* Regen button removed as image regen is not a separate flow */}
+              {/* No individual report for the main image, report on cells or overall section if needed */}
             </div>
             <Image
-              src={moodBoard.generatedImageURL!}
+              src={moodBoard.generatedImageURL}
               // Updated alt text to be more dynamic, incorporating the project prompt if available.
               alt={`AI-generated mood board for: ${prompt || 'AI generated content'}`}
               className="rounded-lg w-full max-w-2xl mx-auto object-contain border p-1 shadow-sm"
-              width={800} // Or appropriate width
-              height={600} // Or appropriate height
-              style={{ height: 'auto', maxWidth: '100%' }} // Maintain aspect ratio and responsiveness
-              // If you know the exact dimensions or ratio, consider layout="responsive" or fixed width/height
-              // For responsive images, you might use 'fill' and a parent container with specific aspect ratio
-              // Here, using explicit width/height and style to maintain aspect ratio while being responsive up to max-width
+              width={800}
+              height={600}
+              style={{ height: 'auto', maxWidth: '100%' }}
             />
-
+            {/* Reporting for the main image could be added here if desired */}
+            {/* <ReportButton itemName="Mood Board Image" onClick={() => openFeedbackDialog(`moodBoard.generatedImageURL`, id)} /> */}
           </div>
         )}
         <h3 className="text-lg font-semibold mb-3 mt-4">Thematic Cells</h3>
@@ -178,7 +245,10 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-base">{cell.title || `Cell ${index + 1}`}</CardTitle>
-                   <RegenerateButton sectionName={`Mood Board Cell ${index + 1}: ${cell.title}`} onClick={() => onRegenerate?.('moodBoardCell', { index })} />
+                  <div className="flex items-center">
+                    {onRegenerate && <RegenerateButton sectionName={`Mood Board Cell ${index + 1}: ${cell.title}`} onClick={() => onRegenerate?.('moodBoardCell', { index })} />}
+                    <ReportButton itemName={`Mood Board Cell ${index + 1}`} onClick={() => openFeedbackDialog(`moodBoard.cells[${index}].description`, id)} />
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="flex-grow">
@@ -191,7 +261,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
 
       <Separator />
 
-      <Section title="Shot List" sectionKey="shotList">
+      <Section title="Shot List" sectionKey="shotList" mainActionOverride={onRegenerate ? <RegenerateButton sectionName="Entire Shot List" onClick={() => onRegenerate?.('shotList')} />: <div />}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -199,7 +269,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
               <TableHead>Lens</TableHead>
               <TableHead>Camera Move</TableHead>
               <TableHead>Framing Notes</TableHead>
-              <TableHead className="text-right w-[150px]">Actions</TableHead>
+              <TableHead className="text-right w-[200px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -210,7 +280,10 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
                 <TableCell>{shot.cameraMove}</TableCell>
                 <TableCell>{shot.framingNotes}</TableCell>
                 <TableCell className="text-right">
-                    <RegenerateButton sectionName={`Shot ${shot.shotNumber}`} onClick={() => onRegenerate?.('shot', { index })} />
+                  <div className="flex items-center justify-end">
+                    {onRegenerate && <RegenerateButton sectionName={`Shot ${shot.shotNumber}`} onClick={() => onRegenerate?.('shot', { index })} />}
+                    <ReportButton itemName={`Shot ${shot.shotNumber}`} onClick={() => openFeedbackDialog(`shotList[${index}].framingNotes`, id)} />
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -221,14 +294,31 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
       <Separator />
 
       <Section title="Animatic Description" sectionKey="animaticDescription">
-        <p className="whitespace-pre-wrap text-muted-foreground">{animaticDescription}</p>
+        <div className="flex items-start justify-between">
+          <p className="whitespace-pre-wrap text-muted-foreground flex-grow">{animaticDescription}</p>
+          <ReportButton itemName="Animatic Description" onClick={() => openFeedbackDialog('animaticDescription', id)} />
+        </div>
       </Section>
 
       <Separator />
 
       <Section title="Pitch Summary" sectionKey="pitchSummary">
-        <p className="whitespace-pre-wrap text-muted-foreground">{pitchSummary}</p>
+         <div className="flex items-start justify-between">
+          <p className="whitespace-pre-wrap text-muted-foreground flex-grow">{pitchSummary}</p>
+          <ReportButton itemName="Pitch Summary" onClick={() => openFeedbackDialog('pitchSummary', id)} />
+        </div>
       </Section>
+
+      {currentReportData && (
+        <FeedbackDialog
+          isOpen={isFeedbackDialogOpen}
+          onOpenChange={setIsFeedbackDialogOpen}
+          onSubmit={handleFeedbackSubmit}
+          reportedContentPath={currentReportData.path}
+          prototypeId={currentReportData.prototypeId}
+          isLoading={isSubmittingFeedback}
+        />
+      )}
     </div>
   );
 }

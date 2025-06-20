@@ -13,7 +13,7 @@ importers:
         version: 1.13.0(genkit@1.13.0)
       '@genkit-ai/next':
         specifier: ^1.8.0
-        version: 1.13.0(genkit@1.13.0)(next@15.3.4(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.67)
+        version: 1.13.0(genkit@1.13.0)(next@15.3.4(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.67)
       '@hookform/resolvers':
         specifier: ^4.1.3
         version: 4.1.3(react-hook-form@7.58.1(react@18.3.1))
@@ -103,7 +103,7 @@ importers:
         version: 13.4.0
       geist:
         specifier: ^1.4.2
-        version: 1.4.2(next@15.3.4(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        version: 1.4.2(next@15.3.4(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       genkit:
         specifier: ^1.8.0
         version: 1.13.0
@@ -115,7 +115,7 @@ importers:
         version: 1.2.0
       next:
         specifier: ^15.3.3
-        version: 15.3.4(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.53.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.3.4(@babel/core@7.27.4)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       patch-package:
         specifier: ^8.0.0
         version: 8.0.0
@@ -180,6 +180,9 @@ importers:
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
+      axe-core:
+        specifier: ^4.9.1
+        version: 4.10.3
       chai:
         specifier: ^5.2.0
         version: 5.2.0
@@ -198,6 +201,9 @@ importers:
       jest:
         specifier: ^30.0.0
         version: 30.0.2(@types/node@20.19.1)
+      jest-axe:
+        specifier: ^9.0.0
+        version: 9.0.0
       jest-environment-jsdom:
         specifier: ^30.0.0
         version: 30.0.2
@@ -1436,7 +1442,6 @@ packages:
     resolution: {integrity: sha512-Z4c23LHV0muZ8hfv4jw6HngPJkbbtZxTkxPNIg7cJcTc9C28N/p2q7g3JZS2SiKBBHJ3uM1dgDye66bB7LEk5w==}
     engines: {node: '>=18'}
     hasBin: true
-
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
 
@@ -2611,6 +2616,10 @@ packages:
 
   axe-core@4.10.3:
     resolution: {integrity: sha512-Xm7bpRXnDSX2YE2YFfBk2FnF0ep6tmG7xPh8iHee8MIcrgq762Nkce856dYtJYLkuIoYZvGfTs/PbZhideTcEg==}
+    engines: {node: '>=4'}
+
+  axe-core@4.9.1:
+    resolution: {integrity: sha512-QbUdXJVTpvUTHU7871ppZkdOLBeGUKBQWHkHrvN2V9IQWGMt61zf3B45BtzjxEJzYuj0JBjBZP/hmYS/R9pmAw==}
     engines: {node: '>=4'}
 
   axios@1.10.0:
@@ -4172,6 +4181,10 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  jest-axe@9.0.0:
+    resolution: {integrity: sha512-Xt7O0+wIpW31lv0SO1wQZUTyJE7DEmnDEZeTt9/S9L5WUywxrv8BrgvTuQEqujtfaQOcJ70p4wg7UUgK1E2F5g==}
+    engines: {node: '>= 16.0.0'}
+
   jest-changed-files@30.0.2:
     resolution: {integrity: sha512-Ius/iRST9FKfJI+I+kpiDh8JuUlAISnRszF9ixZDIqJF17FckH5sOzKC8a0wd0+D+8em5ADRHA5V5MnfeDk2WA==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
@@ -4245,6 +4258,10 @@ packages:
   jest-leak-detector@30.0.2:
     resolution: {integrity: sha512-U66sRrAYdALq+2qtKffBLDWsQ/XoNNs2Lcr83sc9lvE/hEpNafJlq2lXCPUBMNqamMECNxSIekLfe69qg4KMIQ==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
+
+  jest-matcher-utils@29.2.2:
+    resolution: {integrity: sha512-4DkJ1sDPT+UX2MR7Y3od6KtvRi9Im1ZGLGgdLFLm4lPexbTaCgJW5NN3IOXlQHF7NSHY/VHhflQ+WoKtD/vyCw==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
   jest-matcher-utils@29.7.0:
     resolution: {integrity: sha512-sBkD+Xi9DtcChsI3L3u0+N0opgPYnCRPtGcQYrgXmR+hmt/fYfWAL0xRXYU8eWOdfuLgBe0YCW3AFtnRLagq/g==}
@@ -8849,6 +8866,8 @@ snapshots:
 
   axe-core@4.10.3: {}
 
+  axe-core@4.9.1: {}
+
   axios@1.10.0:
     dependencies:
       follow-redirects: 1.15.9
@@ -10734,6 +10753,13 @@ snapshots:
       filelist: 1.0.4
       minimatch: 3.1.2
 
+  jest-axe@9.0.0:
+    dependencies:
+      axe-core: 4.9.1
+      chalk: 4.1.2
+      jest-matcher-utils: 29.2.2
+      lodash.merge: 4.6.2
+
   jest-changed-files@30.0.2:
     dependencies:
       execa: 5.1.1
@@ -10886,6 +10912,13 @@ snapshots:
     dependencies:
       '@jest/get-type': 30.0.1
       pretty-format: 30.0.2
+
+  jest-matcher-utils@29.2.2:
+    dependencies:
+      chalk: 4.1.2
+      jest-diff: 29.7.0
+      jest-get-type: 29.6.3
+      pretty-format: 29.7.0
 
   jest-matcher-utils@29.7.0:
     dependencies:
@@ -11827,7 +11860,6 @@ snapshots:
       playwright-core: 1.53.1
     optionalDependencies:
       fsevents: 2.3.2
-
   possible-typed-array-names@1.1.0: {}
 
   postcss-import@15.1.0(postcss@8.5.6):
