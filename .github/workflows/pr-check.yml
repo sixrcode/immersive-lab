@@ -31,6 +31,9 @@ jobs:
       - name: Test
         run: pnpm test --coverage
 
+      - name: Run Accessibility Tests
+        run: pnpm test:accessibility
+
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
 
