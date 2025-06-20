@@ -41,9 +41,20 @@ if (!admin.apps.length) {
       // app will remain undefined, and db/storage will not be initialized later
     }
   } else {
+    const missingVariables: string[] = [];
+    if (!FIREBASE_PROJECT_ID) missingVariables.push('FIREBASE_PROJECT_ID');
+    if (!FIREBASE_CLIENT_EMAIL) missingVariables.push('FIREBASE_CLIENT_EMAIL');
+    if (!process.env.FIREBASE_PRIVATE_KEY) missingVariables.push('FIREBASE_PRIVATE_KEY'); // Check original env var
+    if (!FIREBASE_STORAGE_BUCKET) missingVariables.push('FIREBASE_STORAGE_BUCKET');
+
+    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.error('!!! FIREBASE ADMIN SDK INITIALIZATION SKIPPED DUE TO MISSING ENV VARIABLES !!!');
+    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.error('The following required environment variables are missing:');
+    missingVariables.forEach(variable => console.error(`  - ${variable}`));
+    console.error('Firebase features like Firestore and Storage will NOT be available.');
     console.warn(
-      'Firebase Admin SDK not initialized. Missing one or more required environment variables: ' +
-      'FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_STORAGE_BUCKET. ' +
+      '(Original warning) Firebase Admin SDK not initialized. Missing one or more required environment variables. ' +
       'Firestore and Storage operations will not be available.'
     );
     // Fallback for environments where SDK isn't (or can't be) initialized,
