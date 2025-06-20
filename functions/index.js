@@ -16,7 +16,6 @@ const cors = require('cors');
 // If functions/index.js is in the same directory as src/ after build, this path might need adjustment.
 // For now, assuming a common root or that the build places it correctly.
 // MODIFIED: Path updated to point to the copied files within functions directory
-const { analyzeScript } = require('./src_copy/ai/flows/ai-script-analyzer');
 
 // Set global options for all functions
 setGlobalOptions({ region: 'us-west1' });
@@ -514,110 +513,6 @@ app.patch('/production-board/cards/:cardId/move', async (req, res) => {
       return res.status(404).json({ error: error.message });
     }
     res.status(500).json({ error: "Failed to move card." });
-  }
-});
-
-// POST /analyzeScript - Analyzes a script (Authenticated)
-app.post('/analyzeScript', async (req, res) => {
-  if (!req.body.script) {
-    return res.status(400).json({ error: 'Script content is required in the request body.' });
-  }
-
-  const { script } = req.body;
-
-  try {
-    // The analyzeScript function expects an object like { script: "..." }
-    const analysisResult = await analyzeScript({ script });
-    res.status(200).json(analysisResult);
-  } catch (error) {
-    functions.logger.error("Error calling analyzeScript:", error);
-    // Check if the error has a message and code, common in Firebase/Google Cloud errors
-    const errorMessage = error.message || 'An unexpected error occurred while analyzing the script.';
-    const errorCode = error.code || 500; // Default to 500 if no specific code
-
-    // It's good practice to not expose raw internal errors to the client,
-    // but for now, we'll return the message. In a production app, you might want to
-    // return a generic message for 500 errors.
-    res.status(typeof errorCode === 'number' && errorCode >= 100 && errorCode < 600 ? errorCode : 500)
-       .json({ error: errorMessage });
-  }
-});
-
-// POST /analyzeScript - Analyzes a script (Authenticated)
-app.post('/analyzeScript', async (req, res) => {
-  if (!req.body.script) {
-    return res.status(400).json({ error: 'Script content is required in the request body.' });
-  }
-
-  const { script } = req.body;
-
-  try {
-    // The analyzeScript function expects an object like { script: "..." }
-    const analysisResult = await analyzeScript({ script });
-    res.status(200).json(analysisResult);
-  } catch (error) {
-    functions.logger.error("Error calling analyzeScript:", error);
-    // Check if the error has a message and code, common in Firebase/Google Cloud errors
-    const errorMessage = error.message || 'An unexpected error occurred while analyzing the script.';
-    const errorCode = error.code || 500; // Default to 500 if no specific code
-
-    // It's good practice to not expose raw internal errors to the client,
-    // but for now, we'll return the message. In a production app, you might want to
-    // return a generic message for 500 errors.
-    res.status(typeof errorCode === 'number' && errorCode >= 100 && errorCode < 600 ? errorCode : 500)
-       .json({ error: errorMessage });
-  }
-});
-
-// POST /analyzeScript - Analyzes a script (Authenticated)
-app.post('/analyzeScript', async (req, res) => {
-  if (!req.body.script) {
-    return res.status(400).json({ error: 'Script content is required in the request body.' });
-  }
-
-  const { script } = req.body;
-
-  try {
-    // The analyzeScript function expects an object like { script: "..." }
-    const analysisResult = await analyzeScript({ script });
-    res.status(200).json(analysisResult);
-  } catch (error) {
-    functions.logger.error("Error calling analyzeScript:", error);
-    // Check if the error has a message and code, common in Firebase/Google Cloud errors
-    const errorMessage = error.message || 'An unexpected error occurred while analyzing the script.';
-    const errorCode = error.code || 500; // Default to 500 if no specific code
-
-    // It's good practice to not expose raw internal errors to the client,
-    // but for now, we'll return the message. In a production app, you might want to
-    // return a generic message for 500 errors.
-    res.status(typeof errorCode === 'number' && errorCode >= 100 && errorCode < 600 ? errorCode : 500)
-       .json({ error: errorMessage });
-  }
-});
-
-// POST /analyzeScript - Analyzes a script (Authenticated)
-app.post('/analyzeScript', async (req, res) => {
-  if (!req.body.script) {
-    return res.status(400).json({ error: 'Script content is required in the request body.' });
-  }
-
-  const { script } = req.body;
-
-  try {
-    // The analyzeScript function expects an object like { script: "..." }
-    const analysisResult = await analyzeScript({ script });
-    res.status(200).json(analysisResult);
-  } catch (error) {
-    functions.logger.error("Error calling analyzeScript:", error);
-    // Check if the error has a message and code, common in Firebase/Google Cloud errors
-    const errorMessage = error.message || 'An unexpected error occurred while analyzing the script.';
-    const errorCode = error.code || 500; // Default to 500 if no specific code
-
-    // It's good practice to not expose raw internal errors to the client,
-    // but for now, we'll return the message. In a production app, you might want to
-    // return a generic message for 500 errors.
-    res.status(typeof errorCode === 'number' && errorCode >= 100 && errorCode < 600 ? errorCode : 500)
-       .json({ error: errorMessage });
   }
 });
 
