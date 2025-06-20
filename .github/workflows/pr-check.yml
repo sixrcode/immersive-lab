@@ -23,8 +23,18 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Type Check
+        run: pnpm typecheck --pretty
+
       - name: Build
         run: pnpm build
 
       - name: Test
-        run: pnpm test
+        run: pnpm test --coverage
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          fail_ci_if_error: true

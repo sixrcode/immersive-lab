@@ -194,6 +194,8 @@ This section outlines how to run tests, the frameworks used, and general testing
     npm run test -- --coverage
     ```
     (Note: The exact command for coverage might vary based on Jest configuration in different packages.)
+- The CI pipeline automatically runs tests on every pull request and enforces a minimum test coverage threshold, failing the build if standards are not met.
+- Additionally, the CI pipeline performs static analysis, including linting and TypeScript type checking, and will fail the build if any errors are detected.
 
 ### Types of Tests
 
