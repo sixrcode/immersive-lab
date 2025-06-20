@@ -97,26 +97,3 @@ export function initializeSocket(io: SocketIOServer) {
 //   console.log(`Broadcasting ${event} to room ${roomId}`, data);
 //   getIO().to(roomId).emit(event, data);
 // }
-
-  console.log('Socket.IO service initialized');
-}
-
-// You might also want to export `io` if other services need to emit events globally
-// For now, keeping it encapsulated. If a chat service or document service needs to emit,
-// they could be passed the `io` instance, or this `socketService` could expose methods
-// like `broadcastToProject(projectId, eventName, data)`.
-
-// Example of an exported broadcast function (if needed by other services)
-// let globalIO: SocketIOServer | null = null;
-// export function initializeSocket(io: SocketIOServer) {
-//   globalIO = io;
-//   // ... rest of the connection logic
-// }
-// export function getIO(): SocketIOServer {
-//   if (!globalIO) throw new Error("Socket.IO not initialized!");
-//   return globalIO;
-// }
-// export function broadcastToRoom(roomId: string, event: string, data: any) {
-//   console.log(`Broadcasting ${event} to room ${roomId}`, data);
-//   getIO().to(roomId).emit(event, data);
-// }
