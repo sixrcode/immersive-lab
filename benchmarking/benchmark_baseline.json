@@ -1,0 +1,8 @@
+{
+  "promptToPrototype": {
+    "avgResponseTime": 2000
+  },
+  "analyzeScript": {
+    "avgResponseTime": 950
+  }
+}
