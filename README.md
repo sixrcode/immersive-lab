@@ -561,6 +561,53 @@ Please see our detailed **[Contributing Guidelines](CONTRIBUTING.md)** for infor
 
 Before submitting your contribution, please ensure your code adheres to our linting standards by running \`npm run lint\` and that all tests pass (\`npm run test\`).
 
+## 📜 Responsible AI Guidelines
+
+The Immersive Storytelling Lab Platform (ISL.SIXR.tv) is committed to fostering a creative and ethical environment. As we integrate AI technologies to empower storytellers, we adhere to the following principles to ensure responsible use:
+
+### Introduction
+We believe AI is a powerful tool for creativity and innovation. Our goal is to provide access to these tools while promoting their ethical use and mitigating potential harms. These guidelines outline our commitment and expectations for users of our AI-powered features.
+
+###  Fairness and Bias
+AI models can inadvertently reflect or amplify existing societal biases. While we strive to use models and techniques that minimize such biases, it's important for users to be aware that biases can still be present in AI-generated content.
+-   **Our Goal:** We are committed to continuously evaluating and working to mitigate biases in the AI tools we provide.
+-   **User Awareness:** We encourage users to critically review AI-generated content and consider potential biases when incorporating it into their work.
+
+### Transparency
+We aim to be transparent about the use of AI on our platform.
+-   **AI-Generated Content:** Content produced significantly by AI tools will be clearly identified where feasible, ensuring users understand its origin.
+-   **Model Capabilities:** We will strive to provide information about the capabilities and limitations of the AI models used.
+
+### Harmful Content
+The generation or promotion of harmful content is strictly prohibited on ISL.SIXR.tv. This includes:
+-   Hate speech
+-   Harassing content
+-   Discriminatory content based on race, ethnicity, religion, gender, sexual orientation, disability, or other protected characteristics
+-   Sexually explicit material
+-   Content that promotes violence, self-harm, or dangerous activities
+-   Misinformation or disinformation with harmful intent
+
+We have implemented safety filters and content moderation technologies (as described in our AI microservice configurations) to block the generation of such content. These systems are not perfect, but we are committed to their ongoing improvement.
+
+### User Responsibility
+Users of ISL.SIXR.tv are responsible for the content they create and how they use the AI tools provided.
+-   **Ethical Use:** We expect all users to leverage AI tools in a manner that is ethical, respectful, and lawful.
+-   **Content Review:** Users should review AI-generated content to ensure it aligns with these guidelines before sharing or publishing.
+-   **No Harmful Intent:** Do not attempt to bypass safety measures or intentionally create harmful content.
+
+### Reporting Mechanisms
+If you encounter content on the platform that you believe violates these guidelines or is otherwise problematic, we encourage you to report it.
+-   *(Note: The specific reporting mechanism is under development. In the interim, please contact platform administrators if you have concerns.)*
+This feedback is crucial for maintaining a safe and respectful environment.
+
+### Continuous Improvement
+The field of AI is rapidly evolving, as are the best practices for responsible AI. ISL.SIXR.tv is committed to:
+-   Staying informed about new research and guidelines in AI ethics.
+-   Continuously refining our safety measures and platform policies.
+-   Seeking feedback from our community to improve our approach to responsible AI.
+
+By using the AI features on ISL.SIXR.tv, you agree to adhere to these guidelines.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details (if available). It is recommended to add a `LICENSE` file to the project root.
