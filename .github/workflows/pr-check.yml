@@ -32,6 +32,9 @@ jobs:
       - name: Test
         run: pnpm test --coverage
 
+      - name: Run Accessibility Tests
+        run: pnpm test:accessibility
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:

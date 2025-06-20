@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "test:accessibility": "jest --testPathPattern=\\.accessibility\\.test\\.tsx"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
@@ -77,6 +78,8 @@
     "firebase-functions-test": "^3.4.1",
     "genkit-cli": "^1.8.0",
     "jest": "^30.0.0",
+    "jest-axe": "^9.0.0",
+    "axe-core": "^4.9.1",
     "jest-environment-jsdom": "^30.0.0",
     "mocha": "^11.6.0",
     "mongoose": "^8.16.0",
