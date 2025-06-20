@@ -73,3 +73,32 @@ We generally follow a Gitflow-like branching strategy:
 
 ## Code of Conduct
 Please note that this project is released with a Contributor Code of Conduct. By participating in this project, you agree to abide by its terms. (A `CODE_OF_CONDUCT.md` file should be added to detail these terms).
+
+## Minimizing Merge Conflicts
+
+To maintain a smooth development workflow and reduce the likelihood of merge conflicts, please consider the following best practices, especially when working on features that might touch shared areas of the codebase:
+
+1.  **AI Service Consolidation:**
+    *   The platform's AI functionalities, particularly for prompt-to-prototype, have been consolidated into the `ai-microservice`. The `services/prompt-gen-service` is deprecated. Ensure all new development targets the `ai-microservice` to prevent conflicting changes.
+
+2.  **Shared Data Schemas (`src/lib/ai-types.ts`, `packages/types/`):**
+    *   Changes to core data structures (e.g., `PromptPackage`, `StoryboardPackage`) should be communicated early with the team.
+    *   Coordinate schema changes to avoid simultaneous edits. Consider centralizing significant model changes on a specific branch or using feature flags for new fields to allow incremental merges.
+
+3.  **Documentation Updates (`README.md`, `CHANGELOG.md`):**
+    *   For `CHANGELOG.md`, try to update it sequentially or consolidate updates into a single PR before a release to avoid conflicts from multiple feature branches.
+    *   For `README.md`, if multiple features require updates to the same section, coordinate these changes or merge them serially.
+
+4.  **Environment Configurations (`.env.example`, Config Files):**
+    *   When adding new environment variables, list them alphabetically in `.env.example` files to minimize diff overlaps.
+    *   Clearly communicate any new environment variable requirements in your Pull Request descriptions so they can be merged carefully.
+
+5.  **Microservice Integration Points (API Routes, Client Hooks):**
+    *   Be mindful when editing code that handles communication between the frontend and microservices (e.g., Next.js API route handlers in `src/app/api/`, client-side hooks that call these services).
+    *   If core integration logic changes (e.g., auth methods, endpoint paths, fundamental error handling), ensure these changes are communicated and feature branches are rebased promptly if they depend on this logic. Consider designating owners or liaisons for key integration modules.
+
+6.  **Sequencing of Refactors vs. Features:**
+    *   Large-scale refactoring (e.g., renaming files/directories, significant logic shifts in shared services like `ai-microservice/index.js` or navigation components) should ideally be done in isolation and merged into the main development branch *before* feature branches diverge too far.
+    *   Communicate planned refactors in advance so other developers can anticipate rebasing or temporarily avoid working on those specific parts of the codebase.
+
+By following these guidelines, we can collectively reduce integration friction. Regularly pulling changes from the main development branch and rebasing your feature branches can also help catch and resolve conflicts earlier.
