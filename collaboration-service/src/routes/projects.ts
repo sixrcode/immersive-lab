@@ -3,6 +3,7 @@ import express, { Request, Response, Router } from 'express';
 import { getModels } from '../models'; // Import getModels
 // import { authenticateToken } from '../middleware/auth'; // Optional: if you have auth middleware
 import { authenticate, AuthenticatedRequest } from '../middleware/auth';
+import { handleProjectDeleted, handleProjectRenamed } from '../services/firestoreSyncService';
 
 const router: Router = express.Router();
 
@@ -58,7 +59,13 @@ router.put('/:projectId', authenticate, getProject, async (req: AuthenticatedReq
     if (typeof req.body.name !== 'string' || req.body.name.trim() === '') {
       return res.status(400).json({ message: 'Project name cannot be empty.' });
     }
+    const oldName = res.locals.project.name; // Capture old name for potential logging or different event structure if needed
     res.locals.project.name = req.body.name;
+
+    // Notify Firestore sync service about project rename
+    if (oldName !== req.body.name) { // Only call if the name actually changed
+      await handleProjectRenamed({ projectId: res.locals.project._id.toString(), newName: req.body.name });
+    }
   }
   if (req.body.description != null) {
     res.locals.project.description = req.body.description;
@@ -79,6 +86,9 @@ router.delete('/:projectId', authenticate, getProject, async (req: Authenticated
     return res.status(403).json({ message: 'Forbidden: User is not a member of this project' });
   }
   try {
+    // Notify Firestore sync service about project deletion
+    await handleProjectDeleted({ projectId: res.locals.project._id.toString() });
+
     await res.locals.project.deleteOne();
     res.json({ message: 'Project deleted' });
   } catch (err:any) {

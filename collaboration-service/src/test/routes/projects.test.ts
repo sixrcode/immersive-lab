@@ -2,6 +2,15 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { app, startServer, server as appServer, io as appIo } from '../../index';
 import { getModels, initModels, IProject } from '../../models'; // Import initModels & IProject
+import * as firestoreSyncService from '../../services/firestoreSyncService'; // To spy on its methods
+// import { db as testFirestoreDb } from '../../firebaseAdmin'; // To interact with Firestore if possible - Placeholder for now
+
+// Mock the service methods to check if they are called
+jest.mock('../../services/firestoreSyncService', () => ({
+  ...jest.requireActual('../../services/firestoreSyncService'), // Import and retain default behavior
+  handleProjectDeleted: jest.fn().mockResolvedValue(undefined), // Mock to check calls
+  handleProjectRenamed: jest.fn().mockResolvedValue(undefined), // Mock to check calls
+}));
 
 jest.mock('../../firebaseAdmin', () => ({
   auth: {
@@ -310,5 +319,113 @@ describe('Project API Endpoints (with Refactored Models)', () => {
       expect(response.status).toBe(403);
       expect(response.body.message).toBe('Forbidden: User is not a member of this project');
     });
+  });
+});
+
+// --- Project Data Synchronization Tests ---
+describe('Project Data Synchronization', () => {
+  let createdProject: IProject; // To store project created during tests
+  const testUserIdSync = new mongoose.Types.ObjectId().toString(); // Dedicated user ID for these tests
+  const agent = request(app); // Supertest agent
+
+  // Helper to set auth token for this specific user
+  const setAuthForSyncUser = () => {
+    (mockAuth.verifyIdToken as jest.Mock).mockResolvedValue({ uid: testUserIdSync, email: 'syncuser@example.com' });
+  };
+
+
+  beforeAll(async () => {
+    // Setup: Ensure a user exists or mock authentication if necessary
+    // For these tests, we are focusing on project routes already being authenticated.
+    // Initialize test Firestore app if necessary and not done globally
+    // e.g. if (admin.apps.length === 0) { admin.initializeApp(...); }
+    // For now, assuming firebaseAdmin.ts handles its init.
+    // The global beforeAll in this file already handles server and model initialization.
+  });
+
+  beforeEach(async () => {
+    const { Project } = getModels();
+    // Create a project directly in MongoDB for testing deletion and rename
+    const projectData = { name: 'Test Sync Project', description: 'Project for sync testing', createdBy: testUserIdSync, members: [testUserIdSync] };
+    createdProject = await new Project(projectData).save();
+
+    // Clear mocks before each test
+    (firestoreSyncService.handleProjectDeleted as jest.Mock).mockClear();
+    (firestoreSyncService.handleProjectRenamed as jest.Mock).mockClear();
+
+    setAuthForSyncUser(); // Set auth for the sync test user
+
+    // TODO: Create mock storyboard data in Firestore linked to createdProject._id
+    // This is a placeholder for now. In a full test, you would:
+    // const storyboardData = { projectId: createdProject._id.toString(), name: "Test Storyboard", panels: [] };
+    // await testFirestoreDb.collection('storyboards').doc('test-storyboard-sync-1').set(storyboardData);
+    console.log(`Placeholder: Would create storyboard data in Firestore for project ${createdProject._id.toString()}`);
+  });
+
+  afterEach(async () => {
+    // Clean up: Remove the project from MongoDB
+    const { Project } = getModels();
+    if (createdProject && createdProject._id) {
+      await Project.findByIdAndDelete(createdProject._id);
+    }
+    // TODO: Clean up mock storyboard data from Firestore
+    // await testFirestoreDb.collection('storyboards').doc('test-storyboard-sync-1').delete();
+    console.log(`Placeholder: Would delete storyboard data in Firestore for project ${createdProject._id.toString()}`);
+  });
+
+  // Test for Project Deletion
+  it('should trigger handleProjectDeleted and remove project from DB when a project is deleted', async () => {
+    const response = await agent.delete(`/api/projects/${createdProject._id}`)
+      .set('Authorization', 'Bearer fake-token-sync-user'); // Token content doesn't matter due to mock
+
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe('Project deleted');
+
+    // Check if project is deleted from MongoDB
+    const { Project } = getModels();
+    const dbProject = await Project.findById(createdProject._id);
+    expect(dbProject).toBeNull();
+
+    // Check if firestoreSyncService.handleProjectDeleted was called
+    expect(firestoreSyncService.handleProjectDeleted).toHaveBeenCalledWith({
+      projectId: createdProject._id.toString(),
+    });
+    expect(firestoreSyncService.handleProjectDeleted).toHaveBeenCalledTimes(1);
+
+    // TODO: Add assertions to check Firestore for actual data deletion
+    // This would involve querying Firestore.
+    // const q = testFirestoreDb.collection('storyboards').where('projectId', '==', createdProject._id.toString());
+    // const snapshot = await q.get();
+    // expect(snapshot.empty).toBe(true);
+    console.log('Placeholder: Would assert Firestore data deletion');
+  });
+
+  // Test for Project Rename
+  it('should trigger handleProjectRenamed and update project in DB when a project is renamed', async () => {
+    const newName = 'Test Sync Project Renamed';
+    const response = await agent.put(`/api/projects/${createdProject._id}`)
+      .set('Authorization', 'Bearer fake-token-sync-user') // Token content doesn't matter
+      .send({ name: newName });
+
+    expect(response.status).toBe(200);
+    expect(response.body.name).toBe(newName);
+
+    // Check if project is updated in MongoDB
+    const { Project } = getModels();
+    const dbProject = await Project.findById(createdProject._id);
+    expect(dbProject).not.toBeNull();
+    expect(dbProject?.name).toBe(newName);
+
+    // Check if firestoreSyncService.handleProjectRenamed was called
+    expect(firestoreSyncService.handleProjectRenamed).toHaveBeenCalledWith({
+      projectId: createdProject._id.toString(),
+      newName: newName,
+    });
+    expect(firestoreSyncService.handleProjectRenamed).toHaveBeenCalledTimes(1);
+
+    // TODO: Add assertions to check Firestore for actual data update
+    // const doc = await testFirestoreDb.collection('storyboards').doc('test-storyboard-sync-1').get();
+    // expect(doc.exists && doc.data()?.projectName).toBe(newName);
+    console.log('Placeholder: Would assert Firestore data update');
   });
 });
