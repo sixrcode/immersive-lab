@@ -1,0 +1,35 @@
+[
+  {
+    "id": "prompt_001_short_generic",
+    "payload": {
+      "prompt": "A lone astronaut discovers an ancient alien artifact on Mars."
+    }
+  },
+  {
+    "id": "prompt_002_detailed_style",
+    "payload": {
+      "prompt": "Create a concept for a neo-noir detective story set in a cyberpunk city. The protagonist is a grizzled detective haunted by his past. Rain should be a constant visual motif.",
+      "stylePreset": "Cyberpunk Noir"
+    }
+  },
+  {
+    "id": "prompt_003_short_style",
+    "payload": {
+      "prompt": "A whimsical children's story about a talking squirrel who collects lost buttons.",
+      "stylePreset": "Whimsical Animation"
+    }
+  },
+  {
+    "id": "prompt_004_no_style_complex",
+    "payload": {
+      "prompt": "Develop a historical drama focusing on the political intrigue and personal sacrifices during the construction of a great medieval cathedral. Explore themes of faith, ambition, and the clash between tradition and progress."
+    }
+  },
+  {
+    "id": "prompt_005_image_input",
+    "payload": {
+      "prompt": "A fantasy scene inspired by the provided image. Focus on the magical elements and the creature shown.",
+      "imageDataUri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    }
+  }
+]

@@ -6,6 +6,13 @@ const admin = require('firebase-admin'); // Assuming admin is initialized elsewh
  * Attaches the decoded token (user information) to req.user if successful.
  */
 const authenticate = async (req, res, next) => {
+  // Bypass authentication for benchmark runs
+  if (process.env.RUNNING_BENCHMARKS === 'true') {
+    console.log('RUNNING_BENCHMARKS is true, bypassing authentication.');
+    req.user = { uid: 'benchmark_user' }; // Optionally mock a user object
+    return next();
+  }
+
   const authorizationHeader = req.headers.authorization;
 
   if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {

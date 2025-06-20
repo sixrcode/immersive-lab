@@ -1,0 +1,20 @@
+[
+  {
+    "id": "script_001_short_dialogue",
+    "payload": {
+      "script": "INT. COFFEE SHOP - DAY\n\nAVA (30s) sits opposite MARK (30s). Cups of coffee between them.\n\nAVA\nI can't believe you said that.\n\nMARK\nI had to. It was the truth.\n\nAVA\nSometimes the truth hurts, Mark.\n\nMARK\nAnd sometimes lies hurt more."
+    }
+  },
+  {
+    "id": "script_002_scene_description",
+    "payload": {
+      "script": "EXT. FOREST - NIGHT\n\nThe moon, a sliver of light in the inky sky, casts long, dancing shadows from the towering trees. ANNA (20s) runs, her breath ragged. Branches snag at her clothes. Something unseen CRASHES behind her. She stumbles, falls, scrambles back up, terror in her eyes. The only sound is her harsh breathing and the relentless pursuit."
+    }
+  },
+  {
+    "id": "script_003_mixed_with_issues",
+    "payload": {
+      "script": "INT. LABORATORY - DAY\n\nDR. ELARA (40s, brilliant but scatterbrained) adjusts her goggles. Strange contraptions bubble and hiss around her.\n\nDR. ELARA\n(To herself)\nAlmost... just a little more voltage!\n\nSuddenly, a small explosion rocks the bench. Sparks fly.ALARMS BLARRE.\n\nASSISTANT (O.S)\nDoctor! Are you alright?\n\nDR. ELARA\n(Coughing)\nPeachy! Just peachy! The temporal displacer is a bit... energetic today. I think my cat could make better coffee than this machine. This is completely unrelated to the experiment by the way."
+    }
+  }
+]
