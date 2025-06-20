@@ -9,9 +9,18 @@ import { Button } from './ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Aliased
 import { Separator } from '@/components/ui/separator'; // Aliased
 import { Flag } from 'lucide-react'; // Added Flag icon
-import { useToast } from '@/components/ui/use-toast'; // Aliased
-import { FeedbackDialog, FeedbackDialogFormData } from '@/components/feedback/FeedbackDialog'; // Aliased
-import { useSubmitFeedback, SubmitFeedbackHookInput } from '@/hooks/useSubmitFeedback'; // Added useSubmitFeedback
+'use client';
+import React, { useState } from 'react';
+
+import { useToast } from '@/components/ui/use-toast';
+import {
+  FeedbackDialog,
+  FeedbackDialogFormData,
+} from '@/components/feedback/FeedbackDialog';
+import {
+  useSubmitFeedback,
+  SubmitFeedbackHookInput,
+} from '@/hooks/useSubmitFeedback';
 
 // Placeholder for a Refresh Icon.
 const RefreshIcon = () => (
