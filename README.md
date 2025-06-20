@@ -350,18 +350,19 @@ These services are responsible for the core AI-driven functionalities of the pla
 
 #### Prompt Generation Service (`services/prompt-gen-service/`)
 
-*   **Purpose:** Handles the core AI-driven generation of creative assets such as loglines, mood boards, shot lists, and pitch summaries based on user prompts. It is responsible for all AI-driven content generation and image processing tasks related to the Prompt-to-Prototype Studio.
+*   **Status: Deprecated for Prompt-to-Prototype.** The functionality for prompt-to-prototype generation, including asset creation (loglines, mood boards, shot lists, etc.) and associated image processing, has been consolidated into the **Centralized AI Microservice (`ai-microservice/`)**.
+*   **Original Purpose:** This service was initially designed to handle the core AI-driven generation of creative assets for the Prompt-to-Prototype Studio.
 *   **Key Technologies:** Node.js, Express, Genkit
 *   **Location:** `services/prompt-gen-service/`
 *   **Notes:**
-    *   This service operates independently from the main web application.
-    *   Its architectural separation ensures the main Next.js application remains responsive and lightweight, allows the AI microservice to be deployed, monitored, and scaled independently, and maintains clear boundaries between user interface/backend logic and AI model orchestration.
-    *   Communication with the frontend is handled via HTTP requests from the Next.js backend, which also manages authentication, Firestore storage, and user session context.
-    *   For detailed setup, environment variables, and API reference, see the [Prompt Generation Service README](./services/prompt-gen-service/README.md).
+    *   This service is no longer called by the Next.js application for prompt generation.
+    *   Its original responsibilities for prompt-to-prototype are now handled by `ai-microservice/`.
+    *   If this service had other functionalities beyond prompt-to-prototype, those would be detailed here. Currently, it is largely unused.
+    *   For historical reference or details on its original design, see the [Prompt Generation Service README](./services/prompt-gen-service/README.md).
 
 #### Centralized AI Microservice (`ai-microservice/`)
 
-*   **Purpose:** Acts as a primary API gateway for a range of AI functionalities beyond prompt generation. It manages Genkit flows, orchestrates communication with various AI models (e.g., Gemini via Google AI), and processes structured input from different frontend features. It serves as the backend for the Prompt-to-Prototype Studio, AI Script Analyzer, and Storyboard Studio.
+*   **Purpose:** Acts as the primary API gateway for a range of AI functionalities. It manages Genkit flows, orchestrates communication with various AI models (e.g., Gemini via Google AI), and processes structured input from different frontend features. It is responsible for and serves as the backend for the **Prompt-to-Prototype Studio** (handling all asset generation and Firestore storage), the AI Script Analyzer, and the Storyboard Studio.
 *   **Key Technologies:** Firebase Function, Node.js, Express, Genkit
 *   **Location:** `ai-microservice/`
 *   **Authentication:** All endpoints require a valid Firebase ID token (Authorization: Bearer <token>).
@@ -372,7 +373,7 @@ These services are responsible for the core AI-driven functionalities of the pla
     *   `POST /generateStoryboard`: Returns a `StoryboardPackage` from a scene description. Intended for the Storyboard Studio.
 *   **Deployment:**
     *   Deploy using the command: `firebase deploy --only functions:aiApi`
-    *   The resulting URL should be set as the `NEXT_PUBLIC_AI_MICROSERVICE_URL` environment variable in the Next.js application.
+    *   The resulting URL should be set as the `NEXT_PUBLIC_AI_MICROSERVICE_URL` environment variable in the Next.js application, which is used for all features relying on this microservice, including prompt-to-prototype.
 *   **Note:** This service centralizes common AI tasks and model interactions, providing a consistent interface for the frontend. For more details, see the [Centralized AI Microservice README](./ai-microservice/README.md).
 
 #### AI Script Analyzer (`functions/`)
@@ -525,11 +526,11 @@ This section outlines the general phased development approach for the ISL.SIXR.t
 *General Note: Each microservice generally aligns with the overall platform phases but with a specific focus relevant to its domain. Development is iterative, and features within each microservice will evolve through these phases.*
 
 *   **Prompt Generation Service (`services/prompt-gen-service/`)**
-    *   *Phase 1:* Core AI model integration for generating initial creative assets (loglines, mood boards, shot lists, pitch summaries). Establish stable API for internal use.
-    *   *Phase 2:* Expansion of supported AI models, improvement in the quality and diversity of generated assets, introduction of more fine-grained style controls and options.
-    *   *Phase 3:* Exploration of advanced generative capabilities (e.g., basic 3D assets, interactive narrative elements), significant optimization for high-volume usage, and potential for customizable model fine-tuning.
+*   **Phase 1 (Historical):* Core AI model integration for generating initial creative assets.
+*   **Phase 2 (Historical):* Expansion of supported AI models, improvement in quality.
+*   **Phase 3 (Consolidated):* All prompt-to-prototype development is now focused within the `Centralized AI Microservice`.
 *   **Centralized AI Microservice (`ai-microservice/`)**
-    *   *Phase 1:* Establish the API gateway structure, implement initial Genkit flows for core platform AI features like script analysis (`/analyzeScript`) and prototype generation (`/promptToPrototype`).
+    *   *Phase 1:* Establish the API gateway structure, implement initial Genkit flows for core platform AI features like script analysis (`/analyzeScript`) and prototype generation (`/promptToPrototype`). This now includes all logic previously in `prompt-gen-service` for prompt-to-prototype.
     *   *Phase 2:* Add more AI-driven endpoints as new features require, refine existing Genkit flows for robustness, improve error handling, logging, and monitoring capabilities.
     *   *Phase 3:* Support for more complex, multi-step AI workflows, potential integration with MLOps pipelines for model management and deployment, and enhanced security measures for sensitive AI operations.
 *   **AI Script Analyzer (`functions/` - via Centralized AI Microservice)**

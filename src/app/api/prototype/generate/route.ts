@@ -1,20 +1,9 @@
-import { v4 as uuidv4 } from 'uuid';
 import { NextRequest, NextResponse } from 'next/server';
 // import { PromptToPrototypeInputSchema, type PromptToPrototypeInput } from '@/ai/flows/prompt-to-prototype';
-import type { PromptPackage, Logline, MoodBoardCell, Shot, PromptToPrototypeInput } from '@/lib/types'; // Assuming PromptToPrototypeInput will be here or defined locally
+// Assuming PromptToPrototypeInput will be here or defined locally.
+// PromptPackage is now the expected output from the microservice.
+import type { PromptPackage, PromptToPrototypeInput } from '@/lib/types';
 import { z } from 'zod'; // Import Zod
-import { db, firebaseAdminApp } from '@/lib/firebase/admin'; 
-
-// Define the structure of the expected response from the prompt generation microservice
-interface PromptGenServiceOutput {
-  loglines: Logline[];
-  moodBoardCells: MoodBoardCell[];
-  moodBoardImage: string; // Firebase Storage URL of the generated mood board image
-  shotList: string;       // Multi-line string representing the shot list
-  proxyClipAnimaticDescription: string;
-  pitchSummary: string;
-  originalUserImageURL?: string; // Firebase Storage URL of the user-uploaded image (if applicable)
-}
 
 // Helper function to extract serializable error details
 function extractSerializableErrorDetails(errorBody: any): string {
@@ -67,15 +56,7 @@ function extractSerializableErrorDetails(errorBody: any): string {
  *       This API route now delegates all such logic to the prompt-gen-service microservice.
  */
 export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage | { error: string; details?: unknown }>> {
-  // 1. Check Firebase Admin SDK
-  if (!firebaseAdminApp) {
-    console.error('Firebase Admin SDK not initialized. Cannot process request.');
-    const errorPayload = { error: 'Firebase Admin SDK not initialized. Check server logs.' };
-    console.log('Returning error response to client (Firebase Admin SDK not initialized):', JSON.stringify(errorPayload, null, 2));
-    return NextResponse.json(errorPayload, { status: 500 });
-  }
-
-  // 2. Validate input using Zod
+  // 1. Validate input using Zod
   const rawBody = await req.json();
   // Define PromptToPrototypeInputSchema locally or import from a valid source
   const PromptToPrototypeInputSchema = z.object({
@@ -109,18 +90,22 @@ export async function POST(req: NextRequest): Promise<NextResponse<PromptPackage
   }
 
   // 4. Determine the AI microservice URL
-  let microserviceUrl =
-    process.env.PROMPT_GEN_SERVICE_URL || process.env.NEXT_PUBLIC_AI_MICROSERVICE_URL;
+  let microserviceUrl = process.env.NEXT_PUBLIC_AI_MICROSERVICE_URL;
 
   if (!microserviceUrl) {
-    console.warn('AI microservice URL is not configured. Defaulting to localhost.');
-    microserviceUrl = 'http://localhost:8080/generate';
-  } else if (!microserviceUrl.endsWith('/generate')) {
-    microserviceUrl = microserviceUrl.replace(/\/?$/, '/generate');
+    console.error('AI microservice URL (NEXT_PUBLIC_AI_MICROSERVICE_URL) is not configured.');
+    // Return an error response or handle as appropriate for your application
+    return NextResponse.json({ error: 'AI microservice URL is not configured.' }, { status: 500 });
+  }
+
+  // Ensure the path /promptToPrototype is appended
+  if (!microserviceUrl.endsWith('/promptToPrototype')) {
+    microserviceUrl = microserviceUrl.replace(/\/?$/, '/promptToPrototype');
   }
 
   // 4. Call the AI microservice
-let flowOutput: PromptGenServiceOutput;
+// The microservice is expected to return a complete PromptPackage.
+let flowOutput: PromptPackage;
 try { // Added error handling for fetch
   const response = await fetch(microserviceUrl, {
     method: 'POST',
@@ -145,7 +130,7 @@ try { // Added error handling for fetch
     return NextResponse.json(errorResponsePayload, { status: response.status });
   }
 
-  flowOutput = await response.json() as PromptGenServiceOutput; // Type assertion
+  flowOutput = await response.json() as PromptPackage; // Type assertion, expecting full PromptPackage
 } catch (error: unknown) { // Catching unknown error type
   console.error('Failed to call AI microservice:', error);
   const errorResponsePayload = {
@@ -156,71 +141,10 @@ try { // Added error handling for fetch
   return NextResponse.json(errorResponsePayload, { status: 503 });
 }
 
-// 5. Extract values and construct PromptPackage
-const { prompt, imageDataUri, stylePreset } = validatedInput;
-const promptPackageId: string = uuidv4();
+// 5. The microservice is expected to return a complete PromptPackage.
+// Firestore saving logic is removed.
 
-const parseShotList = (shotListString: string): Shot[] => {
-  if (!shotListString) return [];
-  return shotListString.trim().split('\n').map((line, index) => {
-    const [num, lens, move, ...notes]: string[] = line.split(',').map(str => str.trim());
-    const shotNumber = parseInt(num, 10) || index + 1;
-    return {
-      shotNumber,
-      lens: lens || '',
-      cameraMove: move || '',
-      framingNotes: notes.join(', ') || '',
-    };
-  });
-};
-
-const moodBoardCells = flowOutput.moodBoardCells.map(cell => ({
-  title: cell.title,
-  description: cell.description,
-}));
-
-const newPromptPackage: PromptPackage = {
-  id: promptPackageId,
-  userId: 'anonymous_user', // Keep as literal string for now
-  prompt,
-  stylePreset,
-  originalImageURL: flowOutput.originalUserImageURL || imageDataUri,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  loglines: flowOutput.loglines,
-  moodBoard: {
-    generatedImageURL: flowOutput.moodBoardImage,
-    cells: moodBoardCells,
-  },
-  shotList: parseShotList(flowOutput.shotList),
-  animaticDescription: flowOutput.proxyClipAnimaticDescription,
-  pitchSummary: flowOutput.pitchSummary,
-  version: 1, // Assuming version starts at 1
-};
-
-// 6. Store the new `PromptPackage` in Firestore.
-if (db) {
-  try {
-    await db.collection('prompt-packages').doc(newPromptPackage.id).set(newPromptPackage);
-    console.log(`PromptPackage ${newPromptPackage.id} saved to Firestore.`);
-  } catch (firestoreError: unknown) {
-    const message =
-      firestoreError instanceof Error
-        ? firestoreError.message
-        : 'Unknown Firestore error';
-    console.error('Failed to save PromptPackage to Firestore:', message, firestoreError
-    );
-    const errorPayload = { error: 'Failed to save data to database.', details: message };
-    console.log('Returning error response to client (Firestore save error):', JSON.stringify(errorPayload, null, 2));
-    return NextResponse.json(errorPayload, { status: 500 });
-  }
-} else {
-  console.warn('Firestore (db) is not initialized. PromptPackage was not saved.');
-  const errorPayload = { error: 'Database service unavailable. Data not saved.' };
-  console.log('Returning error response to client (Firestore db not initialized):', JSON.stringify(errorPayload, null, 2));
-  return NextResponse.json(errorPayload, { status: 500 });
-}
-
-  // 7. Return the created `PromptPackage` to the client.
-  return NextResponse.json(newPromptPackage, { status: 201 }); // Use 201 for created resource
+  // 6. Return the `PromptPackage` received from the microservice to the client.
+  // Status 200 OK as the resource was already created by the microservice.
+  return NextResponse.json(flowOutput, { status: 200 });
 }
