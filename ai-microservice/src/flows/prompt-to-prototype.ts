@@ -73,13 +73,24 @@ const THEME_LIST = [
 const textGenerationPrompt = ai.definePrompt({
   name: 'promptToPrototypeTextPrompt',
   input: {schema: PromptToPrototypeInputSchema},
-  output: {schema: PromptToPrototypeOutputSchema.omit({ 
-    allTextAssetsJsonString: true, 
-    loglinesJsonString: true, 
-    moodBoardCellsJsonString: true, 
+  output: {schema: PromptToPrototypeOutputSchema.omit({
+    allTextAssetsJsonString: true,
+    loglinesJsonString: true,
+    moodBoardCellsJsonString: true,
     shotListMarkdownString: true,
     moodBoardImage: true, // AI doesn't generate the image directly in this text prompt
   })},
+  // Adding safety settings for text generation, mirroring image generation settings.
+  // These settings instruct the model to block content with a high probability
+  // of belonging to the specified harmful categories.
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+    ],
+  },
   prompt: `You are a creative assistant helping to generate initial assets for a project based on a user's prompt, an optional image, and an optional style preset. Your goal is to deliver a comprehensive textual prototype package.
   {{#if stylePreset}}
   The user has selected the style preset: "{{stylePreset}}". This style should be consistently reflected across ALL generated textual assets where applicable, influencing aspects like tone, artistic direction, descriptive language, and specific suggestions. This includes loglines, mood board cell content, shot lists, animatic descriptions, and the pitch summary.
