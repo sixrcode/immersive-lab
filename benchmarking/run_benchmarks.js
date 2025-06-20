@@ -177,12 +177,10 @@ Benchmark results saved to: ${resultsFilename}`);
     console.error('Error saving benchmark results:', error);
   }
 
-  console.log('
-Benchmarking complete.');
+  console.log('\nBenchmarking complete.');
 
   if (performanceRegressionDetected) {
-    console.error('
-Performance regression detected. Exiting with status 1.');
+    console.error('\nPerformance regression detected. Exiting with status 1.');
     process.exit(1);
   }
 }
