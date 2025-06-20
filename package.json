@@ -11,7 +11,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:accessibility": "jest --testPathPattern=\\.accessibility\\.test\\.tsx"
+    "test:accessibility": "jest --testPathPatterns=\\.accessibility\\.test\\.tsx"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
