@@ -32,6 +32,17 @@ jobs:
       - name: Test
         run: pnpm test --coverage
 
+      - name: Run Performance Benchmarks
+        run: node benchmarking/run_benchmarks.js
+        env:
+          BENCHMARK_API_BASE_URL: ${{ secrets.BENCHMARK_API_STAGING_URL }}
+
+      - name: Archive Benchmark Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: benchmarking/results/
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
