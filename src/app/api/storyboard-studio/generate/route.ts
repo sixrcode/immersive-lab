@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { StoryboardGeneratorInputSchema, StoryboardGeneratorInput, StoryboardPanelWithImage as Panel } from '@/lib/ai-types'; // Updated import
+import {
+  StoryboardGeneratorInputSchema,
+  StoryboardGeneratorInput,
+  StoryboardPanelWithImage as MicroservicePanelOutput // Panel from AI microservice (includes imageDataUri)
+} from '@/lib/ai-types';
+import {
+  StoryboardPackage as FinalStoryboardPackage, // Renaming to avoid conflict if any local var is named StoryboardPackage
+  Panel as FinalPanel // Panel structure for Firestore and final API response
+} from 'packages/types/src/storyboard.types';
 import { firebaseAdminApp } from '@/lib/firebase/admin';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, Firestore, DocumentData } from 'firebase-admin/firestore';
@@ -9,24 +17,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 const AI_MICROSERVICE_URL = process.env.NEXT_PUBLIC_AI_MICROSERVICE_URL;
 
-// Define a more specific type for the expected AI service output
-interface AIServicePanelInput {
-  id?: string;
-  imageDataUri?: string;
-  panelNumber?: number; // Made optional as code defaults if not present in panel processing
-  description?: string; // Made optional
-  dialogue?: string;
-  action?: string;
-  cameraAngle?: string;
-  cameraShotSize?: string;
-  notes?: string;
-  [key: string]: unknown; // Allow other properties from AI
-}
-
-interface AIServiceStoryboardResult {
-  panels?: AIServicePanelInput[];
-  title?: string;
-  [key: string]: unknown; // Allow other top-level properties from AI
+// Type for the expected output from the AI microservice
+// This should align with StoryboardGeneratorOutputSchema from @/lib/ai-types
+interface MicroserviceOutput {
+  panels: MicroservicePanelOutput[]; // Each panel includes imageDataUri, description, shotDetails, etc.
+  titleSuggestion?: string; // AI microservice returns titleSuggestion
+  [key: string]: unknown; // Allow other top-level properties from AI, though ideally should be typed
 }
 
 // Ensure Firebase Admin is initialized
@@ -107,19 +103,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // TODO: Replace 'any' with a specific type definition when the AI service output structure is known.
-    const aiStoryboardResult: AIServiceStoryboardResult = await microserviceResponse.json();
+    const aiStoryboardResult: MicroserviceOutput = await microserviceResponse.json();
 
     // 3. Generate new storyboard ID
     const newStoryboardId = adminFirestore.collection('storyboards').doc().id;
+    const now = Timestamp.now(); // Define `now` here for generatedAt timestamp
 
     // 4. Process and Upload Images
-    const processedPanels: Panel[] = [];
+    const processedPanels: FinalPanel[] = []; // Use FinalPanel type
     if (aiStoryboardResult.panels && Array.isArray(aiStoryboardResult.panels)) {
-      for (const panel of aiStoryboardResult.panels) {
-        if (!panel.imageDataUri) {
-          console.warn(`Panel ID ${panel.id || 'unknown'} missing imageDataUri, skipping image upload.`);
-          processedPanels.push({ ...panel, imageURL: '', previewURL: '' }); // Add panel even if image is missing
+      // Loop through panels received from AI microservice (type MicroservicePanelOutput)
+      for (const microservicePanel of aiStoryboardResult.panels) {
+        if (!microservicePanel.imageDataUri) {
+          console.warn(`Panel number ${microservicePanel.panelNumber} missing imageDataUri, skipping image upload.`);
+          // Construct a minimal FinalPanel if image processing is skipped
+          processedPanels.push({
+            id: uuidv4(), // Generate an ID
+            imageURL: '',
+            previewURL: '',
+            alt: microservicePanel.alt || microservicePanel.description || 'Image generation failed',
+            caption: microservicePanel.description || `Panel ${microservicePanel.panelNumber}`,
+            camera: microservicePanel.shotDetails || '',
+            // panelNumber: microservicePanel.panelNumber, // Add if FinalPanel type is extended
+            // dialogueOrSound: microservicePanel.dialogueOrSound, // Add if FinalPanel type is extended
+            generatedAt: now.toDate().toISOString(),
+          });
           continue;
         }
 
@@ -127,30 +135,41 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         let contentType: string = 'image/png'; // Default, can be inferred
 
         try {
-          if (panel.imageDataUri.startsWith('data:')) {
+          if (microservicePanel.imageDataUri.startsWith('data:')) {
             // Handle Data URI
-            const matches = panel.imageDataUri.match(/^data:(.+);base64,(.*)$/);
+            const matches = microservicePanel.imageDataUri.match(/^data:(.+);base64,(.*)$/);
             if (!matches || matches.length !== 3) {
               throw new Error('Invalid data URI format');
             }
             contentType = matches[1];
             buffer = Buffer.from(matches[2], 'base64');
-          } else if (panel.imageDataUri.startsWith('http')) {
+          } else if (microservicePanel.imageDataUri.startsWith('http')) {
             // Handle URL
-            const imageResponse = await fetch(panel.imageDataUri);
+            const imageResponse = await fetch(microservicePanel.imageDataUri);
             if (!imageResponse.ok) {
-              throw new Error(`Failed to fetch image from URL: ${panel.imageDataUri} - Status: ${imageResponse.status}`);
+              throw new Error(`Failed to fetch image from URL: ${microservicePanel.imageDataUri} - Status: ${imageResponse.status}`);
             }
             const arrayBuffer = await imageResponse.arrayBuffer();
             buffer = Buffer.from(arrayBuffer);
             contentType = imageResponse.headers.get('content-type') || contentType;
           } else {
-            console.warn(`Unsupported imageDataUri format for panel ID ${panel.id || 'unknown'}: ${panel.imageDataUri.substring(0,30)}... Skipping.`);
-            processedPanels.push({ ...panel, imageURL: '', previewURL: '' });
+            console.warn(`Unsupported imageDataUri format for panel number ${microservicePanel.panelNumber}: ${microservicePanel.imageDataUri.substring(0,30)}... Skipping.`);
+            // Construct a minimal FinalPanel with error indication
+            processedPanels.push({
+              id: uuidv4(),
+              imageURL: '',
+              previewURL: '',
+              alt: microservicePanel.alt || microservicePanel.description || 'Unsupported image format',
+              caption: microservicePanel.description || `Panel ${microservicePanel.panelNumber}`,
+              camera: microservicePanel.shotDetails || '',
+              // panelNumber: microservicePanel.panelNumber,
+              // dialogueOrSound: microservicePanel.dialogueOrSound,
+              generatedAt: now.toDate().toISOString(),
+            });
             continue;
           }
 
-          const panelId = panel.id || uuidv4(); // Use existing panel ID or generate one
+          const panelId = uuidv4(); // Generate a new unique ID for the FinalPanel
           const fileExtension = contentType.split('/')[1] || 'png';
           const filePath = `users/${userId}/storyboards/${newStoryboardId}/panels/${panelId}/image.${fileExtension}`;
 
@@ -161,24 +180,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           });
           const publicUrl = file.publicUrl();
 
+          // Construct FinalPanel with mapped fields
           processedPanels.push({
-            ...panel,
-            id: panelId, // Ensure panel has an ID
+            id: panelId,
             imageURL: publicUrl,
             previewURL: publicUrl, // For now, preview is same as main image
-            imageDataUri: undefined, // Remove original data URI
+            alt: microservicePanel.alt || microservicePanel.description, // Use alt from microservicePanel, fallback to its description
+            caption: microservicePanel.description, // Map description to caption
+            camera: microservicePanel.shotDetails, // Map shotDetails to camera
+            // panelNumber: microservicePanel.panelNumber, // Add if FinalPanel type is extended
+            // dialogueOrSound: microservicePanel.dialogueOrSound, // Add if FinalPanel type is extended
+            generatedAt: now.toDate().toISOString(),
           });
 
-        } catch (uploadError: unknown) { // Ensure uploadError is typed as unknown
-          console.error(`Error processing/uploading image for panel ${panel.id || 'unknown'}:`, uploadError);
-          // Decide if to fail all or just skip this panel's image
-          // For now, we'll add the panel without the image URL if upload fails
+        } catch (uploadError: unknown) {
+          console.error(`Error processing/uploading image for panel number ${microservicePanel.panelNumber}:`, uploadError);
+          // Construct a minimal FinalPanel with error indication
           processedPanels.push({
-            ...panel,
+            id: uuidv4(),
             imageURL: '',
             previewURL: '',
-            imageDataUri: undefined,
-            error: uploadError instanceof Error ? uploadError.message : 'Image processing failed'
+            alt: microservicePanel.alt || microservicePanel.description || 'Image processing error',
+            caption: microservicePanel.description || `Panel ${microservicePanel.panelNumber}`,
+            camera: microservicePanel.shotDetails || '',
+            // panelNumber: microservicePanel.panelNumber,
+            // dialogueOrSound: microservicePanel.dialogueOrSound,
+            generatedAt: now.toDate().toISOString(),
+            // error: uploadError instanceof Error ? uploadError.message : 'Image processing failed' // Add if FinalPanel supports error field
           });
         }
       }
@@ -187,18 +215,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // 5. Construct StoryboardPackage
-    const now = Timestamp.now();
-    const storyboardPackageData: DocumentData = { // Use DocumentData for Firestore data
+    // `now` is already defined
+    const storyboardPackageData: FinalStoryboardPackage = {
       id: newStoryboardId,
       userId: userId,
-      projectId: projectId, // Include projectId from the request
-      title: aiStoryboardResult.title || validatedInput.sceneDescription.substring(0, 50) || 'Untitled Storyboard',
+      projectId: projectId,
+      title: aiStoryboardResult.titleSuggestion || validatedInput.sceneDescription.substring(0, 50) || 'Untitled Storyboard',
       sceneDescription: validatedInput.sceneDescription,
-      panelCount: processedPanels.length, // This should align with StoryboardPackage type
+      panelCount: processedPanels.length,
       stylePreset: validatedInput.stylePreset,
-      panels: processedPanels,
-      createdAt: now, // Ensure this is Firestore Timestamp
-      updatedAt: now, // Ensure this is Firestore Timestamp
+      panels: processedPanels, // This is now an array of FinalPanel
+      createdAt: now.toDate().toISOString(),
+      updatedAt: now.toDate().toISOString(),
       // Add other fields from aiStoryboardResult or validatedInput as necessary
       // e.g., characters: aiStoryboardResult.characters || [],
       // settings: aiStoryboardResult.settings || [],
