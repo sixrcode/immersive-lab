@@ -10,20 +10,5 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "firebase-admin": "^13.4.0",
-    "mongoose": "^8.16.0",
-    "uuid": "^9.0.1",
-    "winston": "^3.13.0"
-  },
-  "devDependencies": {
-    "cross-env": "^7.0.3",
-    "jest": "^30.0.0",
-    "mongodb-memory-server": "^10.1.4",
-    "supertest": "^7.1.1"
-  }
+  "license": "ISC"
 }
