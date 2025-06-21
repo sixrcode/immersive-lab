@@ -15,9 +15,9 @@ import {
 import {
   useSubmitFeedback,
   SubmitFeedbackHookInput,
-} from '@/hooks/useSubmitFeedback';
+} from '@/lib/useSubmitFeedback';
 import { Flag } from 'lucide-react'; // Assuming Flag icon is from lucide-react
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/lib/use-toast"
 
 // Placeholder for a Refresh Icon.
 const RefreshIcon = () => (

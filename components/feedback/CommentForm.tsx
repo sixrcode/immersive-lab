@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { useSubmitComment } from '@/hooks/useSubmitComment';
+import { useSubmitComment } from '@/lib/useSubmitComment';
 import type { Comment } from '@/lib/feedback-types';
 // Placeholder for actual auth hook
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';

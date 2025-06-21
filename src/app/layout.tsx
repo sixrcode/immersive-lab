@@ -9,7 +9,7 @@ import { AppSidebar } from '@/components/layout/sidebar';
 import { AppHeader } from '@/components/layout/header';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
-import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
+import { AuthProvider } from '@/services/AuthContext'; // Import AuthProvider
 
 const geistSans = GeistSans;
 const geistMono = GeistMono;
