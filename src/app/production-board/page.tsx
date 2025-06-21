@@ -402,8 +402,10 @@ export default function ProductionBoardPage() {
         }
 
         // On success, re-fetch data to ensure consistency
+        const movedCardDataFromAPI: KanbanCardType = await response.json(); // Parse the response
+
         // --- BEGIN: Automatic Progress Tracking ---
-        const movedCard = movedCardResponse; // Use the card data from the move response
+        const movedCard = movedCardDataFromAPI; // Use the card data from the move response
         // Find the target column details to check its title
         const targetColDetails = columns.find(col => col.id === targetColumnId);
 

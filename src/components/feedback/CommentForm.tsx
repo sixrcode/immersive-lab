@@ -9,7 +9,7 @@ import type { Comment } from '@/lib/feedback-types';
 import { UseMutationResult } from '@tanstack/react-query'; // Import UseMutationResult
 // Placeholder for actual auth hook
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { app } from '@/lib/firebase/client';
+import { firebaseApp } from '@/lib/firebase/client';
 
 interface CommentFormProps {
   projectId: string;
@@ -28,7 +28,7 @@ export function CommentForm({ projectId, onSubmitSuccess, onCancel }: CommentFor
   const { mutate: submitComment, isPending: isLoading, error } = useSubmitComment();
 
   useEffect(() => {
-    const auth = getAuth(app);
+    const auth = getAuth(firebaseApp);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user);
       setIsAuthLoading(false);
@@ -74,7 +74,7 @@ export function CommentForm({ projectId, onSubmitSuccess, onCancel }: CommentFor
   if (!isAuthenticated) {
     return (
       <div className="p-4 border rounded-md bg-muted/50">
-        <p className="text-muted-foreground">Please <a href="#" onClick={() => signInAnonymously(getAuth(app))} className="underline">sign in anonymously</a> to leave a comment.</p>
+        <p className="text-muted-foreground">Please <a href="#" onClick={() => signInAnonymously(getAuth(firebaseApp))} className="underline">sign in anonymously</a> to leave a comment.</p>
         {/* Replace href="#" with actual sign-in link or modal trigger
             For testing, added signInAnonymously. Replace with your actual sign-in flow.
         */}

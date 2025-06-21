@@ -22,28 +22,33 @@ jest.mock('next/server', () => {
 
 // Define the actual Jest mock functions that tests will interact with for Firebase
 const mockVerifyIdToken = jest.fn();
-const mockCollection = jest.fn();
-const mockWhere = jest.fn().mockReturnThis();
 const mockGet = jest.fn().mockResolvedValue({ // Default mock for get
- empty: true,
-    docs: [],
-    forEach: jest.fn(),
-  });
+  empty: true,
+  docs: [],
+  forEach: jest.fn(),
+});
+const mockWhere = jest.fn(() => ({
+  get: mockGet,
+}));
+const mockCollection = jest.fn(() => ({
+  where: mockWhere,
+}));
 
 jest.mock('@/lib/firebase/admin', () => {
   return {
     firebaseAdminApp: {
       name: 'mockedApp',
       options: {},
-      getOrInitService: jest.fn((serviceName: string) => {
-        if (serviceName === 'firestore') {
-          return { getDatabase: () => ({ collection: (...args: [string]) => mockCollection(...args) }) };
-        }
-        return null;
-      }),
- },
- auth: { verifyIdToken: (...args: [string, { checkRevoked?: boolean }?]) => mockVerifyIdToken(...args) }, // Explicitly type args
- db: { collection: (...args: [string]) => mockCollection(...args) } // Explicitly type args
+      auth: () => ({ // Mock the auth method on firebaseAdminApp
+        verifyIdToken: mockVerifyIdToken,
+      })
+    },
+    // auth is typically accessed via firebaseAdminApp.auth(), so we might not need a separate top-level auth mock
+    // If it IS accessed directly as import { auth } from ..., then the below is needed.
+    // auth: { verifyIdToken: mockVerifyIdToken },
+    db: {
+      collection: mockCollection // collection itself is a function
+    }
   };
 });
 

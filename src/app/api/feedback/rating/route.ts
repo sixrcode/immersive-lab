@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
-import { adminDb } from '@/lib/firebase/admin';
+import { db } from '@/lib/firebase/admin';
 import { RatingSchema } from '@/lib/feedback-types';
 export async function POST(request: Request) {
   try {

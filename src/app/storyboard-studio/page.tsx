@@ -2,7 +2,7 @@
 "use client";
 
 // Updated import: Use StoryboardPackage and Panel from the canonical types
-import type { StoryboardPackage, Panel as StoryboardPanelType } from "packages/types/src/storyboard.types";
+import type { StoryboardPackage, Panel as StoryboardPanelType } from "../../../../../packages/types/src/storyboard.types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";

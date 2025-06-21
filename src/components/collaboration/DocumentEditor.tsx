@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import io, { type Socket } from 'socket.io-client';
+import io, { type Socket, type DisconnectReason } from 'socket.io-client';
 
 interface Document {
   _id: string;
@@ -96,7 +96,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
       });
 
       // Explicitly type the reason parameter from socket.io-client
-      newSocket.on('disconnect', (reason: Socket.DisconnectReason) => {
+      newSocket.on('disconnect', (reason: DisconnectReason) => {
         console.log('DocumentEditor: Socket disconnected:', reason);
         // Only set error if not an intentional disconnect (handled by cleanup)
         if (reason !== 'io client disconnect') {
@@ -178,9 +178,10 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
         });
       }
     }, 500),
-    [socket, documentId, projectId]
-  ); // Add socket to dependencies as debounced function depends on it
- // Removed 'socket' from dependencies as it's managed by ref now
+    // socketRef.current is stable, documentId and projectId are dependencies
+    // because the debounced function closes over them.
+    [documentId, projectId]
+  );
   const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = event.target.value;
     setContent(newText);

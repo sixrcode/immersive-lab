@@ -61,6 +61,9 @@ export interface PortfolioItemType {
   duration?: string; // e.g., "5 min", "12 episodes"
   datePublished?: string;
   dataAiHint?: string;
+  client?: string;
+  role?: string;
+  softwareUsed?: string[];
 }
 
 export interface PromptToPrototypeInput {

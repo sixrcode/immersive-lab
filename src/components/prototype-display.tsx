@@ -17,7 +17,7 @@ import {
   SubmitFeedbackHookInput,
 } from '@/hooks/useSubmitFeedback';
 import { Flag } from 'lucide-react'; // Assuming Flag icon is from lucide-react
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 // Placeholder for a Refresh Icon.
 const RefreshIcon = () => (
@@ -149,7 +149,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
     createdAt,
   } = promptPackage;
 
-  const Section: FC<{ title: string; children: React.ReactNode; sectionKey: string; actions?: React.ReactNode, mainActionOverride?: React.ReactNode }> =
+  const Section: FC<{ title: string; children: React.ReactNode; sectionKey: SectionKey; actions?: React.ReactNode, mainActionOverride?: React.ReactNode }> =
     ({ title, children, sectionKey, actions, mainActionOverride }) => (
     <Card className="mb-6 print:shadow-none print:border-0">
       <CardHeader className="flex flex-row items-center">
