@@ -74,7 +74,7 @@ describe('AI Microservice API Endpoints', () => {
     });
 
     it('should return 200 and analysis results for valid input', async () => {
-      const mockAnalysisOutput = { analysis: 'Great script!', suggestions: [] };
+      const mockAnalysisOutput = { analysis: 'Great script!', suggestions: [], dialogueIssues: 0 };
       analyzeScript.mockResolvedValue(mockAnalysisOutput);
       // Assuming jest.setup.js correctly mocks admin.firestore().collection().doc().set chain
       // If 'set' is not a function, this specific test will fail, indicating a setup issue.
@@ -83,7 +83,7 @@ describe('AI Microservice API Endpoints', () => {
       const response = await request(app).post('/analyzeScript').set('Authorization', 'Bearer valid-token').send(validScriptInput);
       expect(response.status).toBe(200);
       expect(response.body.id).toBe('mock-uuid-v4');
-      expect(admin.firestore().collection('scriptAnalyses').doc('mock-uuid-v4').set).toHaveBeenCalled();
+      expect(admin.firestore().collection('scriptAnalyses').doc('mock-uuid-v4').set).toHaveBeenCalledWith(expect.objectContaining(mockAnalysisOutput));
     });
 
     it('should return 500 if AI flow fails', async () => {
