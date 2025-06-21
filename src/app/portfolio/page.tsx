@@ -167,13 +167,28 @@ export default function PortfolioPage() {
   const [error, setError] = useState<string | null>(null);
 
    // Placeholder: Get current user. Replace with your actual authentication logic.
-   const user = { uid: "test-user-id", idToken: "dummy-token" }; // This should be replaced with actual auth context
-  const fetchFeedbackForItem = useCallback(async (itemId: string, token: string | null) => {
+   // Moved user outside the component to satisfy exhaustive-deps for useEffect.
+}; // End of PortfolioCard (dummy placement for diff, will be removed)
+
+const placeholderUser = { uid: "test-user-id", idToken: "dummy-token" }; // This should be replaced with actual auth context
+
+export default function PortfolioPage() {
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItemType[]>([]);
+  const [feedbacks, setFeedbacks] = useState<Record<string, ProjectFeedback>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingFeedbackGlobal, setIsLoadingFeedbackGlobal] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<string | null>(null);
+
+  const user = placeholderUser; // Use the stable placeholder user object
+
+  const fetchFeedbackForItem = useCallback(async (itemId: string) => { // Removed unused 'token' parameter
     setIsLoadingFeedbackGlobal(prev => ({ ...prev, [itemId]: true }));
     try {
+      // Use user.idToken directly if needed by the API, e.g., in headers
+      // const headers = user.idToken ? { 'Authorization': `Bearer ${user.idToken}` } : {};
       const [commentsRes, ratingsRes] = await Promise.all([
-        fetch(`/api/feedback/comments?projectId=${itemId}`),
-        fetch(`/api/feedback/ratings?projectId=${itemId}`),
+        fetch(`/api/feedback/comments?projectId=${itemId}` /*, { headers } */),
+        fetch(`/api/feedback/ratings?projectId=${itemId}` /*, { headers } */),
       ]);
 
       if (!commentsRes.ok || !ratingsRes.ok) {
@@ -184,7 +199,7 @@ export default function PortfolioPage() {
       const commentsData = await commentsRes.json();
       const ratingsData = await ratingsRes.json();
 
-      let currentUserRating: number | undefined = undefined;
+      const currentUserRating: number | undefined = undefined; // Made const
        // This part needs to be updated based on how your rating data is structured and if it includes the current user's rating
       return {
         comments: commentsData.success ? commentsData.data : [],
@@ -196,7 +211,7 @@ export default function PortfolioPage() {
     } finally {
       setIsLoadingFeedbackGlobal(prev => ({ ...prev, [itemId]: false }));
     }
-  }, []);
+  }, [user]); // Added user to dependency array as user.idToken might be used
 
   useEffect(() => {
     const fetchPortfolioItems = async () => {
@@ -214,7 +229,24 @@ export default function PortfolioPage() {
             console.error("Invalid raw item received:", rawItem);
             return { id: uuidv4(), title: "Invalid Item", description: "This item was not processed correctly.", category: "Error", imageUrl: "https://placehold.co/600x900.png", datePublished: "N/A", tags: [] };
           }
-          const item = rawItem as any; // Temporarily use any to access properties
+          // Define a type for the expected raw item structure for better type safety
+          interface RawPortfolioItem {
+            _id?: string;
+            id?: string;
+            title?: string;
+            description?: string;
+            category?: string;
+            imageUrl?: string;
+            datePublished?: string;
+            duration?: string;
+            tags?: unknown[];
+            videoUrl?: string;
+            client?: string;
+            role?: string;
+            softwareUsed?: unknown[];
+            dataAiHint?: string;
+          }
+          const item = rawItem as RawPortfolioItem;
           return {
             id: item._id || item.id || uuidv4(),
             title: item.title || "Untitled Project",

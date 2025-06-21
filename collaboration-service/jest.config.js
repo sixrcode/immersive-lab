@@ -21,7 +21,14 @@ module.exports = {
   ],
   // A map from regular expressions to paths to transformers
   transform: {
-    '^.+\\.(ts|tsx|js|jsx)$': 'ts-jest', // Ensure js/jsx are also handled if any exist
+    '^.+\\.(ts|tsx|js|jsx|mjs)$': ['ts-jest', { // Added mjs
+      tsconfig: {
+        // We might need specific tsconfig overrides for this workspace if different from root
+        jsx: 'react-jsx',
+        allowJs: true,
+      }
+    }],
   },
-  transformIgnorePatterns: ['/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson)/)'],
+  transformIgnorePatterns: ['/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson|chai|nanoid|firebase-functions)/)'],
+  testPathIgnorePatterns: ['<rootDir>/../../e2e/'],
 };

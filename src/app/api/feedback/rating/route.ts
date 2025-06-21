@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Transaction } from 'firebase-admin/firestore'; // Import Transaction
 import { db } from '@/lib/firebase/admin';
 import { RatingSchema } from '@/lib/feedback-types';
 export async function POST(request: Request) {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     // For simplicity, let's assume a 'projects_aggregated_ratings' collection
     // Document ID can be the projectId
     const aggregatedRatingRef = db.collection('projects_aggregated_ratings').doc(projectId);
-    await db.runTransaction(async (transaction: any) => { // Added type for transaction
+    await db.runTransaction(async (transaction: Transaction) => { // Use imported Transaction type
       const doc = await transaction.get(aggregatedRatingRef);
 
 			if (!doc.exists) {

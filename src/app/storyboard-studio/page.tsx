@@ -383,11 +383,11 @@ export default function StoryboardStudioPage() {
                       <h4 className="text-xs font-semibold text-foreground">Shot Details:</h4>
                       <p className="text-xs text-muted-foreground">{panel.camera}</p>
  </div>
-                    {/* panel.dialogueOrSound might not exist on StoryboardPanelType. Check if it's part of 'caption' or another field */}
-                    {(panel as StoryboardPanelType).dialogueOrSound && (
+                    {/* panel.dialogueOrSound is optional on StoryboardPanelType */}
+                    {panel.dialogueOrSound && (
  <div>
                         <h4 className="text-xs font-semibold text-foreground">Dialogue/Sound:</h4>
- <p className="text-xs text-muted-foreground">{(panel as StoryboardPanelType).dialogueOrSound}</p>
+ <p className="text-xs text-muted-foreground">{panel.dialogueOrSound}</p>
  </div>
                     )}
                   </CardContent>
@@ -399,10 +399,10 @@ export default function StoryboardStudioPage() {
                               size="sm"
  className="w-full text-xs"
                               onClick={() => {
-                                const panelNumber = (panel as StoryboardPanelType).panelNumber || index + 1;
+                                const panelNumber = panel.panelNumber || index + 1;
                                 const description = panel.caption;
-                                const shotDetails = panel.camera; // Assuming 'camera' is the correct field for shot details
-                                const dialogueOrSound = (panel as any).dialogueOrSound;
+                                const shotDetails = panel.camera;
+                                const dialogueOrSound = panel.dialogueOrSound; // Direct access
                                 handleCopyText(
                                   `Panel ${panelNumber}\nDescription: ${description}\nShot Details: ${shotDetails}${dialogueOrSound ? `\nDialogue/Sound: ${dialogueOrSound}` : ''}`,
                                   `Panel ${panelNumber} Details`

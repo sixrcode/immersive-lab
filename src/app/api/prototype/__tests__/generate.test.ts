@@ -105,16 +105,16 @@ describe('/api/prototype/generate API Endpoint', () => {
   async function createMockRequest(
     body: object | null,
     options: { method?: string; url?: string; headers?: Record<string, string> } = {}
-  ): Promise<NextRequest> {
-    const { method = 'POST', url = '/', headers = {} } = options;
-    // Ensure a full URL is provided to the NextRequest constructor
-    const fullUrl = url.startsWith('http') ? url : `http://localhost${url.startsWith('/') ? '' : '/'}${url}`;
+  ) {
+    const { method = 'POST', headers = {} } = options; // url is not used for simple mock
 
-    return new NextRequest(fullUrl, {
-      method: method,
-      headers: new Headers(headers),
-      body: body ? JSON.stringify(body) : null,
-    });
+    return {
+      headers: {
+        get: (headerName: string) => (headers as Record<string, string>)[headerName] || null,
+      },
+      json: async () => body, // Simulates req.json()
+      // Add other NextRequest properties if your POST handler uses them (e.g., nextUrl)
+    } as unknown as NextRequest; // Cast to NextRequest
   }
 
 

@@ -405,7 +405,6 @@ export default function ProductionBoardPage() {
         const movedCardDataFromAPI: KanbanCardType = await response.json(); // Parse the response
 
         // --- BEGIN: Automatic Progress Tracking ---
-        const movedCard = movedCardDataFromAPI; // Use the card data from the move response
         // Find the target column details to check its title
         const targetColDetails = columns.find(col => col.id === targetColumnId);
 
@@ -413,18 +412,20 @@ export default function ProductionBoardPage() {
         const approvedColumnTitles = ["Final Polish", "Distribution", "Approved"]; // Add more as needed
 
         if (targetColDetails && approvedColumnTitles.includes(targetColDetails.title)) {
-          // Attempt to find the full card details from the current state to get portfolioItemId
-          // This is a bit of a workaround because movedCardResponse from /move might not have portfolioItemId
-          // unless the /move endpoint is also updated to return it (which it should be).
-          // For now, let's try to find it in the `previousColumns` state.
-          let cardWithPortfolioId: KanbanCardType | undefined;
-          const sourceColForPortfolioId = previousColumns.find((col: KanbanColumnType) => col.id === sourceColumnId);
-          if (sourceColForPortfolioId) {
-            cardWithPortfolioId = sourceColForPortfolioId.cards.find((c: KanbanCardType) => c.id === cardId);
+          let portfolioItemIdToUpdate: string | undefined = movedCardDataFromAPI.portfolioItemId;
+
+          // If portfolioItemId is not directly on the moved card data from API, try to find it from previous state
+          // This is a fallback, ideally the /move endpoint should return all necessary card details including portfolioItemId
+          if (!portfolioItemIdToUpdate) {
+            const sourceColForFallback = previousColumns.find((col: KanbanColumnType) => col.id === sourceColumnId);
+            if (sourceColForFallback) {
+              const originalCard = sourceColForFallback.cards.find((c: KanbanCardType) => c.id === cardId);
+              portfolioItemIdToUpdate = originalCard?.portfolioItemId;
+            }
           }
 
-          if (cardWithPortfolioId && cardWithPortfolioId.portfolioItemId) {
-            const portfolioItemId = cardWithPortfolioId.portfolioItemId;
+          if (portfolioItemIdToUpdate) {
+            const portfolioItemId = portfolioItemIdToUpdate;
             // TODO: Get this URL from an environment variable
             const portfolioApiUrl = process.env.NEXT_PUBLIC_PORTFOLIO_MICROSERVICE_URL || 'http://localhost:3002'; // Default for local dev
 

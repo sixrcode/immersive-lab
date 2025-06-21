@@ -71,8 +71,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIdTokenResult(null); // Ensure state is reset on error
           setMfaRequired(false);
           // If token fetching fails critically (e.g., revoked session), sign out
-          if ((error as any).code === 'auth/user-token-expired' || (error as any).code === 'auth/invalid-user-token') {
-            await signOut(auth).catch((err) => console.error("Error during signOut after token error:", err)); // directly call signOut here, onAuthStateChanged will handle the rest
+          if (error instanceof Error && typeof (error as { code?: string }).code === 'string') {
+            const errorCode = (error as { code: string }).code;
+            if (errorCode === 'auth/user-token-expired' || errorCode === 'auth/invalid-user-token') {
+              await signOut(auth).catch((err) => console.error("Error during signOut after token error:", err));
+            }
           }
         }
       } else {
@@ -154,10 +157,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         return tokenResult;
       } catch (error) {
-        // Check if error is an instance of Error and has a 'code' property before casting to 'any'
-        console.error("Error fetching ID token result in fetchTokenResult:", error); // Log the actual error object
-        if ((error as any)?.code === 'auth/user-token-expired' || (error as any)?.code === 'auth/invalid-user-token') { // Still need 'any' here to access 'code' safely on an unknown error object
-          await signOutUser(); // Use the context's signOutUser which handles redirect
+         // Check if error is an instance of Error and has a 'code' property
+         console.error("Error fetching ID token result in fetchTokenResult:", error);
+        if (error instanceof Error && typeof (error as { code?: string }).code === 'string') {
+          const errorCode = (error as { code: string }).code;
+          if (errorCode === 'auth/user-token-expired' || errorCode === 'auth/invalid-user-token') {
+            await signOutUser(); // Use the context's signOutUser which handles redirect
+          }
         }
         // Reset states if token fetching fails
         setIsCreator(false);

@@ -4,9 +4,14 @@ import { NextRequest } from 'next/server';
 import { Tutorial } from 'packages/types/src/tutorial.types';
 
 // Mock NextRequest if necessary, or use a simplified request object for testing
-const createMockRequest = (queryParams: Record<string, string>): NextRequest => {
-  const url = new URL(`http://localhost/api/tutorials?${new URLSearchParams(queryParams).toString()}`);
-  return new NextRequest(url);
+const createMockRequest = (queryParams: Record<string, string>) => {
+  const searchParams = new URLSearchParams(queryParams);
+  return {
+    nextUrl: {
+      searchParams,
+    },
+    // Add other NextRequest properties if your GET handler uses them
+  } as unknown as NextRequest; // Cast to NextRequest to satisfy the handler's type requirement
 };
 
 describe('Tutorials API Endpoint (GET)', () => {
