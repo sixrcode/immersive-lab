@@ -149,8 +149,12 @@ const promptToPrototypeFlow = ai.defineFlow(
     outputSchema: PromptToPrototypeOutputSchema,
   },
   async (input: PromptToPrototypeInput): Promise<PromptToPrototypeOutput> => {
+    const flowExecutionId = Math.random().toString(36).substring(7);
+    console.log(`[${flowExecutionId}] Starting promptToPrototypeFlow for prompt: "${input.prompt.substring(0, 50)}..."`);
+
     try {
       // Task 1: Generate textual components
+      console.time(`[${flowExecutionId}] textGenerationTask`);
       const textGenerationTask = textGenerationPrompt(input);
 
     // Task 2: Generate a single representative mood board image
@@ -183,21 +187,25 @@ const promptToPrototypeFlow = ai.defineFlow(
   { text: imageGenPromptText }
 ] as PromptItem[];
     }
+    console.time(`[${flowExecutionId}] imageGenerationTask`);
     const imageGenerationTask = ai.generate(imageGenPayload);
 
     // Execute tasks in parallel
     const [textResult, imageResult] = await Promise.all([textGenerationTask, imageGenerationTask]);
+    console.timeEnd(`[${flowExecutionId}] textGenerationTask`);
+    console.timeEnd(`[${flowExecutionId}] imageGenerationTask`);
 
     const { output: textOutputPartial } = textResult;
     if (!textOutputPartial) {
-      throw new Error("Failed to generate textual components for the prototype.");
+      console.error(`[${flowExecutionId}] Failed to generate textual components for the prototype.`);
+      throw new Error(`[${flowExecutionId}] Failed to generate textual components for the prototype.`);
     }
     
     const output = textOutputPartial as PromptToPrototypeOutput; // Cast to include all fields
 
     // Assign image result
     if (!imageResult.media || !imageResult.media.url) {
-        console.warn("Mood board image generation failed or returned no URL. Using placeholder.");
+        console.warn(`[${flowExecutionId}] Mood board image generation failed or returned no URL. Using placeholder.`);
         output.moodBoardImage = "https://placehold.co/600x400.png?text=Image+Gen+Failed";
     } else {
         output.moodBoardImage = imageResult.media.url;
@@ -215,7 +223,7 @@ const promptToPrototypeFlow = ai.defineFlow(
         });
     } else if (output.moodBoardCells.length !== 9 && output.moodBoardCells.length > 0) {
         // If AI provided some cells but not all 9, log a warning
-        console.warn(`AI generated ${output.moodBoardCells.length} mood board cells instead of 9. Titles might be missing for some.`);
+        console.warn(`[${flowExecutionId}] AI generated ${output.moodBoardCells.length} mood board cells instead of 9. Titles might be missing for some.`);
     } else {
         // If AI provided no cells, create placeholder cells
         output.moodBoardCells = THEME_LIST.map(themeTitle => ({
@@ -246,10 +254,10 @@ const promptToPrototypeFlow = ai.defineFlow(
       }
     };
     output.allTextAssetsJsonString = JSON.stringify(allTextAssets, null, 2);
-    
+    console.log(`[${flowExecutionId}] Finished promptToPrototypeFlow successfully.`);
     return output;
     } catch (error) {
-      console.error("Error within promptToPrototypeFlow:", error);
+      console.error(`[${flowExecutionId}] Error within promptToPrototypeFlow:`, error);
       throw error; // Re-throw the error to be caught by the API route
     }
   }
