@@ -48,6 +48,7 @@ jobs:
           image: $IMAGE_NAME:${{ github.sha }}
           region: ${{ env.REGION }}
           project_id: ${{ env.PROJECT_ID }}
+          port: 3000 # Explicitly set the container port Cloud Run should target
           # Optional: Set any other Cloud Run deployment options here
           # env_vars: |
           #   KEY1=VALUE1
@@ -79,7 +80,6 @@ jobs:
           #   SECRET_NAME1=projects/your-project/secrets/your-secret1:latest
           #   SECRET_NAME2=projects/your-project/secrets/your-secret2:1
           # cloudsql_instances: your-project:your-region:your-instance
-          # port: 8080 # Default port
           # command: '["/bin/sh", "-c", "your-command"]'
           # args: '["arg1", "arg2"]'
           # startup_cpu_boost: false # Set to true to enable startup CPU boost
@@ -1713,4 +1713,9 @@ jobs:
           # build_kaniko_cache_remote_image_label: '{"key":"value"}' # Image label for remote cache for Kaniko (if building from source with Kaniko)
           # build_kaniko_cache_remote_log_format: text # Log format for remote cache for Kaniko (if building from source with Kaniko)
           # build_kaniko_cache_remote_log_timestamp: false # Log timestamp for remote cache for Kaniko (if building from source with Kaniko)
-          # build_kan
+          # build_kaniko_cache_remote_push_retry_count: 0 # Push retry count for remote cache for Kaniko (if building from source with Kaniko)
+          # build_kaniko_cache_remote_registry_mirror: mirror.gcr.io # Registry mirror for remote cache for Kaniko (if building from source with Kaniko)
+          # build_kaniko_cache_remote_registry_certificate: /path/to/cert # Registry certificate for remote cache for Kaniko (if building from source with Kaniko)
+          # build_kaniko_cache_remote_registry_insecure: false # Insecure remote cache for Kaniko (if building from source with Kaniko)
+          # build_kaniko_cache_remote_registry_skip_tls_verify: false # Skip TLS verify for remote cache for Kaniko (if building from source with Kaniko)
+          # build_kaniko_cache_remote_skip_default_registry

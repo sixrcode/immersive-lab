@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/collaboration/:path*',
+        destination: 'http://localhost:3001/api/:path*', // Proxy to Collaboration Service
+      },
+    ];
+  },
 };
 
 export default nextConfig;
