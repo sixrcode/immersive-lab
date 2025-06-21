@@ -57,11 +57,11 @@ export async function POST(request: NextRequest) {
       message = error.message;
       // Check for specific error types if needed, e.g., Firebase errors
       // This is a generic example; you might need to refine based on actual Firebase error structure
-      if ('code' in error && typeof (error as any).code === 'string') {
+      if (error instanceof Error && 'code' in error && typeof (error as {code?: string}).code === 'string') {
         // Attempt to use Firebase error codes if available
         // This is a common pattern but might need adjustment based on the exact error object structure
-        const firebaseErrorCode = (error as any).code;
-        if (firebaseErrorCode.startsWith('auth/')) {
+        const firebaseErrorCode = (error as {code?: string}).code;
+        if (firebaseErrorCode && firebaseErrorCode.startsWith('auth/')) {
           // More specific handling for auth errors
           message = 'Forbidden, token verification failed.';
           code = firebaseErrorCode; // Use the specific Firebase auth error code

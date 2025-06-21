@@ -13,9 +13,19 @@ module.exports = {
     '**/?(*.)+(spec|test).+(ts|tsx|js)',
   ],
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  transformIgnorePatterns: ['/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson)/)'],
+  transformIgnorePatterns: ['/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson|chai|nanoid|firebase-functions)/)'],
+  transform: {
+    '^.+\\.(ts|tsx|js|jsx|mjs)$': ['ts-jest', { // Added mjs and transform block
+      tsconfig: {
+        // We might need specific tsconfig overrides for this workspace
+        allowJs: true, // Allow ts-jest to process JS files from node_modules
+        // jsx: 'react-jsx' // Not typically needed for node environment
+      }
+    }],
+  },
   // Indicates whether each individual test should be reported during the run
   verbose: true,
   // Setup files to run before each test file
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'], // if we need a setup file for mocks
+  testPathIgnorePatterns: ['<rootDir>/../../e2e/'],
 };

@@ -9,9 +9,11 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1', // Keep the general one as fallback
   },
   transform: {
-    '^.+\\.(ts|tsx|js|jsx)$': ['ts-jest', {
+    '^.+\\.(ts|tsx|js|jsx|mjs)$': ['ts-jest', {
       tsconfig: {
         jsx: 'react-jsx', // Override tsconfig.json's "jsx": "preserve" for Jest
+        // Allow JS for node_modules if ts-jest needs to process them
+        allowJs: true,
       },
     }],
   },
@@ -19,7 +21,7 @@ module.exports = {
   testPathIgnorePatterns: ['<rootDir>/e2/'],
   clearMocks: true,
   transformIgnorePatterns: [
-    '/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson)/)'
+    '/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson|chai|nanoid|firebase-functions)/)'
   ],
   collectCoverage: true,
   coverageDirectory: "coverage",

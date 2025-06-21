@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useSubmitComment } from '@/hooks/useSubmitComment';
 import type { Comment } from '@/lib/feedback-types';
-import { UseMutationResult } from '@tanstack/react-query'; // Import UseMutationResult
 // Placeholder for actual auth hook
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';

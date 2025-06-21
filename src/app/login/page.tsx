@@ -43,28 +43,31 @@ export default function LoginPage() {
     try {
  await signInUser(email, password);
       // AuthProvider's onAuthStateChanged and the useEffect above will handle next steps (MFA or redirect)
-    } catch (err: any) { // Using any for now due to varying error structures from Firebase/auth context
-      let errorMessage = "Failed to sign in. Please check your credentials."; // Provide a default error message
-      // Define a more specific error type if possible, or check for expected properties
-      // For now, assume err might have 'code' and 'message'
-      const firebaseError = err as { code?: string; message?: string };
-
-      if (firebaseError.code) {
-        // Handle Firebase-specific error codes
-        switch (err.code) {
-          case 'auth/user-not-found':
-          case 'auth/invalid-credential': // Firebase v9+ uses invalid-credential for wrong password / user not found
-            errorMessage = "Invalid email or password.";
-            break;
-          case 'auth/invalid-email':
-            errorMessage = "Invalid email format.";
-            break;
-          case 'auth/too-many-requests':
-            errorMessage = "Too many login attempts. Please try again later.";
-            break;
-          default: // Fallback for other Firebase auth errors
-            errorMessage = `Login failed: ${err.message || 'Unknown error'}`;
+    } catch (err: unknown) {
+      let errorMessage = "Failed to sign in. Please check your credentials.";
+      if (err instanceof Error) {
+        const firebaseError = err as { code?: string; message: string }; // Assume Error has message
+        if (firebaseError.code) {
+          // Handle Firebase-specific error codes
+          switch (firebaseError.code) {
+            case 'auth/user-not-found':
+            case 'auth/invalid-credential':
+              errorMessage = "Invalid email or password.";
+              break;
+            case 'auth/invalid-email':
+              errorMessage = "Invalid email format.";
+              break;
+            case 'auth/too-many-requests':
+              errorMessage = "Too many login attempts. Please try again later.";
+              break;
+            default:
+              errorMessage = `Login failed: ${firebaseError.message || 'Unknown error'}`;
+          }
+        } else {
+            errorMessage = `Login failed: ${firebaseError.message || 'An unexpected error occurred.'}`;
         }
+      } else {
+        errorMessage = "An unexpected error occurred during login.";
       }
       setError(errorMessage);
       console.error("Login error:", err);
@@ -85,8 +88,12 @@ export default function LoginPage() {
       // or the useEffect will redirect because mfaRequired becomes false.
       // The useEffect hook handles the redirect on successful MFA
       // router.push('/'); 
-    } catch (err: any) {
-      setError(err.message || "MFA validation failed.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "MFA validation failed.");
+      } else {
+        setError("An unknown error occurred during MFA validation.");
+      }
       setUiLoading(false);
     }
     // No finally setLoading(false) here if completeMfa was successful,

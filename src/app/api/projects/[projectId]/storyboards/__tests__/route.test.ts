@@ -15,8 +15,8 @@ jest.mock('next/server', () => {
         status: init?.status || 200,
         headers: new Headers(init?.headers) // Removed trailing comma
 
-      }),
-    },
+      })) // Removed trailing comma here
+    }
   };
 });
 
@@ -27,34 +27,50 @@ const mockResolvedValueForGet = { // Defined object separately
   docs: [],
 };
 const mockGet = jest.fn().mockResolvedValue(mockResolvedValueForGet); // Default mock for get
-const mockWhere = jest.fn(() => ({
-  get: mockGet,
-}));
-// Updated mockCollection to accept collectionPath argument
-const mockCollection = jest.fn((collectionPath: string) => ({
-  where: mockWhere,
-  // Add other collection methods if needed by tests, e.g., .doc(), .add()
-}));
+const mockWhere = jest.fn();
+const mockCollection = jest.fn();
+const mockGet = jest.fn(); // Declare mockGet here
+const mockVerifyIdToken = jest.fn(); // Declare mockVerifyIdToken here
 
 jest.mock('@/lib/firebase/admin', () => {
+  // Define the mocks that will be used by the factory here, or ensure they are in scope.
+  // For functions that need to be spied on AND used by the mock factory,
+  // they must be defined in a way that the factory can access their mocked implementations.
+
+  // Re-initialize mocks for clarity within the factory's scope if needed,
+  // or ensure outer scope mocks are correctly configured.
+  // Here, we'll use the outer scope mocks that we'll define/clear in beforeEach.
+
+  // This structure ensures that the functions returned by the mock factory
+  // are indeed the jest.fn() instances we can control in tests.
+  mockGet.mockResolvedValue({ empty: true, docs: [] }); // Default behavior
+  mockWhere.mockReturnValue({ get: mockGet });
+  mockCollection.mockReturnValue({ where: mockWhere });
+  mockVerifyIdToken.mockResolvedValue({ uid: 'test-user-id' }); // Default behavior
+
   return {
     firebaseAdminApp: {
       name: 'mockedApp',
       options: {},
-      auth: () => ({ // Mock the auth method on firebaseAdminApp
+      auth: () => ({
         verifyIdToken: mockVerifyIdToken,
       })
     },
-    // auth is typically accessed via firebaseAdminApp.auth(), so we might not need a separate top-level auth mock
-    // If it IS accessed directly as import { auth } from ..., then the below is needed.
-    // auth: { verifyIdToken: mockVerifyIdToken },
     db: {
-      collection: mockCollection // collection itself is a function
+      collection: mockCollection
     }
   };
 });
 
 // --- Mocks End ---
+
+// These are the mock functions tests will interact with.
+// They are already declared above and configured within jest.mock factory.
+// const mockVerifyIdToken = jest.fn(); // Already declared
+// const mockResolvedValueForGet = { empty: true, docs: [] }; // Not needed if mockGet configured directly
+// const mockGet = jest.fn().mockResolvedValue(mockResolvedValueForGet); // Already declared & configured
+// const mockWhere = jest.fn(() => ({ get: mockGet })); // Already declared & configured
+// const mockCollection = jest.fn((collectionPath: string) => ({ where: mockWhere })); // Already declared & configured
 type MockRequest = {
   headers: {
     get: jest.Mock<string | null, [string]>;
