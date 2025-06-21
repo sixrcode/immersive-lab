@@ -9,6 +9,7 @@ import { AppSidebar } from '@/components/layout/sidebar';
 import { AppHeader } from '@/components/layout/header';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
+import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
 
 const geistSans = GeistSans;
 const geistMono = GeistMono;
@@ -38,17 +39,18 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <QueryProvider>
-
-          <SidebarProvider>
-            <AppSidebar />
-            <div className="flex flex-col flex-1 min-h-screen">
-              <AppHeader />
-              <main className="flex-1 p-4 md:p-6 lg:p-8">
-                {children}
-              </main>
-            </div>
-          </SidebarProvider>
-          <Toaster />
+          <AuthProvider> {/* Wrap with AuthProvider */}
+            <SidebarProvider>
+              <AppSidebar />
+              <div className="flex flex-col flex-1 min-h-screen">
+                <AppHeader />
+                <main className="flex-1 p-4 md:p-6 lg:p-8">
+                  {children}
+                </main>
+              </div>
+            </SidebarProvider>
+            <Toaster />
+          </AuthProvider>
         </QueryProvider>
 
       </body>
