@@ -8,7 +8,8 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PlusCircle, MoreHorizontal, Kanban as KanbanIcon, Film, Lightbulb, Edit2, CheckCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import React, { useState, useEffect, FormEvent } from "react";
+import React, { useState, useEffect, FormEvent, useCallback } from "react";
+import io, { type Socket } from 'socket.io-client'; // Import socket.io-client
 import { cn } from "@/lib/utils";
 import {
   Dialog,

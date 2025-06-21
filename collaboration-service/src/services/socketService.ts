@@ -79,22 +79,48 @@ export function initializeSocket(io: SocketIOServer) {
   logger.info('Socket.IO service initialized');
 }
 
-// You might also want to export `io` if other services need to emit events globally
-// For now, keeping it encapsulated. If a chat service or document service needs to emit,
-// they could be passed the `io` instance, or this `socketService` could expose methods
-// like `broadcastToProject(projectId, eventName, data)`.
+// Store the io instance globally within this module after initialization
+let moduleIO: SocketIOServer | null = null;
 
-// Example of an exported broadcast function (if needed by other services)
-// let globalIO: SocketIOServer | null = null;
-// export function initializeSocket(io: SocketIOServer) {
-//   globalIO = io;
-//   // ... rest of the connection logic
-// }
-// export function getIO(): SocketIOServer {
-//   if (!globalIO) throw new Error("Socket.IO not initialized!");
-//   return globalIO;
-// }
-// export function broadcastToRoom(roomId: string, event: string, data: any) {
-//   console.log(`Broadcasting ${event} to room ${roomId}`, data);
-//   getIO().to(roomId).emit(event, data);
-// }
+export function initializeSocketService(ioInstance: SocketIOServer) {
+  if (moduleIO) {
+    logger.warn('Socket.IO service already initialized. Re-initializing (this might be an error in setup).');
+  }
+  moduleIO = ioInstance;
+  initializeSocket(moduleIO); // Call the original connection handler setup
+  logger.info('Socket.IO instance stored in socketService module.');
+}
+
+export function getIO(): SocketIOServer {
+  if (!moduleIO) {
+    // This state should ideally not be reached if initializeSocketService is called at startup.
+    logger.error('Socket.IO getIO() called before initialization!');
+    throw new Error('Socket.IO has not been initialized. Call initializeSocketService first.');
+  }
+  return moduleIO;
+}
+
+/**
+ * Broadcasts a PRODUCTION_BOARD_CHANGED event to all clients in a specific project room.
+ * @param projectId The ID of the project whose production board was changed.
+ * @param updatedBySocketId Optional socket ID of the user who triggered the change, to avoid self-notification if needed.
+ */
+export function broadcastProductionBoardChange(projectId: string, updatedBySocketId?: string) {
+  const io = getIO();
+  if (io && projectId) {
+    // The event payload can be simple if clients are expected to re-fetch.
+    // Or it could contain specific details of the change.
+    // For now, a simple notification.
+    const eventData = {
+      projectId,
+      message: `Production board for project ${projectId} has been updated.`,
+      timestamp: new Date().toISOString(),
+      // If you want to avoid sending to the originator, but this is often handled client-side
+      // updatedBy: updatedBySocketId
+    };
+    io.to(projectId).emit('PRODUCTION_BOARD_CHANGED', eventData);
+    logger.info(`Broadcasted PRODUCTION_BOARD_CHANGED for project ${projectId}`, { projectId, eventData });
+  } else {
+    logger.warn('broadcastProductionBoardChange: Socket.IO not available or projectId missing.', { projectId });
+  }
+}

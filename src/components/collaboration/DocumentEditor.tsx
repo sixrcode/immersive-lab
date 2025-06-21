@@ -41,37 +41,90 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
     // For direct connection: process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL (without /api part for socket)
     // e.g. http://localhost:3001
     // If your socket server is at the root of the collaboration service URL:
-    const rawSocketServiceUrl = (process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || '').startsWith('http')
-      ? process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL?.replace('/api', '') // if it's a full URL
-      : window.location.origin; // if it's a path like /api/collaboration, use current origin
-
-    if (!rawSocketServiceUrl) {
-      console.error("DocumentEditor: socketServiceUrl is not defined, cannot connect socket.");
+    if (!documentId || !projectId) {
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
       return;
     }
 
-    const socketServiceUrl = rawSocketServiceUrl; // Ensure it's a string now
+    // Placeholder for getting user token - replace with actual Firebase auth
+    const getCurrentUserIdToken = async (): Promise<string | null> => {
+      console.warn("DocumentEditor: Using placeholder ID token for socket connection.");
+      // In a real app, this would come from Firebase Auth:
+      // firebase.auth().currentUser?.getIdToken();
+      return "dummy-socket-token";
+    };
 
-    const newSocket = io(socketServiceUrl, {
-      path: (process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || '').startsWith('/api/collaboration')
-        ? '/socket.io/' // Default path if proxied under root and server is also at root
-        : `${process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL?.replace('/api', '')}/socket.io/` // Adjust if service has specific path for socket.io
-    });
+    let newSocket: Socket | null = null;
 
-
-    setSocket(newSocket);
-
-    newSocket.emit('joinProject', projectId); // Join a room associated with the project
-
-    newSocket.on('documentUpdated', (updatedDocument: { documentId: string; content: string; updatedBy: string }) => {
-      if (updatedDocument.documentId === documentId && updatedDocument.updatedBy !== newSocket.id) {
-        setContent(updatedDocument.content);
+    const connectSocket = async () => {
+      const token = await getCurrentUserIdToken();
+      if (!token) {
+        console.error("DocumentEditor: No token available for socket connection.");
+        setError("Authentication token not available for real-time connection.");
+        return;
       }
-    });
+
+      // Connect to the current origin, assuming Next.js dev server proxies /socket.io/
+      // The server (collaboration-service) listens on its default /socket.io/ path.
+      newSocket = io(undefined, { // undefined connects to window.location.origin
+        path: '/socket.io/',      // Standard Socket.IO path
+        reconnectionAttempts: 3,
+        timeout: 10000,
+        query: { token } // Send token for authentication by socketService.ts
+      });
+
+      newSocket.on('connect', () => {
+        console.log('DocumentEditor: Socket connected successfully', newSocket?.id);
+        setSocket(newSocket);
+        newSocket?.emit('joinProject', projectId); // Join a room associated with the project
+      });
+
+      newSocket.on('connect_error', (err) => {
+        console.error('DocumentEditor: Socket connection error:', err);
+        setError(`Failed to connect to real-time service: ${err.message}`);
+        // Attempt to clean up the socket if it's in a bad state but not null
+        if (newSocket && !newSocket.connected) {
+            newSocket.disconnect();
+        }
+        setSocket(null); // Clear socket state on connection error
+      });
+
+      newSocket.on('disconnect', (reason) => {
+        console.log('DocumentEditor: Socket disconnected:', reason);
+        // Only set error if not an intentional disconnect (handled by cleanup)
+        if (reason !== 'io client disconnect') {
+          // setError('Disconnected from real-time service.');
+        }
+        // setSocket(null); // Already handled by cleanup or connect_error
+      });
+
+      newSocket.on('documentUpdated', (updatedDocument: { documentId: string; content: string; updatedBy: string }) => {
+        // Check if the update is for the current document and not from the current socket
+        if (updatedDocument.documentId === documentId && updatedDocument.updatedBy !== newSocket?.id) {
+          setContent(updatedDocument.content);
+        }
+      });
+
+      // Handle joinedProject confirmation (optional, for logging or UI feedback)
+      newSocket.on('joinedProject', (joinedProjectId: string) => {
+        if (joinedProjectId === projectId) {
+          console.log(`DocumentEditor: Successfully joined project room ${projectId}`);
+        }
+      });
+    }
+
+    connectSocket();
 
     return () => {
-      newSocket.emit('leaveProject', projectId);
-      newSocket.disconnect();
+      if (newSocket) {
+        console.log(`DocumentEditor: Cleaning up socket for project ${projectId}, document ${documentId}`);
+        newSocket.emit('leaveProject', projectId);
+        newSocket.disconnect();
+        setSocket(null);
+      }
     };
   }, [documentId, projectId]);
 

@@ -1,5 +1,6 @@
 // Firebase Admin SDK initialization (used for Firestore, Auth, etc.)
 const admin = require("firebase-admin");
+const axios = require('axios'); // Import axios
 
 // Firebase Functions v2 (modern HTTP functions + logging)
 const { onRequest } = require("firebase-functions/v2/https");
@@ -9,11 +10,50 @@ const { v4: uuidv4 } = require('uuid'); // Import uuid
 
 const express = require('express');
 const cors = require('cors');
-// For now, assuming a common root or that the build places it correctly.
-// MODIFIED: Path updated to point to the copied files within functions directory
 
 // Set global options for all functions
-setGlobalOptions({ region: 'us-west1' });
+// Ensure region matches where your collaboration service might be or a suitable default
+setGlobalOptions({ region: 'us-west1', secrets: ["COLLABORATION_SERVICE_INTERNAL_URL"] });
+
+// Helper function to notify collaboration service
+// The COLLABORATION_SERVICE_INTERNAL_URL should be set as a secret in Firebase Functions environment
+const notifyCollaborationService = async (projectId, updatedBySocketId) => {
+  const collaborationServiceUrl = process.env.COLLABORATION_SERVICE_INTERNAL_URL;
+  if (!collaborationServiceUrl) {
+    logger.error("COLLABORATION_SERVICE_INTERNAL_URL is not set. Cannot notify collaboration service.");
+    return;
+  }
+  try {
+    const endpoint = `${collaborationServiceUrl}/api/internal/broadcast-board-change`;
+    const params = { projectId };
+    if (updatedBySocketId) {
+      params.updatedBySocketId = updatedBySocketId;
+    }
+    // Use a timeout for the request to prevent function from hanging too long
+    await axios.post(endpoint, null, { params, timeout: 3000 }); // 3 second timeout
+    logger.info(`Successfully notified collaboration service for projectId: ${projectId}`);
+  } catch (error) {
+    let errorMessage = 'Failed to notify collaboration service.';
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      errorMessage = `Error from collaboration service: ${error.response.status} - ${JSON.stringify(error.response.data)}`;
+      logger.error(errorMessage, { status: error.response.status, data: error.response.data, projectId });
+    } else if (error.request) {
+      // The request was made but no response was received
+      errorMessage = `No response from collaboration service: ${error.message}`;
+      logger.error(errorMessage, { message: error.message, projectId });
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      errorMessage = `Error setting up notification to collaboration service: ${error.message}`;
+      logger.error(errorMessage, { message: error.message, projectId });
+    }
+    // We don't want to fail the main operation if notification fails, so just log.
+  }
+};
+
+// Assuming a global production board for now, use a fixed ID.
+const GLOBAL_PRODUCTION_BOARD_PROJECT_ID = "globalProductionBoard";
 
 // Initialize admin SDK (ensure it's only done once)
 if (admin.apps.length === 0) {
