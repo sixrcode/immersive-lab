@@ -7,7 +7,7 @@ import {
 import {
   StoryboardPackage as FinalStoryboardPackage, // Renaming to avoid conflict if any local var is named StoryboardPackage
   Panel as FinalPanel // Panel structure for Firestore and final API response
-} from '../../../../../../packages/types/src/storyboard.types';
+} from '../../../../../packages/types/src/storyboard.types';
 import { firebaseAdminApp } from '@/lib/firebase/admin';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp, Firestore } from 'firebase-admin/firestore';

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import io, { type Socket, type DisconnectReason } from 'socket.io-client';
+import { io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client'; // Removed DisconnectReason
 
 interface Document {
   _id: string;
@@ -16,9 +17,13 @@ interface DocumentEditorProps {
 }
 
 // Debounce function - Moved outside the component
-const debounce = <F extends (...args: unknown[]) => unknown>(func: F, waitFor: number) => {
+// More specific typing for debounce
+const debounce = <TArgs extends unknown[]>(
+  func: (...args: TArgs) => unknown,
+  waitFor: number
+) => {
   let timeout: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<F>): void => {
+  return (...args: TArgs): void => {
     if (timeout) {
       clearTimeout(timeout);
     }
@@ -96,7 +101,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
       });
 
       // Explicitly type the reason parameter from socket.io-client
-      newSocket.on('disconnect', (reason: DisconnectReason) => {
+      newSocket.on('disconnect', (reason: string) => { // Changed DisconnectReason to string
         console.log('DocumentEditor: Socket disconnected:', reason);
         // Only set error if not an intentional disconnect (handled by cleanup)
         if (reason !== 'io client disconnect') {
