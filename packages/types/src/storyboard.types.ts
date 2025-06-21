@@ -12,6 +12,8 @@ export interface Panel {
   camera?: string; // Optional camera shot type (e.g., "Close Up", "Wide Shot")
   durationMs?: number; // Optional suggested duration in milliseconds
   generatedAt: string; // ISO timestamp of when the panel was generated
+  panelNumber?: number; // Optional panel number
+  dialogueOrSound?: string; // Optional dialogue or sound description
   // Add any other panel-specific metadata here
 }
 
