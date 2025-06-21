@@ -5,6 +5,13 @@ import { PrototypeDisplay } from '../prototype-display'; // Adjust path
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PromptPackage, MoodBoardCell } from '@/lib/types';
 
+// Mock the useToast hook
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({
+    toast: jest.fn(),
+  }),
+}));
+
 // Mock child UI components as needed, similar to prompt-input.test.tsx if they are complex
 // For simplicity, we'll assume they render content passed to them.
 // If specific UI components have complex logic that interferes, they should be mocked.

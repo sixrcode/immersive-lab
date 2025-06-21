@@ -1,4 +1,6 @@
 // Firebase Admin Mock
+const mockDefaultApp = { name: '__FIRBASE_DEFAULT_APP__', options: {} };
+
 const mockFirestore = {
   collection: jest.fn().mockReturnThis(),
   doc: jest.fn().mockReturnThis(),
@@ -26,19 +28,39 @@ const fieldValueMock = {
 };
 
 jest.mock('firebase-admin', () => {
-  const actualAdmin = jest.requireActual('firebase-admin'); // Get actual admin for other properties if needed
-  return {
-    ...actualAdmin, // Spread actual admin to keep other functionalities like auth (if not fully mocked)
-    initializeApp: jest.fn(),
-    firestore: jest.fn(() => ({ // Return the mock Firestore object
+  const actualAdmin = jest.requireActual('firebase-admin');
+  const adminNamespace = {
+    ...actualAdmin,
+    initializeApp: jest.fn((options, name = '__FIRBASE_DEFAULT_APP__') => {
+      // Find if app already exists in our mock apps array
+      let app = adminNamespace.apps.find(app => app && app.name === name);
+      if (app) {
+        return app;
+      }
+      // Create a new app and add to our mock apps array
+      app = { ...mockDefaultApp, options: options || {}, name };
+      adminNamespace.apps.push(app);
+      return app;
+    }),
+    app: jest.fn((name = '__FIRBASE_DEFAULT_APP__') => {
+        const foundApp = adminNamespace.apps.find(app => app && app.name === name);
+        if (!foundApp) {
+            // This behavior mimics the real SDK's error when an app is not found.
+            throw new Error(`The FirebaseApp named "${name}" does not exist.`);
+        }
+        return foundApp;
+    }),
+    apps: [mockDefaultApp], // Start with one default app already initialized
+    firestore: jest.fn(() => ({
       ...mockFirestore,
-      FieldValue: fieldValueMock, // Attach the FieldValue mock here
+      FieldValue: fieldValueMock,
     })),
-    // Mock other admin services if used by the functions (e.g., auth)
     auth: jest.fn(() => ({
         verifyIdToken: jest.fn().mockResolvedValue({ uid: 'test-user-uid', email: 'user@example.com' })
     })),
+    // Add other admin services if used by the functions (e.g., storage, messaging)
   };
+  return adminNamespace;
 });
 
 
