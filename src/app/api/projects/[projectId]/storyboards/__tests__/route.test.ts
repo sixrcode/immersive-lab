@@ -3,7 +3,7 @@
 jest.useRealTimers(); // Ensure real timers are used
 
 import { GET } from '../route'; // Adjust path as necessary
-import { NextRequest, NextResponse } from 'next/server'; // Import NextResponse for mocking
+import { NextResponse } from 'next/server'; // Import NextResponse for mocking
 
 // --- Mocks Start ---
 
@@ -39,8 +39,8 @@ jest.mock('@/lib/firebase/admin', () => {
       name: 'mockedApp',
       options: {},
       getOrInitService: jest.fn((serviceName: string) => {
-        if (serviceName === 'auth') {
-          return { verifyIdToken: (...args: any[]) => mockVerifyIdToken(...args) };
+        if (serviceName === 'auth') { // Explicitly type args
+ return { verifyIdToken: (...args: [string, any?]) => mockVerifyIdToken(...args) };
         }
         if (serviceName === 'firestore') {
           return { getDatabase: () => ({ collection: (...args: any[]) => mockCollection(...args) }) };
@@ -48,8 +48,8 @@ jest.mock('@/lib/firebase/admin', () => {
         return null;
       }),
     },
-    auth: { verifyIdToken: (...args: any[]) => mockVerifyIdToken(...args) },
-    db: { collection: (...args: any[]) => mockCollection(...args) }
+    auth: { verifyIdToken: (...args: [string, any?]) => mockVerifyIdToken(...args) }, // Explicitly type args
+    db: { collection: (...args: [string, any?]) => mockCollection(...args) } // Explicitly type args
   };
 });
 
@@ -102,7 +102,7 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
         empty: false,
         docs: mockStoryboardsData.map(s => ({ data: () => s })),
         forEach: (callback: (doc: any) => void) => mockStoryboardsData.map(s => ({ data: () => s })).forEach(callback)
-      });
+ });
 
       const req = createMockRequest('Bearer valid-token');
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
@@ -237,7 +237,7 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
         jest.doMock('@/lib/firebase/admin', () => ({
           firebaseAdminApp: null,
           auth: { verifyIdToken: (...args: any[]) => localMockVerifyIdToken(...args) },
-          db: { collection: (...args: any[]) => localMockCollection(...args) }
+ db: { collection: (...args: [string, any?]) => localMockCollection(...args) }
         }));
 
         const { GET: GET_LOCAL } = await import('../route');

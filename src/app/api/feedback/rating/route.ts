@@ -81,9 +81,9 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, data: { id: ratingRef.id, ...newRatingDoc } }, { status: 201 });
-  } catch (error: any) {
+    return NextResponse.json({ success: true, data: { id: ratingRef.id, ...newRatingDoc } }, { status: 201 }); // Consider omitting newRatingDoc or sanitizing
+  } catch (error: unknown) {
     console.error('Error submitting rating:', error);
-    return NextResponse.json({ success: false, error: { id: 'unknown-error', message: error.message || 'Failed to submit rating.', code: 'INTERNAL_SERVER_ERROR' } }, { status: 500 });
+ return NextResponse.json({ success: false, error: { id: 'unknown-error', message: error instanceof Error ? error.message : 'Failed to submit rating.', code: 'INTERNAL_SERVER_ERROR' } }, { status: 500 });
   }
 }

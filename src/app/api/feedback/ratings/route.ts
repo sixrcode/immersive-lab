@@ -50,7 +50,8 @@ export async function GET(request: Request) {
     }, { status: 200 });
 
   } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     console.error('Error fetching ratings:', error);
-    return NextResponse.json({ success: false, error: { id: 'unknown-error', message: error.message || 'Failed to fetch ratings.', code: 'INTERNAL_SERVER_ERROR' } }, { status: 500 });
+    return NextResponse.json({ success: false, error: { id: 'unknown-error', message: errorMessage, code: 'INTERNAL_SERVER_ERROR' } }, { status: 500 });
   }
 }

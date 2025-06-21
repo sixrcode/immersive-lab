@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const commentRef = await adminDb.collection('project_comments').add(newComment);
 
     return NextResponse.json({ success: true, data: { id: commentRef.id, ...newComment } }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error submitting comment:', error);
     return NextResponse.json({ success: false, error: { id: 'unknown-error', message: error.message || 'Failed to submit comment.', code: 'INTERNAL_SERVER_ERROR' } }, { status: 500 });
   }

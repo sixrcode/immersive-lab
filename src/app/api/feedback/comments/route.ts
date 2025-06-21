@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json({ success: true, data: comments }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching comments:', error);
     return NextResponse.json({ success: false, error: { id: 'unknown-error', message: error.message || 'Failed to fetch comments.', code: 'INTERNAL_SERVER_ERROR' } }, { status: 500 });
   }

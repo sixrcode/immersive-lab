@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(newReport, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error processing feedback report:', error);
     // Differentiate between known error types and unknown ones if necessary
     if (error.type === 'FirebaseAuthError') { // Example, adjust based on actual errors
