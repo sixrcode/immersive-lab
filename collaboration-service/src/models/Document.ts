@@ -1,11 +1,11 @@
-import { Schema, Document, Model, Mongoose } from 'mongoose';
+import { Schema, Document, Model, Mongoose, Types } from 'mongoose'; // Import Types
 
 export interface IDocument extends Document {
   title: string;
   content: string;
-  projectId: Schema.Types.ObjectId;
-  createdBy: Schema.Types.ObjectId;
-  lastModifiedBy: Schema.Types.ObjectId;
+  projectId: Types.ObjectId; // Use Types.ObjectId for instances
+  createdBy: Types.ObjectId; // Use Types.ObjectId for instances
+  lastModifiedBy: Types.ObjectId; // Use Types.ObjectId for instances
   createdAt: Date;
   updatedAt: Date;
 }

@@ -30,6 +30,9 @@ RUN --mount=type=cache,id=pnpm-portfolio,target=/pnpm/store pnpm --filter portfo
 # Build Next.js application
 RUN pnpm build
 
+# Typecheck collaboration-service (TypeScript)
+RUN cd collaboration-service && npm run typecheck
+
 # Build collaboration-service (TypeScript)
 RUN cd collaboration-service && npm run build
 

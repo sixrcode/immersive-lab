@@ -26,10 +26,10 @@ router.post('/broadcast-board-change', (req: Request, res: Response) => {
   try {
     broadcastProductionBoardChange(projectId, updatedBySocketId as string | undefined);
     logger.info(`Internal broadcast-board-change: Successfully triggered broadcast for projectId: ${projectId}`, { projectId, updatedBySocketId });
-    res.status(200).json({ success: true, message: 'Broadcast for production board change initiated.' });
+    return res.status(200).json({ success: true, message: 'Broadcast for production board change initiated.' });
   } catch (error) {
     logger.error('Internal broadcast-board-change: Error triggering broadcast.', { projectId, error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined });
-    res.status(500).json({ success: false, message: 'Failed to initiate broadcast.' });
+    return res.status(500).json({ success: false, message: 'Failed to initiate broadcast.' });
   }
 });
 

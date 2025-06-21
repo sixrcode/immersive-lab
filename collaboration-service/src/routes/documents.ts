@@ -10,16 +10,16 @@ const router: Router = express.Router();
 // --- Document Routes ---
 
 // GET /api/projects/:projectId/documents - Get all documents for a project
-router.get('/projects/:projectId/documents', async (req: Request, res: Response) => {
+router.get('/projects/:projectId/documents', async (req: Request, res: Response, next: NextFunction) => {
   const { Document } = getModels();
   try {
     const documents = await Document.find({ projectId: req.params.projectId });
     // .populate('createdBy', 'username email')
     // .populate('lastModifiedBy', 'username email');
-    res.json(documents);
+    return res.json(documents);
   } catch (err:any) {
     logger.error(`Error fetching documents for project ${req.params.projectId}`, { error: err, projectId: req.params.projectId });
-    next(err);
+    return next(err);
   }
 });
 
@@ -35,8 +35,7 @@ router.post('/projects/:projectId/documents', async (req: Request, res: Response
     if (!project) {
       // It's good practice to log this specific case
       logger.warn(`Attempt to create document for non-existent project ${projectId}`, { projectId, body: req.body });
-      res.status(404).json({ message: 'Project not found' });
-      return;
+      return res.status(404).json({ message: 'Project not found' });
     }
 
     const document = new Document({
@@ -48,17 +47,17 @@ router.post('/projects/:projectId/documents', async (req: Request, res: Response
     });
 
     const newDocument = await document.save();
-    res.status(201).json(newDocument);
+    return res.status(201).json(newDocument);
   } catch (err:any) {
     logger.error(`Error creating document for project ${projectId}`, { error: err, projectId, body: req.body });
     err.status = 400;
-    next(err);
+    return next(err);
   }
 });
 
 // GET /api/documents/:documentId - Get a single document by ID
 router.get('/:documentId', getDocument, (req: Request, res: Response) => {
-  res.json(res.locals.document);
+  return res.json(res.locals.document);
 });
 
 // PUT /api/documents/:documentId - Update a document
@@ -80,11 +79,11 @@ router.put('/:documentId', getDocument, async (req: Request, res: Response, next
     const updatedDocument = await res.locals.document.save();
     // Consider emitting a socket event here for real-time updates
     // io.to(updatedDocument.projectId.toString()).emit('documentUpdated', updatedDocument);
-    res.json(updatedDocument);
+    return res.json(updatedDocument);
   } catch (err:any) {
     logger.error(`Error updating document ${req.params.documentId}`, { error: err, documentId: req.params.documentId, body: req.body });
     err.status = 400;
-    next(err);
+    return next(err);
   }
 });
 
@@ -95,10 +94,10 @@ router.delete('/:documentId', getDocument, async (req: Request, res: Response, n
     await res.locals.document.deleteOne();
     // Consider emitting a socket event here for real-time updates
     // io.to(deletedDocument.projectId.toString()).emit('documentDeleted', { id: deletedDocument._id });
-    res.json({ message: 'Document deleted' });
+    return res.json({ message: 'Document deleted' });
   } catch (err:any) {
     logger.error(`Error deleting document ${req.params.documentId}`, { error: err, documentId: req.params.documentId });
-    next(err);
+    return next(err);
   }
 });
 
@@ -112,18 +111,16 @@ async function getDocument(req: Request, res: Response, next: express.NextFuncti
     // .populate('lastModifiedBy', 'username email');
     if (document == null) {
       logger.warn(`Document not found with ID: ${req.params.documentId}`, { documentId: req.params.documentId });
-      res.status(404).json({ message: 'Cannot find document' });
-      return;
+      return res.status(404).json({ message: 'Cannot find document' });
     }
   } catch (err:any) {
     logger.error(`Error in getDocument middleware while fetching document ${req.params.documentId}`, { error: err, documentId: req.params.documentId });
     // Pass error to the global error handler, ensuring it has a status if not already set
     if (!err.status) err.status = 500;
-    next(err);
-    return;
+    return next(err);
   }
   res.locals.document = document;
-  next();
+  return next();
 }
 
 export default router;

@@ -13,11 +13,24 @@ jest.mock('../../services/firestoreSyncService', () => ({
 }));
 
 jest.mock('../../firebaseAdmin', () => ({
-  auth: {
-    verifyIdToken: jest.fn(),
+  __esModule: true, // Important for mocking default exports of ES modules
+  default: {
+    auth: () => ({
+      verifyIdToken: jest.fn(),
+    }),
+    // Add other admin services if they are used by the code paths under test
+    // For example, if projects.ts indirectly calls db or storage:
+    firestore: () => ({
+      // mock firestore methods if necessary
+    }),
+    storage: () => ({
+      // mock storage methods if necessary
+    }),
   },
 }));
-import { auth as mockAuth } from '../../firebaseAdmin'; // Import the mocked auth
+
+// We will get the mock function differently now
+import adminMock from '../../firebaseAdmin'; // Import the mocked default admin
 
 // Variable to hold the server instance for this test suite
 let currentTestServer: import('http').Server;
@@ -66,12 +79,12 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     const { Project } = getModels();
     await Project.deleteMany({});
     // Default mock for successful authentication for most tests
-    (mockAuth.verifyIdToken as jest.Mock).mockResolvedValue({ uid: mockUserId, email: 'test@example.com' });
+     (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValue({ uid: mockUserId, email: 'test@example.com' });
   });
 
   describe('POST /api/projects', () => {
     it('should create a new project and return 201', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
+       (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
       const { Project } = getModels(); // Get model within the test
       const projectData = {
         name: 'Test Project 1',
@@ -89,13 +102,14 @@ describe('Project API Endpoints (with Refactored Models)', () => {
       expect(response.body.members).toContain(mockUserId);
       const projectInDb = await Project.findById(response.body._id);
       expect(projectInDb).not.toBeNull();
-      expect(projectInDb?.name).toBe(projectData.name);
-      expect(projectInDb?.createdBy.toString()).toBe(mockUserId);
-      expect(projectInDb?.members.map(m => m.toString())).toContain(mockUserId);
+      // After the above assertion, projectInDb is known to be non-null
+      expect(projectInDb!.name).toBe(projectData.name);
+      expect(projectInDb!.createdBy.toString()).toBe(mockUserId);
+      expect(projectInDb!.members.map(m => m.toString())).toContain(mockUserId);
     });
 
     it('should return 400 if name is missing', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
+      (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
       const projectData = { description: 'Missing name' }; // createdBy removed
       const response = await request(app)
         .post('/api/projects')
@@ -106,7 +120,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     });
 
     it('should return 400 if name is an empty string', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
+      (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
       const projectData = { name: '   ', description: 'Empty name test' };
       const response = await request(app)
         .post('/api/projects')
@@ -125,7 +139,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     });
 
     it('should return 403 if token is invalid', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockRejectedValueOnce(new Error('Invalid token'));
+      (adminMock.auth().verifyIdToken as jest.Mock).mockRejectedValueOnce(new Error('Invalid token'));
       const projectData = { name: 'Test Project Invalid Token', description: 'A project for testing' };
       const response = await request(app)
         .post('/api/projects')
@@ -137,7 +151,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
 
   describe('GET /api/projects', () => {
     it('should return an array of projects for an authenticated user', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
+      (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
       const { Project } = getModels();
       await Project.create([
         { name: 'Project Alpha', createdBy: mockUserId, members: [mockUserId] },
@@ -196,7 +210,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Gamma', createdBy: mockUserId, members: [mockUserId] });
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const response = await request(app)
         .get(`/api/projects/${(project as any)._id}`)
         .set('Authorization', 'Bearer fake-token');
@@ -222,7 +236,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member when updating', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Delta', description: 'Original Desc', createdBy: mockUserId, members: [mockUserId] });
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const updates = { name: 'Project Delta Updated Attempt' };
       const response = await request(app)
         .put(`/api/projects/${(project as any)._id}`)
@@ -261,7 +275,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member when deleting', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Epsilon', createdBy: mockUserId, members: [mockUserId] });
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const response = await request(app)
         .delete(`/api/projects/${(project as any)._id}`)
         .set('Authorization', 'Bearer fake-token');
@@ -287,7 +301,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member when adding a member', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Membership Project', createdBy: mockUserId, members: [mockUserId] }) as IProject;
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const response = await request(app)
         .post(`/api/projects/${(project as any)._id}/members`)
         .set('Authorization', 'Bearer fake-token')
@@ -312,7 +326,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member when removing a member', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Remove Member Project', createdBy: mockUserId, members: [mockUserId, thirdMockUserId] });
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const response = await request(app)
         .delete(`/api/projects/${(project as any)._id}/members/${thirdMockUserId}`)
         .set('Authorization', 'Bearer fake-token');
@@ -330,7 +344,7 @@ describe('Project Data Synchronization', () => {
 
   // Helper to set auth token for this specific user
   const setAuthForSyncUser = () => {
-    (mockAuth.verifyIdToken as jest.Mock).mockResolvedValue({ uid: testUserIdSync, email: 'syncuser@example.com' });
+    (adminMock.auth().verifyIdToken as jest.Mock).mockResolvedValue({ uid: testUserIdSync, email: 'syncuser@example.com' });
   };
 
 

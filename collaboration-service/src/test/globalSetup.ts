@@ -56,7 +56,7 @@ export default async function globalSetup() {
   } catch (error) {
     console.error('Failed to connect Mongoose or perform DB operation in globalSetup:', error);
     if (global.__MONGOD__) {
-      await global.__MONGOD__.stop().catch(e => console.error('Error stopping mongod in error path', e));
+      await global.__MONGOD__.stop().catch((e: any) => console.error('Error stopping mongod in error path', e));
     }
     process.exit(1);
   }

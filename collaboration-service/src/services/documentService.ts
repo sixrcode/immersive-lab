@@ -1,6 +1,6 @@
 // import { getIO } from './socketService'; // If you need to emit socket events from here
 import { IDocument, DocumentModel } from '../models/Document'; // Changed import
-import mongoose from 'mongoose';
+import mongoose, { Types, Schema } from 'mongoose'; // Import Types and Schema
 import { getModels } from '../models'; // Added getModels import
 import logger from '../logger'; // Import logger
 
@@ -8,7 +8,7 @@ import logger from '../logger'; // Import logger
  * Service for handling document-related business logic.
  */
 export const DocumentService = {
-  async getDocumentById(documentId: string | mongoose.Types.ObjectId): Promise<IDocument | null> {
+  async getDocumentById(documentId: string | Types.ObjectId): Promise<IDocument | null> {
     try {
       const document = await getModels().Document.findById(documentId)
         .populate('createdBy', 'username email')
@@ -20,7 +20,7 @@ export const DocumentService = {
     }
   },
 
-  async getDocumentsByProjectId(projectId: string | mongoose.Types.ObjectId): Promise<IDocument[]> {
+  async getDocumentsByProjectId(projectId: string | Types.ObjectId): Promise<IDocument[]> {
     try {
       const documents = await getModels().Document.find({ projectId })
         .populate('createdBy', 'username email')
@@ -35,8 +35,8 @@ export const DocumentService = {
 
   async createDocument(
     title: string,
-    projectId: string | mongoose.Types.ObjectId,
-    userId: string | mongoose.Types.ObjectId,
+    projectId: string | Types.ObjectId,
+    userId: string | Types.ObjectId,
     content: string = ''
   ): Promise<IDocument> {
     try {
@@ -58,9 +58,9 @@ export const DocumentService = {
   },
 
   async updateDocumentContent(
-    documentId: string | mongoose.Types.ObjectId,
+    documentId: string | Types.ObjectId,
     content: string,
-    userId: string | mongoose.Types.ObjectId
+    userId: string | Types.ObjectId
   ): Promise<IDocument | null> {
     try {
       const document = await getModels().Document.findById(documentId);
@@ -68,7 +68,13 @@ export const DocumentService = {
         return null; // Or throw an error
       }
       document.content = content;
-      document.lastModifiedBy = userId as mongoose.Types.ObjectId; // Cast needed if userId is string
+      let userIdToAssign: Types.ObjectId; // This will hold an instance
+      if (typeof userId === 'string') {
+        userIdToAssign = new Types.ObjectId(userId);
+      } else {
+        userIdToAssign = userId; // userId is already Types.ObjectId (an instance)
+      }
+      document.lastModifiedBy = userIdToAssign; // Assigning instance to instance type
       await document.save();
 
       // Example: Emit an event after updating a document
@@ -84,7 +90,7 @@ export const DocumentService = {
     }
   },
 
-  async deleteDocument(documentId: string | mongoose.Types.ObjectId): Promise<IDocument | null> {
+  async deleteDocument(documentId: string | Types.ObjectId): Promise<IDocument | null> {
     try {
       const document = await getModels().Document.findByIdAndDelete(documentId);
       if (document) {

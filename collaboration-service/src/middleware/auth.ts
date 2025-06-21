@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../firebaseAdmin';           // Firebase Admin wrapper (initialized elsewhere)
-import * as admin from 'firebase-admin';           // For DecodedIdToken typing
+import admin from '../firebaseAdmin';           // Firebase Admin wrapper (initialized elsewhere)
+import { DecodedIdToken } from 'firebase-admin/auth'; // Corrected import for DecodedIdToken
 import logger from '../logger';                    // Centralised (Winston/Pino) logger
 
 /**
  * Extend Express Request with a verified Firebase user object.
  */
 export interface AuthenticatedRequest extends Request {
-  user?: admin.auth.DecodedIdToken;
+  user?: DecodedIdToken;
 }
 
 /**
@@ -53,7 +53,7 @@ export const authenticate = async (
   // 3) Verify the token with Firebase Admin
   // ---------------------------------------------------------------------------
   try {
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken;
 
     logger.info('User authenticated', {

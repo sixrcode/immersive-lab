@@ -5,7 +5,7 @@ import logger from '../logger'; // Import logger
 const router: Router = express.Router();
 
 // GET /api/projects/:projectId/chats - Get all chat messages for a project
-router.get('/projects/:projectId/chats', async (req: Request, res: Response) => {
+router.get('/projects/:projectId/chats', async (req: Request, res: Response, next: NextFunction) => {
   const { projectId } = req.params;
   const { limit = 50, before } = req.query;
   const { ChatMessage, Project } = getModels(); // Corrected: single destructuring
@@ -13,8 +13,7 @@ router.get('/projects/:projectId/chats', async (req: Request, res: Response) => 
   try {
     const project = await Project.findById(projectId);
     if (!project) {
-      res.status(404).json({ message: 'Project not found' });
-      return;
+      return res.status(404).json({ message: 'Project not found' });
     }
 
     const query: any = { projectId };
@@ -27,10 +26,10 @@ router.get('/projects/:projectId/chats', async (req: Request, res: Response) => 
       .limit(Number(limit));
       // .populate('senderId', 'username email'); // Removed populate
 
-    res.json(messages.reverse());
+    return res.json(messages.reverse());
   } catch (err:any) {
     logger.error(`Error fetching chat messages for project ${projectId}`, { error: err, projectId, query: req.query });
-    next(err); // Pass to global error handler
+    return next(err); // Pass to global error handler
   }
 });
 
@@ -43,8 +42,7 @@ router.post('/projects/:projectId/chats', async (req: Request, res: Response, ne
   try {
     const project = await Project.findById(projectId);
     if (!project) {
-      res.status(404).json({ message: 'Project not found' });
-      return;
+      return res.status(404).json({ message: 'Project not found' });
     }
 
     const chatMessage = new ChatMessage({
@@ -57,11 +55,11 @@ router.post('/projects/:projectId/chats', async (req: Request, res: Response, ne
     const newChatMessage = await chatMessage.save();
     // await newChatMessage.populate('senderId', 'username email'); // Removed populate
 
-    res.status(201).json(newChatMessage);
+    return res.status(201).json(newChatMessage);
   } catch (err:any) {
     logger.error(`Error posting chat message for project ${projectId}`, { error: err, projectId, body: req.body });
     err.status = 400; // Set status for bad request
-    next(err); // Pass to global error handler
+    return next(err); // Pass to global error handler
   }
 });
 
@@ -82,10 +80,10 @@ router.get('/documents/:documentId/chats', async (req: Request, res: Response, n
             .limit(Number(limit));
             // .populate('senderId', 'username email'); // Removed populate
 
-        res.json(messages.reverse());
+        return res.json(messages.reverse());
     } catch (err:any) {
         logger.error(`Error fetching chat messages for document ${documentId}`, { error: err, documentId, query: req.query });
-        next(err); // Pass to global error handler
+        return next(err); // Pass to global error handler
     }
 });
 

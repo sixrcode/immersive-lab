@@ -3,9 +3,23 @@ import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 
 const { combine, timestamp, json, printf } = winston.format;
 
+interface LogEntry {
+  level: string;
+  message: string | unknown; // Allow message to be unknown
+  timestamp?: string; // Made timestamp optional
+  errorId?: string;
+  userId?: string;
+  route?: string;
+  method?: string;
+  errorCode?: string;
+  stack?: string;
+  requestDetails?: any;
+  [key: string]: any;
+}
+
 // Custom format to add an error ID and ensure consistent structure
-const customFormat = printf(({ level, message, timestamp, errorId, userId, route, method, errorCode, stack, requestDetails, ...metadata }) => {
-  let logEntry: any = {
+const customFormat = printf(({ level, message, timestamp, errorId, userId, route, method, errorCode, stack, requestDetails, ...metadata }: LogEntry) => {
+  let logEntry: LogEntry = {
     level,
     message,
     timestamp,
@@ -38,7 +52,7 @@ const logger = winston.createLogger({
       format: combine(
         timestamp(),
         winston.format.colorize(), // Optional: for colorful console output during development
-        printf(({ level, message, timestamp, service, stack, errorId, ...metadata }) => {
+        printf(({ level, message, timestamp, service, stack, errorId, ...metadata }: LogEntry) => {
           let log = `${timestamp} [${service}] ${level}: ${message}`;
           if (errorId) log += ` (ErrorID: ${errorId})`;
           // Add other metadata to the string if needed for console view

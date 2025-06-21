@@ -1,10 +1,11 @@
-import { Schema, Document, Model, Mongoose } from 'mongoose'; // Keep Mongoose for types
+import { Schema, Document, Model, Mongoose, Types } from 'mongoose'; // Combined import
 
 export interface IProject extends Document {
+  _id: Types.ObjectId; // Explicitly define _id
   name: string;
   description?: string;
-  createdBy: Schema.Types.ObjectId; // User ID // Made this required as per original schema for tests
-  members?: Schema.Types.ObjectId[];
+  createdBy: Types.ObjectId; // User ID // Made this required as per original schema for tests
+  members: Types.ObjectId[]; // Changed to required and use Types.ObjectId
   createdAt: Date;
   updatedAt: Date;
 }
