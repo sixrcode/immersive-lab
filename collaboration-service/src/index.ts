@@ -15,7 +15,9 @@ dotenv.config();
 import projectRoutes from './routes/projects';
 import documentRoutes from './routes/documents';
 import chatMessageRoutes from './routes/chatMessages';
-import { initializeSocket } from './services/socketService'; // Placeholder for socket service
+// Import the new initializeSocketService and other necessary functions
+import { initializeSocketService, broadcastProductionBoardChange } from './services/socketService';
+import internalRoutes from './routes/internal'; // Import internal routes
 
 const app: Express = express();
 const port = process.env.PORT || 3001;
