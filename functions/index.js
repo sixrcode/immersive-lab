@@ -246,7 +246,8 @@ app.delete('/production-board/columns/:columnId', async (req, res, next) => {
 // Cards Endpoints
 app.post('/production-board/columns/:columnId/cards', async (req, res, next) => {
   const { columnId } = req.params;
-  const { title, description, priority, dueDate, coverImage, dataAiHint, orderInColumn } = req.body;
+  // Add portfolioItemId to destructuring
+  const { title, description, priority, dueDate, coverImage, dataAiHint, orderInColumn, portfolioItemId } = req.body;
 
   if (!columnId) {
     const errorId = uuidv4();
@@ -284,6 +285,7 @@ app.post('/production-board/columns/:columnId/cards', async (req, res, next) => 
         dueDate: dueDate || null,
         coverImage: coverImage || null,
         dataAiHint: dataAiHint || null,
+        portfolioItemId: portfolioItemId || null, // Save portfolioItemId
         orderInColumn: effectiveOrderInColumn,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -347,7 +349,8 @@ app.get('/production-board/cards/:cardId', async (req, res, next) => {
 app.put('/production-board/cards/:cardId', async (req, res, next) => {
   try {
     const { cardId } = req.params;
-    const { title, description, priority, dueDate, coverImage, dataAiHint, orderInColumn, columnId: newColumnId } = req.body;
+    // Add portfolioItemId to destructuring
+    const { title, description, priority, dueDate, coverImage, dataAiHint, orderInColumn, columnId: newColumnId, portfolioItemId } = req.body;
 
     if (!cardId) {
       const errorId = uuidv4();
@@ -358,7 +361,8 @@ app.put('/production-board/cards/:cardId', async (req, res, next) => {
     const cardRef = db.collection('productionBoardCards').doc(cardId);
 
     const updateData = {};
-    const allowedFields = { title, description, priority, dueDate, coverImage, dataAiHint, orderInColumn };
+    // Add portfolioItemId to allowedFields
+    const allowedFields = { title, description, priority, dueDate, coverImage, dataAiHint, orderInColumn, portfolioItemId };
 
     for (const [key, value] of Object.entries(allowedFields)) {
       if (value !== undefined) {

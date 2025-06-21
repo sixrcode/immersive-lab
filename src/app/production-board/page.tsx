@@ -402,8 +402,64 @@ export default function ProductionBoardPage() {
         }
 
         // On success, re-fetch data to ensure consistency
-        // Alternatively, update state with response if API returns the full board or updated columns/card
-        fetchBoardData();
+        const movedCardResponse = await response.json(); // Assuming API returns the updated card
+
+        // --- BEGIN: Automatic Progress Tracking ---
+        const movedCard = movedCardResponse; // Use the card data from the move response
+                                            // This should ideally include its portfolioItemId if fetched correctly
+
+        // Find the target column details to check its title
+        const targetColDetails = columns.find(col => col.id === targetColumnId);
+
+        // Define "approved" column titles
+        const approvedColumnTitles = ["Final Polish", "Distribution", "Approved"]; // Add more as needed
+
+        if (targetColDetails && approvedColumnTitles.includes(targetColDetails.title)) {
+          // Attempt to find the full card details from the current state to get portfolioItemId
+          // This is a bit of a workaround because movedCardResponse from /move might not have portfolioItemId
+          // unless the /move endpoint is also updated to return it (which it should be).
+          // For now, let's try to find it in the `previousColumns` state.
+          let cardWithPortfolioId: KanbanCardType | undefined;
+          const sourceColForPortfolioId = previousColumns.find((col: KanbanColumnType) => col.id === sourceColumnId);
+          if (sourceColForPortfolioId) {
+            cardWithPortfolioId = sourceColForPortfolioId.cards.find((c: KanbanCardType) => c.id === cardId);
+          }
+
+          if (cardWithPortfolioId && cardWithPortfolioId.portfolioItemId) {
+            const portfolioItemId = cardWithPortfolioId.portfolioItemId;
+            // TODO: Get this URL from an environment variable
+            const portfolioApiUrl = process.env.NEXT_PUBLIC_PORTFOLIO_MICROSERVICE_URL || 'http://localhost:3002'; // Default for local dev
+
+            try {
+              const portfolioUpdateResponse = await fetch(`${portfolioApiUrl}/portfolio/${portfolioItemId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  // TODO: Add Authorization header if portfolio microservice requires it
+                },
+                body: JSON.stringify({ productionStatus: targetColDetails.title }), // Or a more generic "Completed"
+              });
+
+              if (!portfolioUpdateResponse.ok) {
+                const portfolioErrorData = await portfolioUpdateResponse.json().catch(() => ({ error: "Failed to parse portfolio update error" }));
+                console.error(`Failed to update portfolio status for item ${portfolioItemId}:`, portfolioErrorData.error || portfolioUpdateResponse.statusText);
+                // Log this error, maybe show a non-blocking toast to the user
+                // setError(prev => prev ? `${prev}\nFailed to update portfolio for ${portfolioItemId}.` : `Failed to update portfolio for ${portfolioItemId}.`);
+              } else {
+                console.log(`Successfully updated portfolio status for item ${portfolioItemId} to ${targetColDetails.title}`);
+                // Show success toast if desired
+              }
+            } catch (portfolioErr: unknown) {
+              console.error(`Error calling portfolio microservice for item ${portfolioItemId}:`, portfolioErr);
+              // setError(prev => prev ? `${prev}\nError calling portfolio service for ${portfolioItemId}.` : `Error calling portfolio service for ${portfolioItemId}.`);
+            }
+          } else {
+            console.warn(`Card ${cardId} moved to an approved column '${targetColDetails.title}' but has no portfolioItemId.`);
+          }
+        }
+        // --- END: Automatic Progress Tracking ---
+
+        fetchBoardData(); // Refresh data
         // You might want to show a success toast here
       } catch (err: unknown) {
         console.error("Failed to move card:", err);

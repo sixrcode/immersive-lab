@@ -158,6 +158,22 @@ describe('PUT /portfolio/:id', () => {
     expect(dbItem.title).toBe(updates.title);
   });
 
+  it('should update the productionStatus of an existing portfolio item', async () => {
+    const item = await PortfolioItem.create(createSampleItem());
+    const updates = { productionStatus: "In Production" };
+
+    const res = await request(app)
+      .put(`/portfolio/${item._id}`)
+      .send(updates);
+
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.productionStatus).toBe(updates.productionStatus);
+
+    const dbItem = await PortfolioItem.findById(item._id);
+    expect(dbItem.productionStatus).toBe(updates.productionStatus);
+    expect(dbItem.title).toBe(item.title); // Ensure other fields are not changed
+  });
+
   it('should return 404 if item to update is not found', async () => {
     const nonExistentId = new mongoose.Types.ObjectId();
     const updates = { title: "Updated Title" };
