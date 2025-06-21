@@ -7,7 +7,7 @@ import { useSubmitRating } from '@/hooks/useSubmitRating';
 import type { Rating } from '@/lib/feedback-types';
 
 // Placeholder for actual auth hook
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase/client';
 
 interface RatingFormProps {
@@ -31,7 +31,7 @@ export function RatingForm({ projectId, currentRating = 0, onSubmitSuccess, onCa
 
   useEffect(() => {
     const auth = getAuth(firebaseApp);
-    const unsubscribe = onAuthStateChanged(getAuth(firebaseClientApp), (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => { // Use the existing auth instance
       setIsAuthenticated(!!user);
       setIsAuthLoading(false);
     });
@@ -72,7 +72,7 @@ export function RatingForm({ projectId, currentRating = 0, onSubmitSuccess, onCa
   if (!isAuthenticated) {
     return (
       <div className="p-4 border rounded-md bg-muted/50">
-        <p className="text-muted-foreground">Please <a href="#" onClick={() => getAuth(firebaseApp).signInAnonymously()} className="underline">sign in</a> to leave a rating.</p>
+        <p className="text-muted-foreground">Please <a href="#" onClick={() => signInAnonymously(getAuth(firebaseApp))} className="underline">sign in</a> to leave a rating.</p>
          {/* Replace href="#" with actual sign-in link or modal trigger
              For testing, added signInAnonymously. Replace with your actual sign-in flow.
         */}

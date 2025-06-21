@@ -223,11 +223,11 @@ export default function PortfolioPage() {
             imageUrl: item.imageUrl || "https://placehold.co/600x900.png",
             datePublished: item.datePublished ? new Date(item.datePublished as string).toISOString().split('T')[0] : "N/A",
             duration: typeof item.duration === 'string' ? item.duration : "N/A",
-            tags: Array.isArray(item.tags) ? item.tags.map(tag => String(tag)) : [],
+            tags: Array.isArray(item.tags) ? item.tags.map((tag: unknown) => String(tag)) : [],
             videoUrl: typeof item.videoUrl === 'string' ? item.videoUrl : undefined,
             client: typeof item.client === 'string' ? item.client : undefined,
             role: typeof item.role === 'string' ? item.role : "N/A",
-            softwareUsed: Array.isArray(item.softwareUsed) ? item.softwareUsed.map(String) : [],
+            softwareUsed: Array.isArray(item.softwareUsed) ? item.softwareUsed.map((sw: unknown) => String(sw)) : [],
             dataAiHint: typeof item.dataAiHint === 'string' ? item.dataAiHint : undefined,
           };
         });

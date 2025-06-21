@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Tutorial } from '@/types/tutorial.types';
+import { Tutorial } from '../../../packages/types/src/tutorial.types';
 import { Badge } from '@/components/ui/badge';
 
 interface TutorialCardProps {

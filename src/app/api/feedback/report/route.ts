@@ -50,10 +50,26 @@ export async function POST(request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('Error processing feedback report:', error);
-    // Differentiate between known error types and unknown ones if necessary
-    if (error.type === 'FirebaseAuthError') { // Example, adjust based on actual errors
-        return NextResponse.json({ error: 'Forbidden, token verification failed' }, { status: 403 });
+    let message = 'An unexpected error occurred.';
+    let code = 'INTERNAL_SERVER_ERROR'; // Default error code
+
+    if (error instanceof Error) {
+      message = error.message;
+      // Check for specific error types if needed, e.g., Firebase errors
+      // This is a generic example; you might need to refine based on actual Firebase error structure
+      if ('code' in error && typeof (error as any).code === 'string') {
+        // Attempt to use Firebase error codes if available
+        // This is a common pattern but might need adjustment based on the exact error object structure
+        const firebaseErrorCode = (error as any).code;
+        if (firebaseErrorCode.startsWith('auth/')) {
+          // More specific handling for auth errors
+          message = 'Forbidden, token verification failed.';
+          code = firebaseErrorCode; // Use the specific Firebase auth error code
+          return NextResponse.json({ error: message, code }, { status: 403 });
+        }
+      }
     }
-    return NextResponse.json({ error: 'Internal Server Error', message: error.message || 'An unexpected error occurred.' }, { status: 500 });
+    // For generic errors or if specific checks don't match
+    return NextResponse.json({ error: 'Internal Server Error', message, code }, { status: 500 });
   }
 }
