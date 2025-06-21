@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, LogOut, LayoutGrid } from 'lucide-react';
+import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, LogOut, LayoutGrid, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { useEffect, useState } from 'react';
@@ -27,6 +27,7 @@ const navItems = [
   { href: '/production-board', label: 'Production Board', icon: Kanban },
   { href: '/collaboration', label: 'Collaboration', icon: Users },
   { href: '/portfolio', label: 'Portfolio Showcase', icon: Film },
+  { href: '/tutorials', label: 'Tutorials', icon: BookOpen },
 ];
 
 export function AppSidebar() {
