@@ -139,6 +139,9 @@ const storyboardGeneratorFlow = ai.defineFlow(
 
     const panelsWithImages = await Promise.all(imageGenerationPromises);
 
+    // Sort panels by panelNumber
+    panelsWithImages.sort((a, b) => a.panelNumber - b.panelNumber);
+
     return {
       panels: panelsWithImages,
       titleSuggestion: textOutput.titleSuggestion,
