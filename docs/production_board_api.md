@@ -348,3 +348,112 @@ Base path for these endpoints: `/production-board` (relative to the main API fun
     ```json
     { "error": "Failed to move card." }
     ```
+
+## AI-Powered Checklist Generation
+
+Base path for this endpoint: `/api` (relative to the AI microservice function's URL, e.g., `YOUR_AI_FUNCTION_URL/api`)
+
+### 1. POST /productionChecklist
+- **Description:** Generates a production checklist based on script analysis output and specified requirements.
+- **Authentication:** Requires a valid authentication token (ID token) in the `Authorization` header: `Authorization: Bearer <TOKEN>`.
+- **Request Body:**
+  ```json
+  {
+    "scriptAnalysis": {
+      "analysis": "SCENE 1: INT. COFFEE SHOP - DAY. ANNA (30s) sits by the window, sipping coffee and writing in a RED NOTEBOOK. MARK (30s) enters and approaches her. Anna wears a BLUE DRESS. Mark needs a FAKE BEARD for a later scene.",
+      "suggestions": [
+        {
+          "section": "ANNA (30s) sits by the window",
+          "issue": "Age ambiguity",
+          "improvement": "Specify if '30s' means early, mid, or late thirties for better casting."
+        }
+      ]
+    },
+    "checklistRequirements": {
+      "include": ["casting", "locations", "props", "wardrobe", "makeup"]
+    }
+  }
+  ```
+  - `scriptAnalysis` (object, required): The output from the Script Analyzer service.
+    - `analysis` (string, required): The main textual analysis of the script.
+    - `suggestions` (array of objects, optional): A list of suggestions, each with `section`, `issue`, and `improvement`.
+  - `checklistRequirements` (object, required): Specifies which categories of tasks to generate.
+    - `include` (array of strings, required): An array of task categories. Possible values include: "casting", "locations", "props", "wardrobe", "makeup", "sfx", "vfx", "stunts", "music", "setDressing", "animals", "unknown".
+- **Success Response:**
+  - **Code:** `200 OK`
+  - **Body:** An object containing the generated checklist package.
+    ```json
+    {
+      "id": "checklistGeneratedId",
+      "userId": "userFirebaseUid",
+      "createdAt": "2023-10-27T10:00:00Z",
+      "scriptAnalysisId": "scriptAnalysisOptionalId", // ID of the source scriptAnalysis, if available
+      "checklistRequirements": {
+        "include": ["casting", "locations", "props", "wardrobe", "makeup"]
+      },
+      "tasks": [
+        {
+          "id": "task-001",
+          "type": "casting",
+          "description": "Cast character: ANNA",
+          "sceneContext": "SCENE 1: INT. COFFEE SHOP - DAY",
+          "notes": "Character is in their 30s. Wears a BLUE DRESS."
+        },
+        {
+          "id": "task-002",
+          "type": "casting",
+          "description": "Cast character: MARK",
+          "sceneContext": "SCENE 1: INT. COFFEE SHOP - DAY",
+          "notes": "Character is in their 30s. Requires a FAKE BEARD for a later scene."
+        },
+        {
+          "id": "task-003",
+          "type": "locations",
+          "description": "Secure location: INT. COFFEE SHOP - DAY",
+          "sceneContext": "SCENE 1"
+        },
+        {
+          "id": "task-004",
+          "type": "props",
+          "description": "Acquire prop: RED NOTEBOOK",
+          "sceneContext": "SCENE 1: INT. COFFEE SHOP - DAY"
+        },
+        {
+          "id": "task-005",
+          "type": "wardrobe",
+          "description": "Prepare wardrobe: BLUE DRESS for ANNA",
+          "sceneContext": "SCENE 1: INT. COFFEE SHOP - DAY"
+        },
+        {
+          "id": "task-006",
+          "type": "makeup",
+          "description": "Prepare makeup: FAKE BEARD for MARK",
+          "sceneContext": "SCENE 1 (mentioned for later scene)"
+        }
+      ]
+    }
+    ```
+- **Error Responses:**
+  - `400 Bad Request`: If the input validation fails (e.g., missing `scriptAnalysis` or `checklistRequirements`).
+    ```json
+    {
+      "success": false,
+      "error": {
+        "id": "errorGeneratedId",
+        "message": "Invalid input for production checklist",
+        "code": "VALIDATION_ERROR",
+        "details": { /* Zod error formatting */ }
+      }
+    }
+    ```
+  - `500 Internal Server Error`: If the checklist generation or database operation fails.
+    ```json
+    {
+      "success": false,
+      "error": {
+        "id": "errorGeneratedId",
+        "message": "An unexpected error occurred.",
+        "code": "INTERNAL_ERROR"
+      }
+    }
+    ```

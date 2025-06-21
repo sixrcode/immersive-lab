@@ -13,6 +13,7 @@ const db = admin.firestore(); // Initialize Firestore
 const { analyzeScript, AnalyzeScriptInputSchema } = require('./src/flows/ai-script-analyzer');
 const { promptToPrototype, PromptToPrototypeInputSchema } = require('./src/flows/prompt-to-prototype');
 const { generateStoryboard, StoryboardGeneratorInputSchema } = require('./src/flows/storyboard-generator-flow');
+const { generateProductionChecklistFlow, ProductionChecklistInputSchema } = require('./src/flows/production-checklist-generator');
 
 // Import utility and storage functions
 const { dataUriToBuffer } = require('./src/utils');
@@ -77,6 +78,58 @@ app.post('/analyzeScript', async (req, res) => {
       error.code = 'FIRESTORE_OPERATION_FAILED'; // More specific error code
     } else {
       error.status = error.status || 500; // Keep existing status or default
+    }
+    next(error); // Pass to global error handler
+  }
+});
+
+// --- Endpoint for Production Checklist Generation ---
+app.post('/productionChecklist', async (req, res, next) => {
+  const checklistId = uuidv4();
+  const userId = req.user.uid; // Use authenticated user's ID
+
+  try {
+    const validationResult = ProductionChecklistInputSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'}`, {
+        errorId: errorId,
+        route: req.path,
+        userId: req.user ? req.user.uid : 'unknown',
+        validationErrors: validationResult.error.format()
+      });
+      return res.status(400).json({
+        success: false,
+        error: {
+          id: errorId,
+          message: "Invalid input for production checklist",
+          code: "VALIDATION_ERROR",
+          details: validationResult.error.format()
+        }
+      });
+    }
+
+    const flowInput = validationResult.data;
+    const flowOutput = await generateProductionChecklistFlow(flowInput);
+
+    const productionChecklistPackage = {
+      id: checklistId,
+      userId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      scriptAnalysisId: flowInput.scriptAnalysis.id || null, // Assuming scriptAnalysis might have an ID
+      checklistRequirements: flowInput.checklistRequirements,
+      tasks: flowOutput, // This is an array of tasks
+    };
+
+    await db.collection('productionChecklists').doc(checklistId).set(productionChecklistPackage);
+
+    return res.status(200).json(productionChecklistPackage);
+  } catch (error) {
+    if (error.code === 'FIRESTORE_ERROR') {
+      error.status = 503;
+      error.code = 'FIRESTORE_OPERATION_FAILED';
+    } else {
+      error.status = error.status || 500;
     }
     next(error); // Pass to global error handler
   }
