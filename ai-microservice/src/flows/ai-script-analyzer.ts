@@ -32,6 +32,7 @@ const AnalyzeScriptOutputSchema = z.object({
       improvement: z.string().describe('A suggestion for improving the section.'),
     })
   ).describe('A list of specific suggestions for improving the script.'),
+  dialogueIssues: z.number().optional().describe('The number of dialogue issues found in the script.'),
 });
 export type AnalyzeScriptOutput = z.infer<typeof AnalyzeScriptOutputSchema>;
 
@@ -51,13 +52,15 @@ Script:
 {{{script}}}
 
 Identify any sections that are unclear, off-tone, or inconsistent, and suggest specific improvements.
+Also, analyze the dialogue for unnatural sentences. For example, a long series of statements without any questions might be considered unnatural.
+Count the number of such dialogue issues and include it in the 'dialogueIssues' field of your response.
 
 For each suggestion, provide:
 - 'section': The *exact, verbatim text* of the script segment you are addressing. This text is CRITICAL for the 'Apply Suggestion' feature and MUST be an exact quote from the original script. Do NOT paraphrase or summarize this section. Do NOT add your own surrounding quotation marks to this 'section' field unless those quotation marks are part of the original script segment itself. If the problematic text is common, try to make your quoted 'section' distinctive enough if possible.
 - 'issue': A clear description of the issue identified in that section.
 - 'improvement': A specific suggestion for how to improve that section.
 
-Ensure the overall output is a detailed analysis and a list of specific suggestions for improvement.
+Ensure the overall output is a detailed analysis, a list of specific suggestions for improvement, and the count of dialogue issues.
 Follow the schema documentation provided in the AnalyzeScriptOutputSchema for how to format your response.
 `,
 });
