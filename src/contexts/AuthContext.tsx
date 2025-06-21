@@ -12,6 +12,7 @@ import {
   IdTokenResult,
   UserCredential
 } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 import { firebaseApp } from '@/lib/firebase/client';
 import { useRouter } from 'next/navigation';
 
@@ -71,9 +72,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIdTokenResult(null); // Ensure state is reset on error
           setMfaRequired(false);
           // If token fetching fails critically (e.g., revoked session), sign out
-          if (error instanceof Error && typeof (error as { code?: string }).code === 'string') {
-            const errorCode = (error as { code: string }).code;
-            if (errorCode === 'auth/user-token-expired' || errorCode === 'auth/invalid-user-token') {
+          if (error instanceof FirebaseError) {
+            if (error.code === 'auth/user-token-expired' || error.code === 'auth/invalid-user-token') {
               await signOut(auth).catch((err) => console.error("Error during signOut after token error:", err));
             }
           }
@@ -159,9 +159,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
          // Check if error is an instance of Error and has a 'code' property
          console.error("Error fetching ID token result in fetchTokenResult:", error);
-        if (error instanceof Error && typeof (error as { code?: string }).code === 'string') {
-          const errorCode = (error as { code: string }).code;
-          if (errorCode === 'auth/user-token-expired' || errorCode === 'auth/invalid-user-token') {
+        if (error instanceof FirebaseError) {
+          if (error.code === 'auth/user-token-expired' || error.code === 'auth/invalid-user-token') {
             await signOutUser(); // Use the context's signOutUser which handles redirect
           }
         }
