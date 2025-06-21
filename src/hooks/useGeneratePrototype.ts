@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import type { PromptPackage as PromptPackageAPIOutput } from "@/lib/types"; // API output type from the backend
-import type { PromptToPrototypeInput } from "@/ai/flows/prompt-to-prototype"; // Structure for the API request body
+import type { PromptToPrototypeInput } from "@/lib/types"; // Structure for the API request body
 
 /**
  * @fileoverview Custom React Query hook (`useGeneratePrototype`) for generating prototype assets.
