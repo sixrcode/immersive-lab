@@ -13,7 +13,7 @@ jest.mock('next/server', () => {
       json: jest.fn((body, init) => ({
         json: () => Promise.resolve(body), // Simplified mock response object
         status: init?.status || 200,
-        headers: new Headers(init?.headers),
+        headers: new Headers(init?.headers) // Removed trailing comma
 
       }),
     },
@@ -22,16 +22,18 @@ jest.mock('next/server', () => {
 
 // Define the actual Jest mock functions that tests will interact with for Firebase
 const mockVerifyIdToken = jest.fn();
-const mockGet = jest.fn().mockResolvedValue({ // Default mock for get
+const mockResolvedValueForGet = { // Defined object separately
   empty: true,
   docs: [],
-  forEach: jest.fn(),
-});
+};
+const mockGet = jest.fn().mockResolvedValue(mockResolvedValueForGet); // Default mock for get
 const mockWhere = jest.fn(() => ({
   get: mockGet,
 }));
-const mockCollection = jest.fn(() => ({
+// Updated mockCollection to accept collectionPath argument
+const mockCollection = jest.fn((collectionPath: string) => ({
   where: mockWhere,
+  // Add other collection methods if needed by tests, e.g., .doc(), .add()
 }));
 
 jest.mock('@/lib/firebase/admin', () => {
