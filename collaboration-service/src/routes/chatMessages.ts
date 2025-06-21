@@ -1,5 +1,6 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Request, Response, Router, NextFunction } from 'express';
 import { getModels } from '../models'; // Import getModels
+import logger from '../logger'; // Import logger
 
 const router: Router = express.Router();
 
@@ -28,12 +29,13 @@ router.get('/projects/:projectId/chats', async (req: Request, res: Response) => 
 
     res.json(messages.reverse());
   } catch (err:any) {
-    res.status(500).json({ message: err.message });
+    logger.error(`Error fetching chat messages for project ${projectId}`, { error: err, projectId, query: req.query });
+    next(err); // Pass to global error handler
   }
 });
 
 // POST /api/projects/:projectId/chats - Post a new chat message in a project
-router.post('/projects/:projectId/chats', async (req: Request, res: Response) => {
+router.post('/projects/:projectId/chats', async (req: Request, res: Response, next: NextFunction) => {
   const { message, senderId, documentId } = req.body;
   const { projectId } = req.params;
   const { ChatMessage, Project } = getModels(); // Corrected: single destructuring
@@ -57,12 +59,14 @@ router.post('/projects/:projectId/chats', async (req: Request, res: Response) =>
 
     res.status(201).json(newChatMessage);
   } catch (err:any) {
-    res.status(400).json({ message: err.message });
+    logger.error(`Error posting chat message for project ${projectId}`, { error: err, projectId, body: req.body });
+    err.status = 400; // Set status for bad request
+    next(err); // Pass to global error handler
   }
 });
 
 // GET /api/documents/:documentId/chats - Get all chat messages for a specific document (comments)
-router.get('/documents/:documentId/chats', async (req: Request, res: Response) => {
+router.get('/documents/:documentId/chats', async (req: Request, res: Response, next: NextFunction) => {
     const { documentId } = req.params;
     const { limit = 50, before } = req.query;
     const { ChatMessage } = getModels();
@@ -80,7 +84,8 @@ router.get('/documents/:documentId/chats', async (req: Request, res: Response) =
 
         res.json(messages.reverse());
     } catch (err:any) {
-        res.status(500).json({ message: err.message });
+        logger.error(`Error fetching chat messages for document ${documentId}`, { error: err, documentId, query: req.query });
+        next(err); // Pass to global error handler
     }
 });
 

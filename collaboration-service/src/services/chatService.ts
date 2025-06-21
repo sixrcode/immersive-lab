@@ -2,6 +2,7 @@
 import { IChatMessage, ChatMessageModel } from '../models/ChatMessage'; // Changed import
 import mongoose from 'mongoose';
 import { getModels } from '../models'; // Added getModels import
+import logger from '../logger'; // Import logger
 
 /**
  * Service for handling chat-related business logic.
@@ -24,7 +25,7 @@ export const ChatService = {
 
       return messages.reverse(); // Typically, you want to show the oldest of the batch first.
     } catch (error) {
-      console.error('Error fetching project messages:', error);
+      logger.error('Error fetching project messages', { error, projectId, limit, before });
       throw error;
     }
   },
@@ -46,7 +47,7 @@ export const ChatService = {
 
       return messages.reverse();
     } catch (error) {
-      console.error('Error fetching document messages:', error);
+      logger.error('Error fetching document messages', { error, documentId, limit, before });
       throw error;
     }
   },
@@ -83,7 +84,7 @@ export const ChatService = {
 
       return chatMessage;
     } catch (error) {
-      console.error('Error creating message:', error);
+      logger.error('Error creating message', { error, projectId, senderId, documentId });
       throw error;
     }
   },

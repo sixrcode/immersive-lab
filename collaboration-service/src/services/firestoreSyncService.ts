@@ -1,5 +1,6 @@
 // collaboration-service/src/services/firestoreSyncService.ts
 import { db, storage } from '../firebaseAdmin'; // Import db and storage from the new setup
+import logger from '../logger'; // Import logger
 
 // Placeholder for StoryboardPackage and Panel types.
 // In a real scenario, these would be shared types, e.g., from a `packages/types`
@@ -28,14 +29,14 @@ interface ProjectRenamePayload {
 
 // Add this function inside firestoreSyncService.ts
 async function getStoryboardsByProjectId(projectId: string): Promise<StoryboardPackage[]> {
-  console.log(`[FirestoreSyncService] Fetching storyboards for project ID: ${projectId}`);
+  logger.info(`[FirestoreSyncService] Fetching storyboards for project ID: ${projectId}`, { projectId });
   try {
     const storyboardsRef = db.collection('storyboards');
     const q = storyboardsRef.where('projectId', '==', projectId);
     const querySnapshot = await q.get();
 
     if (querySnapshot.empty) {
-      console.log(`[FirestoreSyncService] No storyboards found for project ID: ${projectId}`);
+      logger.info(`[FirestoreSyncService] No storyboards found for project ID: ${projectId}`, { projectId });
       return [];
     }
 
@@ -43,17 +44,17 @@ async function getStoryboardsByProjectId(projectId: string): Promise<StoryboardP
     querySnapshot.forEach(doc => {
       storyboards.push({ id: doc.id, ...doc.data() } as StoryboardPackage);
     });
-    console.log(`[FirestoreSyncService] Successfully fetched ${storyboards.length} storyboards for project ID: ${projectId}`);
+    logger.info(`[FirestoreSyncService] Successfully fetched ${storyboards.length} storyboards for project ID: ${projectId}`, { projectId, count: storyboards.length });
     return storyboards;
   } catch (error) {
-    console.error(`[FirestoreSyncService] Error fetching storyboards for project ID ${projectId}:`, error);
+    logger.error(`[FirestoreSyncService] Error fetching storyboards for project ID ${projectId}`, { error, projectId });
     throw error;
   }
 }
 
 // Add this function inside firestoreSyncService.ts
 async function deleteStoryboard(storyboard: StoryboardPackage): Promise<void> {
-  console.log(`[FirestoreSyncService] Attempting to delete storyboard ID: ${storyboard.id}`);
+  logger.info(`[FirestoreSyncService] Attempting to delete storyboard ID: ${storyboard.id}`, { storyboardId: storyboard.id });
   try {
     // 1. Delete images from Firebase Storage
     const imageDeletePromises: Promise<any>[] = [];
@@ -70,32 +71,32 @@ async function deleteStoryboard(storyboard: StoryboardPackage): Promise<void> {
             if (storage.bucket().name) {
                 const fileRef = storage.bucket().file(imagePath);
                 imageDeletePromises.push(fileRef.delete().catch(err => {
-                console.warn(`[FirestoreSyncService] Failed to delete image ${imagePath} from Storage: ${err.message}. It might not exist or permissions are missing.`);
+                logger.warn(`[FirestoreSyncService] Failed to delete image ${imagePath} from Storage: ${err.message}. It might not exist or permissions are missing.`, { imagePath, storyboardId: storyboard.id, panelId: panel.id });
                 }));
             } else {
-                console.warn(`[FirestoreSyncService] Storage bucket not available, skipping deletion of image ${imagePath}. Ensure Admin SDK is initialized with a bucket.`);
+                logger.warn(`[FirestoreSyncService] Storage bucket not available, skipping deletion of image ${imagePath}. Ensure Admin SDK is initialized with a bucket.`, { imagePath, storyboardId: storyboard.id });
             }
 
           } else {
-            console.warn(`[FirestoreSyncService] Could not extract path from imageURL: ${panel.imageURL} for panel ${panel.id}`);
+            logger.warn(`[FirestoreSyncService] Could not extract path from imageURL: ${panel.imageURL} for panel ${panel.id}`, { imageUrl: panel.imageURL, panelId: panel.id, storyboardId: storyboard.id });
           }
         } catch (e) {
-            console.warn(`[FirestoreSyncService] Error processing imageURL ${panel.imageURL} for deletion: `, e);
+            logger.warn(`[FirestoreSyncService] Error processing imageURL ${panel.imageURL} for deletion: `, { error: e, imageUrl: panel.imageURL, storyboardId: storyboard.id });
         }
       }
       // Add logic for other images like 'previewURL' if necessary
     });
 
     await Promise.all(imageDeletePromises);
-    console.log(`[FirestoreSyncService] Finished attempting to delete associated images from Storage for storyboard ID: ${storyboard.id}.`);
+    logger.info(`[FirestoreSyncService] Finished attempting to delete associated images from Storage for storyboard ID: ${storyboard.id}.`, { storyboardId: storyboard.id });
 
     // 2. Delete the StoryboardPackage document from Firestore
     const docRef = db.collection('storyboards').doc(storyboard.id);
     await docRef.delete();
-    console.log(`[FirestoreSyncService] Successfully deleted storyboard document from Firestore for ID: ${storyboard.id}.`);
+    logger.info(`[FirestoreSyncService] Successfully deleted storyboard document from Firestore for ID: ${storyboard.id}.`, { storyboardId: storyboard.id });
 
   } catch (error) {
-    console.error(`[FirestoreSyncService] Error deleting storyboard ID: ${storyboard.id}:`, error);
+    logger.error(`[FirestoreSyncService] Error deleting storyboard ID: ${storyboard.id}`, { error, storyboardId: storyboard.id });
     throw error;
   }
 }
@@ -108,26 +109,26 @@ async function deleteStoryboard(storyboard: StoryboardPackage): Promise<void> {
  * - Handling deletion of other project-linked data in Firestore (e.g., prototypes).
  */
 export const handleProjectDeleted = async ({ projectId }: ProjectId): Promise<void> => {
-  console.log(`[FirestoreSyncService] Received project deleted event for projectId: ${projectId}`);
+  logger.info(`[FirestoreSyncService] Received project deleted event for projectId: ${projectId}`, { projectId });
   try {
     const storyboards = await getStoryboardsByProjectId(projectId);
     if (storyboards.length === 0) {
-      console.log(`[FirestoreSyncService] No storyboards to delete for project ${projectId}.`);
+      logger.info(`[FirestoreSyncService] No storyboards to delete for project ${projectId}.`, { projectId });
       return;
     }
 
-    console.log(`[FirestoreSyncService] Deleting ${storyboards.length} storyboard(s) for project ${projectId}...`);
+    logger.info(`[FirestoreSyncService] Deleting ${storyboards.length} storyboard(s) for project ${projectId}...`, { projectId, count: storyboards.length });
     for (const storyboard of storyboards) {
       await deleteStoryboard(storyboard);
     }
-    console.log(`[FirestoreSyncService] Successfully processed deletion for project ${projectId}.`);
+    logger.info(`[FirestoreSyncService] Successfully processed deletion for project ${projectId}.`, { projectId });
 
     // TODO: Handle deletion of other project-linked data in Firestore (e.g., prototypes).
     // For now, this is a placeholder.
-    console.log(`[FirestoreSyncService] Placeholder for deleting other Firestore data (e.g., prototypes) related to project ${projectId}.`);
+    logger.info(`[FirestoreSyncService] Placeholder for deleting other Firestore data (e.g., prototypes) related to project ${projectId}.`, { projectId });
 
   } catch (error) {
-    console.error(`[FirestoreSyncService] Error in handleProjectDeleted for projectId ${projectId}:`, error);
+    logger.error(`[FirestoreSyncService] Error in handleProjectDeleted for projectId ${projectId}`, { error, projectId });
     // Decide on error handling strategy (e.g., retry, log to monitoring)
   }
 };
@@ -140,16 +141,16 @@ export const handleProjectDeleted = async ({ projectId }: ProjectId): Promise<vo
  * - Updating other project-linked data in Firestore if any.
  */
 export const handleProjectRenamed = async ({ projectId, newName }: ProjectRenamePayload): Promise<void> => {
-  console.log(`[FirestoreSyncService] Received project renamed event for projectId: ${projectId}, newName: ${newName}`);
+  logger.info(`[FirestoreSyncService] Received project renamed event for projectId: ${projectId}, newName: ${newName}`, { projectId, newName });
   try {
     const storyboards = await getStoryboardsByProjectId(projectId); // Assuming getStoryboardsByProjectId is available
 
     if (storyboards.length === 0) {
-      console.log(`[FirestoreSyncService] No storyboards found for project ${projectId} to update name.`);
+      logger.info(`[FirestoreSyncService] No storyboards found for project ${projectId} to update name.`, { projectId });
       return;
     }
 
-    console.log(`[FirestoreSyncService] Updating project name to "${newName}" for ${storyboards.length} storyboard(s) linked to project ${projectId}...`);
+    logger.info(`[FirestoreSyncService] Updating project name to "${newName}" for ${storyboards.length} storyboard(s) linked to project ${projectId}...`, { projectId, newName, count: storyboards.length });
 
     const updatePromises: Promise<void>[] = [];
     for (const storyboard of storyboards) {
@@ -158,23 +159,23 @@ export const handleProjectRenamed = async ({ projectId, newName }: ProjectRename
       updatePromises.push(
         storyboardRef.update({ projectName: newName })
           .then(() => {
-            console.log(`[FirestoreSyncService] Successfully updated project name for storyboard ${storyboard.id}`);
+            logger.info(`[FirestoreSyncService] Successfully updated project name for storyboard ${storyboard.id}`, { storyboardId: storyboard.id, projectId, newName });
           })
           .catch(err => {
-            console.error(`[FirestoreSyncService] Failed to update project name for storyboard ${storyboard.id}:`, err);
+            logger.error(`[FirestoreSyncService] Failed to update project name for storyboard ${storyboard.id}`, { error: err, storyboardId: storyboard.id, projectId, newName });
             // Optionally, collect errors instead of just logging, to decide if the whole process failed
           })
       );
     }
 
     await Promise.all(updatePromises);
-    console.log(`[FirestoreSyncService] Successfully processed rename for project ${projectId}. All relevant storyboards updated.`);
+    logger.info(`[FirestoreSyncService] Successfully processed rename for project ${projectId}. All relevant storyboards updated.`, { projectId, newName });
 
     // TODO: Implement update for other project-linked data in Firestore (e.g., prototypes)
-    console.log(`[FirestoreSyncService] Placeholder for updating other Firestore data (e.g., prototypes) related to project rename for ${projectId}.`);
+    logger.info(`[FirestoreSyncService] Placeholder for updating other Firestore data (e.g., prototypes) related to project rename for ${projectId}.`, { projectId });
 
   } catch (error) {
-    console.error(`[FirestoreSyncService] Error in handleProjectRenamed for projectId ${projectId}:`, error);
+    logger.error(`[FirestoreSyncService] Error in handleProjectRenamed for projectId ${projectId}`, { error, projectId, newName });
     // Decide on error handling strategy
   }
 };

@@ -1,7 +1,8 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Request, Response, Router, NextFunction } from 'express';
 // import Document from '../models/Document'; // Models will be accessed via getModels
 // import Project from '../models/Project'; // Models will be accessed via getModels
 import { getModels } from '../models'; // Import getModels
+import logger from '../logger'; // Import logger
 // import { authenticateToken } from '../middleware/auth'; // Optional: if you have auth middleware
 
 const router: Router = express.Router();
@@ -17,12 +18,13 @@ router.get('/projects/:projectId/documents', async (req: Request, res: Response)
     // .populate('lastModifiedBy', 'username email');
     res.json(documents);
   } catch (err:any) {
-    res.status(500).json({ message: err.message });
+    logger.error(`Error fetching documents for project ${req.params.projectId}`, { error: err, projectId: req.params.projectId });
+    next(err);
   }
 });
 
 // POST /api/projects/:projectId/documents - Create a new document in a project
-router.post('/projects/:projectId/documents', async (req: Request, res: Response) => {
+router.post('/projects/:projectId/documents', async (req: Request, res: Response, next: NextFunction) => {
   const { title, content, createdBy } = req.body; // Assuming createdBy (user ID) from auth/request
   const { projectId } = req.params;
 
@@ -31,6 +33,8 @@ router.post('/projects/:projectId/documents', async (req: Request, res: Response
     // Optional: Check if project exists
     const project = await Project.findById(projectId);
     if (!project) {
+      // It's good practice to log this specific case
+      logger.warn(`Attempt to create document for non-existent project ${projectId}`, { projectId, body: req.body });
       res.status(404).json({ message: 'Project not found' });
       return;
     }
@@ -46,7 +50,9 @@ router.post('/projects/:projectId/documents', async (req: Request, res: Response
     const newDocument = await document.save();
     res.status(201).json(newDocument);
   } catch (err:any) {
-    res.status(400).json({ message: err.message });
+    logger.error(`Error creating document for project ${projectId}`, { error: err, projectId, body: req.body });
+    err.status = 400;
+    next(err);
   }
 });
 
@@ -56,7 +62,7 @@ router.get('/:documentId', getDocument, (req: Request, res: Response) => {
 });
 
 // PUT /api/documents/:documentId - Update a document
-router.put('/:documentId', getDocument, async (req: Request, res: Response) => {
+router.put('/:documentId', getDocument, async (req: Request, res: Response, next: NextFunction) => {
   const { title, content, lastModifiedBy } = req.body; // Assuming lastModifiedBy from auth/request
 
   if (title != null) {
@@ -76,12 +82,14 @@ router.put('/:documentId', getDocument, async (req: Request, res: Response) => {
     // io.to(updatedDocument.projectId.toString()).emit('documentUpdated', updatedDocument);
     res.json(updatedDocument);
   } catch (err:any) {
-    res.status(400).json({ message: err.message });
+    logger.error(`Error updating document ${req.params.documentId}`, { error: err, documentId: req.params.documentId, body: req.body });
+    err.status = 400;
+    next(err);
   }
 });
 
 // DELETE /api/documents/:documentId - Delete a document
-router.delete('/:documentId', getDocument, async (req: Request, res: Response) => {
+router.delete('/:documentId', getDocument, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const deletedDocument = res.locals.document;
     await res.locals.document.deleteOne();
@@ -89,7 +97,8 @@ router.delete('/:documentId', getDocument, async (req: Request, res: Response) =
     // io.to(deletedDocument.projectId.toString()).emit('documentDeleted', { id: deletedDocument._id });
     res.json({ message: 'Document deleted' });
   } catch (err:any) {
-    res.status(500).json({ message: err.message });
+    logger.error(`Error deleting document ${req.params.documentId}`, { error: err, documentId: req.params.documentId });
+    next(err);
   }
 });
 
@@ -102,11 +111,15 @@ async function getDocument(req: Request, res: Response, next: express.NextFuncti
     // .populate('createdBy', 'username email')
     // .populate('lastModifiedBy', 'username email');
     if (document == null) {
+      logger.warn(`Document not found with ID: ${req.params.documentId}`, { documentId: req.params.documentId });
       res.status(404).json({ message: 'Cannot find document' });
       return;
     }
   } catch (err:any) {
-    res.status(500).json({ message: err.message });
+    logger.error(`Error in getDocument middleware while fetching document ${req.params.documentId}`, { error: err, documentId: req.params.documentId });
+    // Pass error to the global error handler, ensuring it has a status if not already set
+    if (!err.status) err.status = 500;
+    next(err);
     return;
   }
   res.locals.document = document;

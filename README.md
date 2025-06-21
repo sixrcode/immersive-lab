@@ -30,6 +30,7 @@ Forge the Future, One Story at a Time.
   - [AI Script Analyzer functions](#ai-script-analyzer-functions)
   - [Collaboration Service collaboration-service](#collaboration-service-collaboration-service)
   - [Portfolio Microservice portfolio-microservice](#portfolio-microservice-portfolio-microservice)
+- [Error Handling and Logging](#error-handling-and-logging)
 - [Future Improvements](#future-improvements)
   - [Enhanced AI Capabilities](#enhanced-ai-capabilities)
   - [Broader Platform Integrations](#broader-platform-integrations)
@@ -409,6 +410,50 @@ These services provide tools and functionalities to aid in the planning, organiz
 *   **Key Technologies:** Utilizes Genkit-powered AI functions within the Centralized AI Microservice (via the `/generateStoryboard` endpoint) for image generation. Frontend components for displaying and managing storyboard panels.
 *   **Location:** Logic primarily handled by the Centralized AI Microservice, with UI components in the Next.js application.
 *   **Note:** This tool is designed to bridge the gap between textual descriptions/shot lists and visual storytelling, facilitating pre-visualization. It is a key part of the "Prompt-to-Prototype Studio Handoff Features".
+
+## Error Handling and Logging
+
+All microservices in this project adhere to a standardized approach for error handling and logging to ensure consistency and aid in debugging.
+
+### Standardized Error Response
+
+When an error occurs, API endpoints will return a JSON response in the following format:
+
+```json
+{
+  "success": false,
+  "error": {
+    "id": "unique-error-id-uuidv4",
+    "message": "A human-readable description of the error.",
+    "code": "ERROR_CODE_STRING"
+  }
+}
+```
+
+*   `success`: Always `false` for errors.
+*   `error.id`: A unique identifier (UUID v4) generated for each error instance. This ID is also logged and can be used to correlate client-side errors with server-side logs.
+*   `error.message`: A developer-friendly message explaining the error.
+*   `error.code`: A string code representing the type of error (e.g., `VALIDATION_ERROR`, `UNAUTHENTICATED`, `INTERNAL_SERVER_ERROR`, `FIRESTORE_OPERATION_FAILED`).
+
+The HTTP status code will also reflect the nature of the error (e.g., 400 for validation errors, 401/403 for auth errors, 500 for server errors).
+
+### Structured Logging
+
+*   **Firebase Functions (`ai-microservice`, `functions/index.js`):** These services use the built-in `firebase-functions/logger` which produces structured JSON logs in Google Cloud Logging.
+*   **Standalone Node.js Services (`collaboration-service`, `portfolio-microservice`):** These services use the `winston` library, configured to output structured JSON logs to the console. In a production deployment, these console logs would typically be collected by a log aggregator.
+
+All logs aim to include:
+*   `errorId`: The unique error identifier, correlating with the API response.
+*   `service`: The name of the microservice (e.g., `ai-microservice`).
+*   `userId`: Identifier for the user who initiated the request, if available.
+*   `route`: The API route that was accessed.
+*   `method`: The HTTP method used.
+*   `errorCode`: The error code string.
+*   `errorMessage`: The error message.
+*   `stack`: The stack trace for server errors.
+*   Other relevant contextual information.
+
+This consistent logging and error reporting helps in quickly identifying, diagnosing, and resolving issues.
 
 ## 🚀 CI/CD & Deployment Pipeline
 
