@@ -1,38 +1,72 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../firebaseAdmin'; // Assuming firebaseAdmin.ts is in the parent directory (src/)
+import { auth } from '../firebaseAdmin';           // Firebase Admin wrapper
+import * as admin from 'firebase-admin';           // For DecodedIdToken typing
+import logger from '../logger';                    // Centralised Winston/Pino logger (assumed)
 
-import * as admin from 'firebase-admin'; // Import admin for DecodedIdToken type
-
+/**
+ * Extend Express Request with a verified Firebase user object.
+ */
 export interface AuthenticatedRequest extends Request {
   user?: admin.auth.DecodedIdToken;
 }
 
-export const authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  // console.log('Authenticating request...'); // Reduced verbosity
-  const authorizationHeader = req.headers.authorization;
+/**
+ * Authentication middleware
+ * 1. Checks for `Authorization: Bearer <token>`
+ * 2. Verifies the Firebase ID token
+ * 3. Attaches `req.user` if valid
+ * 4. Logs at each step with contextual metadata
+ */
+export const authenticate = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  logger.info('Authenticating request', { path: req.path, ip: req.ip });
 
+  const authorizationHeader = req.headers.authorization;
   if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-    // console.log('No Bearer token found in Authorization header.'); // Reduced verbosity
-    return res.status(401).json({ error: 'Unauthorized. No Bearer token provided.' });
+    logger.warn('No Bearer token found in Authorization header', {
+      path: req.path,
+      ip: req.ip,
+    });
+    return res
+      .status(401)
+      .json({ message: 'Unauthorized: No Bearer token provided.' });
   }
 
   const idToken = authorizationHeader.split('Bearer ')[1];
-
   if (!idToken) {
-    // console.log('Bearer token is empty.'); // Reduced verbosity
-    return res.status(401).json({ error: 'Unauthorized. Bearer token is empty.' });
+    logger.warn('Bearer token is empty', { path: req.path, ip: req.ip });
+    return res
+      .status(401)
+      .json({ message: 'Unauthorized: Bearer token is empty.' });
   }
 
   try {
     const decodedToken = await auth.verifyIdToken(idToken);
     req.user = decodedToken;
-    console.log(`User ${decodedToken.uid} authenticated successfully.`); // TODO: Review logging of UIDs in production for privacy compliance.
-    next();
-  } catch (error: any) { // Explicitly type error as any to access error.code
-    console.error('Error verifying ID token:', error.message); // Log error message for context
+    logger.info('User authenticated', {
+      userId: decodedToken.uid,
+      path: req.path,
+    });
+    return next();
+  } catch (error: any) {
+    logger.error('Error verifying ID token', {
+      error: error.message,
+      code: error.code,
+      path: req.path,
+      ip: req.ip,
+    });
+
     if (error.code === 'auth/id-token-expired') {
-      return res.status(401).json({ error: 'Unauthorized. Token expired.', errorCode: error.code });
+      return res
+        .status(401)
+        .json({ message: 'Unauthorized: Token expired.', errorCode: error.code });
     }
-    return res.status(403).json({ error: 'Forbidden. Invalid or expired token.', errorCode: error.code });
+
+    return res
+      .status(403)
+      .json({ message: 'Forbidden: Invalid or expired token.', errorCode: error.code });
   }
 };

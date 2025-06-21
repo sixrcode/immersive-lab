@@ -5,6 +5,7 @@ const admin = require("firebase-admin");
 const { onRequest } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const logger = require("firebase-functions/logger");
+const { v4: uuidv4 } = require('uuid'); // Import uuid
 
 const express = require('express');
 const cors = require('cors');
@@ -50,8 +51,25 @@ async function authenticate(req, res, next) {
     req.user = decodedToken; // Add user to request
     next();
   } catch (error) {
-    logger.error("Error while verifying Firebase ID token:", error);
-    res.status(403).json({ error: 'Forbidden - Invalid or expired token.' });
+    // This error is an authentication failure, so it's handled directly.
+    // It doesn't pass to the global Express error handler via next(error)
+    // because we want to send a 403 immediately.
+    // For consistency, we can structure the log and response similarly.
+    const errorId = uuidv4();
+    logger.error(`Firebase ID token verification error - Error ID: ${errorId}`, {
+      errorId: errorId,
+      originalMessage: error.message,
+      stack: error.stack,
+      // Potentially log parts of the token if policy allows, for debugging, but be careful.
+    });
+    res.status(403).json({
+      success: false,
+      error: {
+        id: errorId,
+        message: 'Forbidden - Invalid or expired token.',
+        code: 'TOKEN_VERIFICATION_FAILED',
+      }
+    });
   }
 }
 
@@ -90,17 +108,34 @@ app.get('/production-board/columns', async (req, res) => {
 
     res.status(200).json(columnsData);
   } catch (error) {
-    functions.logger.error("Error fetching columns and cards:", error);
-    res.status(500).json({ error: "Failed to fetch columns and their cards." });
+    // logger.error already called by the global handler if next(error) is used.
+    // Here, we can add more specific context if needed before passing to global handler.
+    error.status = error.status || 500;
+    error.code = error.code || 'FETCH_COLUMNS_FAILED';
+    next(error);
   }
 });
 
-app.post('/production-board/columns', async (req, res) => {
+app.post('/production-board/columns', async (req, res, next) => {
   try {
     const { title } = req.body;
 
     if (!title || typeof title !== 'string' || title.trim() === '') {
-      return res.status(400).json({ error: "Title is required and must be a non-empty string." });
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Title is required`, {
+        errorId: errorId,
+        route: req.path,
+        userId: req.user ? req.user.uid : 'unknown',
+        reason: "Title is required and must be a non-empty string."
+      });
+      return res.status(400).json({
+        success: false,
+        error: {
+          id: errorId,
+          message: "Title is required and must be a non-empty string.",
+          code: "VALIDATION_ERROR",
+        }
+      });
     }
 
     const newColumnData = {
@@ -115,29 +150,36 @@ app.post('/production-board/columns', async (req, res) => {
 
     res.status(201).json({ id: columnDoc.id, ...columnDoc.data() });
   } catch (error) {
-    functions.logger.error("Error creating new column:", error);
-    res.status(500).json({ error: "Failed to create new column." });
+    error.status = error.status || 500;
+    error.code = error.code || 'CREATE_COLUMN_FAILED';
+    next(error);
   }
 });
 
-app.put('/production-board/columns/:columnId', async (req, res) => {
+app.put('/production-board/columns/:columnId', async (req, res, next) => {
   try {
     const { columnId } = req.params;
     const { title } = req.body;
 
     if (!columnId) {
-      return res.status(400).json({ error: "Column ID is required." });
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Column ID is required`, { errorId, route: req.path, userId: req.user?.uid });
+      return res.status(400).json({ success: false, error: { id: errorId, message: "Column ID is required.", code: "VALIDATION_ERROR" } });
     }
 
     if (title !== undefined && (typeof title !== 'string' || title.trim() === '')) {
-      return res.status(400).json({ error: "Title, if provided, must be a non-empty string." });
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Title must be non-empty`, { errorId, route: req.path, userId: req.user?.uid });
+      return res.status(400).json({ success: false, error: { id: errorId, message: "Title, if provided, must be a non-empty string.", code: "VALIDATION_ERROR" } });
     }
 
     const columnRef = db.collection('productionBoardColumns').doc(columnId);
     const columnDoc = await columnRef.get();
 
     if (!columnDoc.exists) {
-      return res.status(404).json({ error: "Column not found." });
+      const errorId = uuidv4();
+      logger.warn(`Not Found Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Column not found`, { errorId, route: req.path, userId: req.user?.uid, columnId });
+      return res.status(404).json({ success: false, error: { id: errorId, message: "Column not found.", code: "NOT_FOUND" } });
     }
 
     const updateData = {
@@ -153,24 +195,29 @@ app.put('/production-board/columns/:columnId', async (req, res) => {
 
     res.status(200).json({ id: updatedDoc.id, ...updatedDoc.data() });
   } catch (error) {
-    functions.logger.error(`Error updating column ${req.params.columnId}:`, error);
-    res.status(500).json({ error: "Failed to update column." });
+    error.status = error.status || 500;
+    error.code = error.code || 'UPDATE_COLUMN_FAILED';
+    next(error);
   }
 });
 
-app.delete('/production-board/columns/:columnId', async (req, res) => {
+app.delete('/production-board/columns/:columnId', async (req, res, next) => {
   try {
     const { columnId } = req.params;
 
     if (!columnId) {
-      return res.status(400).json({ error: "Column ID is required." });
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Column ID required`, { errorId, route: req.path, userId: req.user?.uid });
+      return res.status(400).json({ success: false, error: { id: errorId, message: "Column ID is required.", code: "VALIDATION_ERROR" } });
     }
 
     const columnRef = db.collection('productionBoardColumns').doc(columnId);
     const columnDoc = await columnRef.get();
 
     if (!columnDoc.exists) {
-      return res.status(404).json({ error: "Column not found." });
+      const errorId = uuidv4();
+      logger.warn(`Not Found Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Column not found`, { errorId, route: req.path, userId: req.user?.uid, columnId });
+      return res.status(404).json({ success: false, error: { id: errorId, message: "Column not found.", code: "NOT_FOUND" } });
     }
 
     // Batch delete associated cards
@@ -190,21 +237,26 @@ app.delete('/production-board/columns/:columnId', async (req, res) => {
 
     res.status(204).send(); // Successfully deleted
   } catch (error) {
-    functions.logger.error(`Error deleting column ${req.params.columnId} and its cards:`, error);
-    res.status(500).json({ error: "Failed to delete column and its cards." });
+    error.status = error.status || 500;
+    error.code = error.code || 'DELETE_COLUMN_FAILED';
+    next(error);
   }
 });
 
 // Cards Endpoints
-app.post('/production-board/columns/:columnId/cards', async (req, res) => {
+app.post('/production-board/columns/:columnId/cards', async (req, res, next) => {
   const { columnId } = req.params;
   const { title, description, priority, dueDate, coverImage, dataAiHint, orderInColumn } = req.body;
 
   if (!columnId) {
-    return res.status(400).json({ error: "Column ID is required." });
+    const errorId = uuidv4();
+    logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Column ID required`, { errorId, route: req.path, userId: req.user?.uid });
+    return res.status(400).json({ success: false, error: { id: errorId, message: "Column ID is required.", code: "VALIDATION_ERROR" } });
   }
   if (!title || typeof title !== 'string' || title.trim() === '') {
-    return res.status(400).json({ error: "Card title is required and must be a non-empty string." });
+    const errorId = uuidv4();
+    logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Card title required`, { errorId, route: req.path, userId: req.user?.uid, columnId });
+    return res.status(400).json({ success: false, error: { id: errorId, message: "Card title is required and must be a non-empty string.", code: "VALIDATION_ERROR" } });
   }
 
   const columnRef = db.collection('productionBoardColumns').doc(columnId);
@@ -254,43 +306,53 @@ app.post('/production-board/columns/:columnId/cards', async (req, res) => {
 
     res.status(201).json(newCardData);
   } catch (error) {
-    functions.logger.error(`Error creating card in column ${columnId}:`, error);
-    if (error.status === 404) {
-      return res.status(404).json({ error: error.message });
+    if (error.status === 404) { // Specific error from transaction
+      const errorId = uuidv4();
+      logger.warn(`Not Found Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: ${error.message}`, { errorId, route: req.path, userId: req.user?.uid, columnId });
+      return res.status(404).json({ success: false, error: { id: errorId, message: error.message, code: "NOT_FOUND" } });
     }
-    res.status(500).json({ error: "Failed to create new card." });
+    error.status = error.status || 500;
+    error.code = error.code || 'CREATE_CARD_FAILED';
+    next(error);
   }
 });
 
-app.get('/production-board/cards/:cardId', async (req, res) => {
+app.get('/production-board/cards/:cardId', async (req, res, next) => {
   try {
     const { cardId } = req.params;
 
     if (!cardId) {
-      return res.status(400).json({ error: "Card ID is required." });
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Card ID required`, { errorId, route: req.path, userId: req.user?.uid });
+      return res.status(400).json({ success: false, error: { id: errorId, message: "Card ID is required.", code: "VALIDATION_ERROR" } });
     }
 
     const cardRef = db.collection('productionBoardCards').doc(cardId);
     const cardDoc = await cardRef.get();
 
     if (!cardDoc.exists) {
-      return res.status(404).json({ error: "Card not found." });
+      const errorId = uuidv4();
+      logger.warn(`Not Found Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Card not found`, { errorId, route: req.path, userId: req.user?.uid, cardId });
+      return res.status(404).json({ success: false, error: { id: errorId, message: "Card not found.", code: "NOT_FOUND" } });
     }
 
     res.status(200).json({ id: cardDoc.id, ...cardDoc.data() });
   } catch (error) {
-    functions.logger.error(`Error fetching card ${req.params.cardId}:`, error);
-    res.status(500).json({ error: "Failed to fetch card." });
+    error.status = error.status || 500;
+    error.code = error.code || 'FETCH_CARD_FAILED';
+    next(error);
   }
 });
 
-app.put('/production-board/cards/:cardId', async (req, res) => {
+app.put('/production-board/cards/:cardId', async (req, res, next) => {
   try {
     const { cardId } = req.params;
     const { title, description, priority, dueDate, coverImage, dataAiHint, orderInColumn, columnId: newColumnId } = req.body;
 
     if (!cardId) {
-      return res.status(400).json({ error: "Card ID is required." });
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Card ID required`, { errorId, route: req.path, userId: req.user?.uid });
+      return res.status(400).json({ success: false, error: { id: errorId, message: "Card ID is required.", code: "VALIDATION_ERROR" } });
     }
 
     const cardRef = db.collection('productionBoardCards').doc(cardId);
@@ -301,7 +363,9 @@ app.put('/production-board/cards/:cardId', async (req, res) => {
     for (const [key, value] of Object.entries(allowedFields)) {
       if (value !== undefined) {
         if (key === 'title' && (typeof value !== 'string' || value.trim() === '')) {
-          return res.status(400).json({ error: "Title, if provided, must be a non-empty string." });
+          const errorId = uuidv4();
+          logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Title must be non-empty`, { errorId, route: req.path, userId: req.user?.uid, cardId });
+          return res.status(400).json({ success: false, error: { id: errorId, message: "Title, if provided, must be a non-empty string.", code: "VALIDATION_ERROR" } });
         }
         updateData[key] = (typeof value === 'string') ? value.trim() : value;
       }
@@ -314,12 +378,14 @@ app.put('/production-board/cards/:cardId', async (req, res) => {
     // The dedicated MOVE endpoint is responsible for changing columnId and updating cardOrder arrays.
     if (newColumnId !== undefined) {
       // Log a warning or simply ignore. For now, ignoring.
-      functions.logger.warn(`Attempted to change columnId for card ${cardId} via PUT. This should be done via PATCH /move.`);
+      logger.warn(`Attempted to change columnId for card ${cardId} via PUT. This should be done via PATCH /move.`, { cardId, userId: req.user?.uid });
     }
 
 
     if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ error: "No valid fields provided for update." });
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: No valid fields for update`, { errorId, route: req.path, userId: req.user?.uid, cardId });
+      return res.status(400).json({ success: false, error: { id: errorId, message: "No valid fields provided for update.", code: "VALIDATION_ERROR" } });
     }
 
     updateData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
@@ -336,20 +402,25 @@ app.put('/production-board/cards/:cardId', async (req, res) => {
     res.status(200).json({ id: updatedCardDoc.id, ...updatedCardDoc.data() });
 
   } catch (error) {
-    functions.logger.error(`Error updating card ${req.params.cardId}:`, error);
-    if (error.status === 404) {
-      return res.status(404).json({ error: error.message });
+    if (error.status === 404) { // Specific error from transaction
+      const errorId = uuidv4();
+      logger.warn(`Not Found Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: ${error.message}`, { errorId, route: req.path, userId: req.user?.uid, cardId });
+      return res.status(404).json({ success: false, error: { id: errorId, message: error.message, code: "NOT_FOUND" } });
     }
-    res.status(500).json({ error: "Failed to update card." });
+    error.status = error.status || 500;
+    error.code = error.code || 'UPDATE_CARD_FAILED';
+    next(error);
   }
 });
 
-app.delete('/production-board/cards/:cardId', async (req, res) => {
+app.delete('/production-board/cards/:cardId', async (req, res, next) => {
   try {
     const { cardId } = req.params;
 
     if (!cardId) {
-      return res.status(400).json({ error: "Card ID is required." });
+      const errorId = uuidv4();
+      logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Card ID required`, { errorId, route: req.path, userId: req.user?.uid });
+      return res.status(400).json({ success: false, error: { id: errorId, message: "Card ID is required.", code: "VALIDATION_ERROR" } });
     }
 
     const cardRef = db.collection('productionBoardCards').doc(cardId);
@@ -373,10 +444,10 @@ app.delete('/production-board/cards/:cardId', async (req, res) => {
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
         } else {
-            functions.logger.warn(`Column ${columnId} not found when trying to remove card ${cardId} from its cardOrder.`);
+            logger.warn(`Column ${columnId} not found when trying to remove card ${cardId} from its cardOrder.`, { cardId, columnId, userId: req.user?.uid });
         }
       } else {
-        functions.logger.warn(`Card ${cardId} does not have a columnId. Cannot update cardOrder.`);
+        logger.warn(`Card ${cardId} does not have a columnId. Cannot update cardOrder.`, { cardId, userId: req.user?.uid });
       }
 
       transaction.delete(cardRef);
@@ -384,27 +455,36 @@ app.delete('/production-board/cards/:cardId', async (req, res) => {
 
     res.status(204).send();
   } catch (error) {
-    functions.logger.error(`Error deleting card ${req.params.cardId}:`, error);
-    if (error.status === 404) {
-      return res.status(404).json({ error: error.message });
+    if (error.status === 404) { // Specific error from transaction
+      const errorId = uuidv4();
+      logger.warn(`Not Found Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: ${error.message}`, { errorId, route: req.path, userId: req.user?.uid, cardId });
+      return res.status(404).json({ success: false, error: { id: errorId, message: error.message, code: "NOT_FOUND" } });
     }
-    res.status(500).json({ error: "Failed to delete card." });
+    error.status = error.status || 500;
+    error.code = error.code || 'DELETE_CARD_FAILED';
+    next(error);
   }
 });
 
-app.patch('/production-board/cards/:cardId/move', async (req, res) => {
+app.patch('/production-board/cards/:cardId/move', async (req, res, next) => {
   const { cardId } = req.params;
   const { targetColumnId, newOrderInColumn } = req.body; // newOrderInColumn is the index in the target's cardOrder
 
   if (!cardId) {
-    return res.status(400).json({ error: "Card ID is required." });
+    const errorId = uuidv4();
+    logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Card ID required`, { errorId, route: req.path, userId: req.user?.uid });
+    return res.status(400).json({ success: false, error: { id: errorId, message: "Card ID is required.", code: "VALIDATION_ERROR" } });
   }
   if (!targetColumnId) {
-    return res.status(400).json({ error: "Target column ID is required." });
+    const errorId = uuidv4();
+    logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Target column ID required`, { errorId, route: req.path, userId: req.user?.uid, cardId });
+    return res.status(400).json({ success: false, error: { id: errorId, message: "Target column ID is required.", code: "VALIDATION_ERROR" } });
   }
   // newOrderInColumn can be 0, so check for undefined
   if (newOrderInColumn !== undefined && (typeof newOrderInColumn !== 'number' || newOrderInColumn < 0)) {
-    return res.status(400).json({ error: "New order index must be a non-negative number." });
+    const errorId = uuidv4();
+    logger.warn(`Validation Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: Invalid order index`, { errorId, route: req.path, userId: req.user?.uid, cardId, newOrderInColumn });
+    return res.status(400).json({ success: false, error: { id: errorId, message: "New order index must be a non-negative number.", code: "VALIDATION_ERROR" } });
   }
 
   const cardRef = db.collection('productionBoardCards').doc(cardId);
@@ -502,17 +582,59 @@ app.patch('/production-board/cards/:cardId/move', async (req, res) => {
     res.status(200).json(updatedCardData);
 
   } catch (error) {
-    functions.logger.error(`Error moving card ${cardId} to column ${targetColumnId}:`, error);
-    if (error.status === 404) {
-      return res.status(404).json({ error: error.message });
+    if (error.status === 404) { // Specific error from transaction
+      const errorId = uuidv4();
+      logger.warn(`Not Found Error ID: ${errorId} - Route: ${req.path} - User: ${req.user ? req.user.uid : 'unknown'} - Message: ${error.message}`, { errorId, route: req.path, userId: req.user?.uid, cardId, targetColumnId });
+      return res.status(404).json({ success: false, error: { id: errorId, message: error.message, code: "NOT_FOUND" } });
     }
-    res.status(500).json({ error: "Failed to move card." });
+    error.status = error.status || 500;
+    error.code = error.code || 'MOVE_CARD_FAILED';
+    next(error);
   }
 });
 
+// Global error handler for the Express app 'api'
+app.use((err, req, res, next) => {
+  const errorId = err.errorId || uuidv4();
+  const userId = req.user ? req.user.uid : 'unknown'; // From authenticate middleware
+  const errorMessage = err.message || 'An unexpected error occurred in the API.';
+  const errorCode = err.code || 'INTERNAL_API_ERROR';
+  const errorStatus = typeof err.status === 'number' ? err.status : 500;
+
+  // Log the error using firebase-functions/logger
+  logger.error(`API Error ID: ${errorId} - User: ${userId} - Route: ${req.path} - Code: ${errorCode} - Message: ${errorMessage}`, {
+    errorId: errorId,
+    userId: userId,
+    route: req.path,
+    method: req.method,
+    errorCode: errorCode,
+    errorMessage: errorMessage,
+    stack: err.stack,
+    requestDetails: {
+      params: req.params,
+      query: req.query,
+      // body: req.body, // Avoid logging sensitive PII by default
+    }
+  });
+
+  // Send standardized JSON response
+  if (res.headersSent) {
+    return next(err); // Delegate to default if headers already sent
+  }
+  res.status(errorStatus).json({
+    success: false,
+    error: {
+      id: errorId,
+      message: errorMessage,
+      code: errorCode,
+    }
+  });
+});
+
+
 // Expose Express app as a single Firebase Function
-admin.initializeApp();
-setGlobalOptions({ region: "us-west1" });
+// admin.initializeApp(); // Already initialized at the top if (admin.apps.length === 0)
+// setGlobalOptions({ region: "us-west1" }); // Already set at the top
 
 /**
  * Main API export.
@@ -548,9 +670,36 @@ exports.api = onRequest(app);
  * Optional simple function for testing or demos.
  * Not connected to the main Express API.
  */
-exports.helloWorld = onRequest((req, res) => {
-  logger.info("Hello logs!", { structuredData: true });
-  res.send("Hello from Firebase!");
+exports.helloWorld = onRequest(async (req, res) => {
+  const errorId = uuidv4(); // Generate errorId at the start for potential use
+  try {
+    logger.info("Hello logs!", { structuredData: true, userId: req.user?.uid }); // Example of adding userId if available
+    res.status(200).json({ success: true, data: "Hello from Firebase!" });
+  } catch (error) {
+    const userId = req.user ? req.user.uid : (req.body && req.body.userId) || 'unknown';
+    const errorMessage = error.message || 'An unexpected error occurred in helloWorld.';
+    const errorCode = error.code || 'FUNCTION_EXECUTION_ERROR';
+    const errorStatus = typeof error.status === 'number' ? error.status : 500;
+
+    logger.error(`Function Error ID: ${errorId} - Function: helloWorld - User: ${userId} - Code: ${errorCode} - Message: ${errorMessage}`, {
+      errorId: errorId,
+      functionName: 'helloWorld',
+      userId: userId,
+      errorCode: errorCode,
+      errorMessage: errorMessage,
+      stack: error.stack,
+      requestData: req.body // Log request data cautiously
+    });
+
+    res.status(errorStatus).json({
+      success: false,
+      error: {
+        id: errorId,
+        message: errorMessage,
+        code: errorCode,
+      }
+    });
+  }
 });
 
 /**

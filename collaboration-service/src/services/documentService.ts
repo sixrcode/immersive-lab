@@ -2,6 +2,7 @@
 import { IDocument, DocumentModel } from '../models/Document'; // Changed import
 import mongoose from 'mongoose';
 import { getModels } from '../models'; // Added getModels import
+import logger from '../logger'; // Import logger
 
 /**
  * Service for handling document-related business logic.
@@ -14,7 +15,7 @@ export const DocumentService = {
         .populate('lastModifiedBy', 'username email');
       return document;
     } catch (error) {
-      console.error('Error fetching document by ID:', error);
+      logger.error('Error fetching document by ID', { error, documentId });
       throw error; // Or handle more gracefully
     }
   },
@@ -27,7 +28,7 @@ export const DocumentService = {
         .sort({ updatedAt: -1 });
       return documents;
     } catch (error) {
-      console.error('Error fetching documents by project ID:', error);
+      logger.error('Error fetching documents by project ID', { error, projectId });
       throw error;
     }
   },
@@ -51,7 +52,7 @@ export const DocumentService = {
       // getIO().to(projectId.toString()).emit('documentCreated', document);
       return document;
     } catch (error) {
-      console.error('Error creating document:', error);
+      logger.error('Error creating document', { error, title, projectId, userId });
       throw error;
     }
   },
@@ -78,7 +79,7 @@ export const DocumentService = {
       // });
       return document;
     } catch (error) {
-      console.error('Error updating document content:', error);
+      logger.error('Error updating document content', { error, documentId, userId });
       throw error;
     }
   },
@@ -92,7 +93,7 @@ export const DocumentService = {
       }
       return document;
     } catch (error) {
-      console.error('Error deleting document:', error);
+      logger.error('Error deleting document', { error, documentId });
       throw error;
     }
   }

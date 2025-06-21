@@ -1,6 +1,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { auth } from '../firebaseAdmin'; // Import Firebase Admin auth
 import * as admin from 'firebase-admin'; // For DecodedIdToken type
+import logger from '../logger'; // Import logger
 
 // Extend Socket data with an optional user property
 interface AuthenticatedSocket extends Socket {
@@ -11,12 +12,12 @@ interface AuthenticatedSocket extends Socket {
 
 export function initializeSocket(io: SocketIOServer) {
   io.on('connection', async (socket: AuthenticatedSocket) => { // Use AuthenticatedSocket
-    console.log(`Client attempting to connect: ${socket.id}`);
+    logger.info(`Client attempting to connect: ${socket.id}`, { socketId: socket.id, ip: socket.handshake.address });
 
     const token = socket.handshake.query.token as string;
 
     if (!token) {
-      console.log(`Socket ${socket.id} disconnected: No token provided in handshake query.`);
+      logger.warn(`Socket ${socket.id} disconnected: No token provided in handshake query.`, { socketId: socket.id });
       socket.disconnect(true);
       return;
     }
@@ -24,33 +25,33 @@ export function initializeSocket(io: SocketIOServer) {
     try {
       const decodedToken = await auth.verifyIdToken(token);
       socket.data.user = decodedToken;
-      console.log(`Socket ${socket.id} authenticated for user ${decodedToken.uid}. Client connected.`);
+      logger.info(`Socket ${socket.id} authenticated for user ${decodedToken.uid}. Client connected.`, { socketId: socket.id, userId: decodedToken.uid });
 
       // Example: Join a room (e.g., a project room)
       // Ensure this and other handlers are only set up *after* successful authentication
       socket.on('joinProject', (projectId: string) => {
         socket.join(projectId);
-        console.log(`Socket ${socket.id} (User ${socket.data.user?.uid}) joined project room: ${projectId}`);
+        logger.info(`Socket ${socket.id} (User ${socket.data.user?.uid}) joined project room: ${projectId}`, { socketId: socket.id, userId: socket.data.user?.uid, projectId });
         socket.emit('joinedProject', projectId);
       });
 
       socket.on('leaveProject', (projectId: string) => {
         socket.leave(projectId);
-        console.log(`Socket ${socket.id} (User ${socket.data.user?.uid}) left project room: ${projectId}`);
+        logger.info(`Socket ${socket.id} (User ${socket.data.user?.uid}) left project room: ${projectId}`, { socketId: socket.id, userId: socket.data.user?.uid, projectId });
         socket.emit('leftProject', projectId);
       });
 
       socket.on('documentChange', (data: { documentId: string; projectId: string, newContent: any }) => {
-        console.log(`Document ${data.documentId} changed by ${socket.id} (User ${socket.data.user?.uid}):`, data.newContent);
+        logger.info(`Document ${data.documentId} changed by ${socket.id} (User ${socket.data.user?.uid})`, { documentId: data.documentId, socketId: socket.id, userId: socket.data.user?.uid, projectId: data.projectId });
         if (data.projectId) {
            socket.to(data.projectId).emit('documentUpdated', { documentId: data.documentId, content: data.newContent, updatedBy: socket.data.user?.uid || socket.id });
         } else {
-          console.warn(`Document change event for ${data.documentId} received without projectId.`);
+          logger.warn(`Document change event for ${data.documentId} received without projectId.`, { documentId: data.documentId, socketId: socket.id, userId: socket.data.user?.uid });
         }
       });
 
       socket.on('sendChatMessage', (data: { projectId: string; message: string; senderId?: string }) => {
-        console.log(`Chat message for project ${data.projectId} from ${socket.id} (User ${socket.data.user?.uid}): ${data.message}`);
+        logger.info(`Chat message for project ${data.projectId} from ${socket.id} (User ${socket.data.user?.uid}): ${data.message}`, { projectId: data.projectId, socketId: socket.id, userId: socket.data.user?.uid });
         const chatData = {
           message: data.message,
           senderId: socket.data.user?.uid || data.senderId || socket.id, // Prefer Firebase UID
@@ -61,21 +62,21 @@ export function initializeSocket(io: SocketIOServer) {
       });
 
       socket.on('disconnect', () => {
-        console.log(`Client disconnected: ${socket.id} (User ${socket.data.user?.uid})`);
+        logger.info(`Client disconnected: ${socket.id} (User ${socket.data.user?.uid})`, { socketId: socket.id, userId: socket.data.user?.uid });
       });
 
     } catch (error) {
-      console.error(`Socket ${socket.id} authentication failed:`, error.message);
+      logger.error(`Socket ${socket.id} authentication failed: ${error.message}`, { error, socketId: socket.id });
       socket.disconnect(true);
       return;
     }
 
     // Error handling for sockets (basic) - this is now inside the try block or should be for authenticated sockets
     socket.on('error', (error) => {
-      console.error(`Socket Error from ${socket.id} (User ${socket.data.user?.uid}):`, error);
+      logger.error(`Socket Error from ${socket.id} (User ${socket.data.user?.uid}):`, { error, socketId: socket.id, userId: socket.data.user?.uid });
     });
   });
-  console.log('Socket.IO service initialized');
+  logger.info('Socket.IO service initialized');
 }
 
 // You might also want to export `io` if other services need to emit events globally
