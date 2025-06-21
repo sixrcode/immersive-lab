@@ -1,9 +1,7 @@
 
 "use client";
 
-// import { generateStoryboard } from "@/ai/flows/storyboard-generator-flow"; // Removed direct import
 // Updated import: Use StoryboardPackage and Panel from the canonical types
-import type { StoryboardGeneratorInput } from "@/lib/ai-types";
 import type { StoryboardPackage, Panel as StoryboardPanelType } from "packages/types/src/storyboard.types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -108,7 +106,7 @@ export default function StoryboardStudioPage() {
     }
 
     try {
-      const inputToApi: StoryboardGeneratorInput = {
+      const inputToApi: FormValues = {
         ...values,
         numPanels: Number(values.numPanels) || 6,
       };
@@ -123,7 +121,7 @@ export default function StoryboardStudioPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        const errorData: { details?: string; error?: string; message?: string } = await response.json().catch(() => ({ message: "Unknown error" }));
         const errorMessage = errorData.details || errorData.error || `Request failed with status ${response.status}`;
         throw new Error(errorMessage);
       }
@@ -368,44 +366,42 @@ export default function StoryboardStudioPage() {
                                   size="icon"
                                   className="absolute top-2 right-2 h-7 w-7 bg-black/30 text-white hover:bg-accent/80 hover:text-accent-foreground"
                                   // Pass panel.imageURL and ensure panelNumber is available or use index+1
-                                  onClick={() => handleDownloadImage(panel.imageURL, (panel as any).panelNumber || index + 1)}
+                                  onClick={() => handleDownloadImage(panel.imageURL, panel.panelNumber || index + 1)}
                                 >
                                   <Download className="h-4 w-4" />
                                 </Button>
-                            </TooltipTrigger>
+ </TooltipTrigger>
                             <TooltipContent><p>Download Panel Image</p></TooltipContent>
                           </Tooltip>
                       )}
                     </div>
                     <div>
                       <h4 className="text-xs font-semibold text-foreground mt-1">Description/Caption:</h4>
-                      {/* Use panel.caption from StoryboardPanelType. Fallback to panel.description if migrating. */}
-                      <p className="text-xs text-muted-foreground break-words">{panel.caption || (panel as any).description}</p>
-                    </div>
+                      <p className="text-xs text-muted-foreground break-words">{panel.caption}</p>
+ </div>
                     <div>
                       <h4 className="text-xs font-semibold text-foreground">Shot Details:</h4>
-                      {/* Use panel.camera from StoryboardPanelType. Fallback to panel.shotDetails if migrating. */}
-                      <p className="text-xs text-muted-foreground">{panel.camera || (panel as any).shotDetails}</p>
-                    </div>
+                      <p className="text-xs text-muted-foreground">{panel.camera}</p>
+ </div>
                     {/* panel.dialogueOrSound might not exist on StoryboardPanelType. Check if it's part of 'caption' or another field */}
-                    {(panel as any).dialogueOrSound && (
-                       <div>
+                    {(panel as StoryboardPanelType).dialogueOrSound && (
+ <div>
                         <h4 className="text-xs font-semibold text-foreground">Dialogue/Sound:</h4>
-                        <p className="text-xs text-muted-foreground">{(panel as any).dialogueOrSound}</p>
-                      </div>
+ <p className="text-xs text-muted-foreground">{(panel as StoryboardPanelType).dialogueOrSound}</p>
+ </div>
                     )}
                   </CardContent>
                    <CardFooter className="p-3 border-t mt-auto">
                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="w-full text-xs"
+ <TooltipTrigger asChild>
+ <Button
+                              variant="outline"
+                              size="sm"
+ className="w-full text-xs"
                               onClick={() => {
-                                const panelNumber = (panel as any).panelNumber || index + 1;
-                                const description = panel.caption || (panel as any).description;
-                                const shotDetails = panel.camera || (panel as any).shotDetails;
+                                const panelNumber = (panel as StoryboardPanelType).panelNumber || index + 1;
+                                const description = panel.caption;
+                                const shotDetails = panel.camera; // Assuming 'camera' is the correct field for shot details
                                 const dialogueOrSound = (panel as any).dialogueOrSound;
                                 handleCopyText(
                                   `Panel ${panelNumber}\nDescription: ${description}\nShot Details: ${shotDetails}${dialogueOrSound ? `\nDialogue/Sound: ${dialogueOrSound}` : ''}`,
@@ -415,7 +411,7 @@ export default function StoryboardStudioPage() {
                             >
                               <Copy className="mr-1.5 h-3 w-3" /> Copy Panel Text
                             </Button>
-                        </TooltipTrigger>
+ </TooltipTrigger>
                         <TooltipContent><p>Copy all text for this panel</p></TooltipContent>
                       </Tooltip>
                    </CardFooter>

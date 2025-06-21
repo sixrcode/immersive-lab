@@ -3,23 +3,17 @@
 import { useEffect, useState, useCallback } from "react";
 import type { PortfolioItemType } from "@/lib/types";
 import Image from "next/image";
-import { Film, PlayCircle, Share2, CalendarDays, Clock, MessageSquare, Star, ThumbsUp, Loader2, AlertTriangle } from "lucide-react";
-import { v4 as uuidv4 } from 'uuid';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Film, PlayCircle, Share2, CalendarDays, Clock, MessageSquare, Star, Loader2, AlertTriangle } from "lucide-react";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CommentForm } from "@/components/feedback/CommentForm";
 import { RatingForm } from "@/components/feedback/RatingForm";
-import type { Comment as CommentType, Rating as RatingType } from "@/lib/feedback-types"; // Import feedback types
-import { cn } from "@/lib/utils";
+import { CardDescription, CardFooter } from "@/components/ui/card"; // Import CardFooter
+
+import { v4 as uuidv4 } from 'uuid';
+import type { Comment as CommentType, Rating as RatingType } from "@/lib/feedback-types";
 // Placeholder for auth - replace with your actual auth context or hook
 // import { useAuth } from "@/hooks/useAuth"; // Example: const { user } = useAuth();
 
@@ -34,18 +28,14 @@ interface PortfolioCardProps {
   onCommentSubmit: (projectId: string, comment: CommentType) => void;
   onRatingSubmit: (projectId: string, rating: RatingType) => void;
   isLoadingFeedback: boolean;
-  // user: any; // Replace 'any' with your actual user type
 }
 
 function PortfolioCard({ item, feedback, onCommentSubmit, onRatingSubmit, isLoadingFeedback }: PortfolioCardProps) {
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [showRatingForm, setShowRatingForm] = useState(false);
-
-  // Placeholder: Get current user. Replace with your actual authentication logic.
-  // const { user } = useAuth(); // Example
   const user = { uid: "test-user-id" }; // REMOVE THIS: Replace with actual user from auth
 
-  const handleCommentSuccess = (newComment: CommentType) => {
+  const handleCommentSuccess = (newComment: CommentType) => { // Use newComment directly
     onCommentSubmit(item.id, newComment);
     setShowCommentForm(false);
   };
@@ -104,7 +94,7 @@ function PortfolioCard({ item, feedback, onCommentSubmit, onRatingSubmit, isLoad
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-0.5"> {/* Corrected gap */}
                 {isLoadingFeedback ? <Loader2 className="h-4 w-4 animate-spin" /> : renderStars(feedback?.ratings.averageRating || 0)}
               </div>
               <span>({feedback?.ratings.ratingCount || 0} ratings)</span>
@@ -157,10 +147,10 @@ function PortfolioCard({ item, feedback, onCommentSubmit, onRatingSubmit, isLoad
           )}
         </div>
       </CardContent>
-      <Separator />
-      <CardFooter className="p-4 bg-muted/30">
+      <Separator /> {/* Added separator */}
+      <CardFooter className="p-4 bg-muted/30 flex justify-between items-center">
         <div className="flex justify-between items-center w-full text-xs text-muted-foreground">
-            <div className="flex items-center gap-1"> <CalendarDays className="h-3.5 w-3.5" /> <span>{item.datePublished}</span> </div>
+            <div className="flex items-center gap-1"> <CalendarDays className="h-3.5 w-3.5" /> <span>{item.datePublished || 'N/A'}</span> </div>
             <div className="flex items-center gap-1"> <Clock className="h-3.5 w-3.5" /> <span>{item.duration || "N/A"}</span> </div>
             <Button variant="ghost" size="sm" className="text-xs p-1 h-auto"> <Share2 className="h-3.5 w-3.5 mr-1" /> Share </Button>
         </div>
@@ -176,13 +166,9 @@ export default function PortfolioPage() {
   const [isLoadingFeedbackGlobal, setIsLoadingFeedbackGlobal] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
 
-  // Placeholder: Get current user. Replace with your actual authentication logic.
-  // const { user, loading: authLoading, getIdToken } = useAuth(); // Example
-  const user = { uid: "test-user-id", idToken: "dummy-token" }; // REMOVE THIS: Replace with actual user from auth
-  // const idToken = user?.idToken; // Or however you get the token
-
+   // Placeholder: Get current user. Replace with your actual authentication logic.
+   const user = { uid: "test-user-id", idToken: "dummy-token" }; // This should be replaced with actual auth context
   const fetchFeedbackForItem = useCallback(async (itemId: string, token: string | null) => {
-    if (!itemId) return null;
     setIsLoadingFeedbackGlobal(prev => ({ ...prev, [itemId]: true }));
     try {
       const [commentsRes, ratingsRes] = await Promise.all([
@@ -198,14 +184,8 @@ export default function PortfolioPage() {
       const commentsData = await commentsRes.json();
       const ratingsData = await ratingsRes.json();
 
-      // Check if user has rated this project - this would ideally come from ratings API or a separate user-specific ratings fetch
-      // For now, this is a placeholder.
       let currentUserRating: number | undefined = undefined;
-      // Example: if you fetched individual ratings and user's own rating is among them
-      // const userRatingDoc = ratingsData.data.individualRatings?.find(r => r.userId === user?.uid);
-      // if (userRatingDoc) currentUserRating = userRatingDoc.value;
-
-
+       // This part needs to be updated based on how your rating data is structured and if it includes the current user's rating
       return {
         comments: commentsData.success ? commentsData.data : [],
         ratings: ratingsData.success ? { ...ratingsData.data, currentUserRating } : { averageRating: 0, ratingCount: 0, currentUserRating },
@@ -229,13 +209,12 @@ export default function PortfolioPage() {
           throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         const rawItems: unknown[] = await response.json();
-
         const transformedItems: PortfolioItemType[] = rawItems.map((rawItem: unknown): PortfolioItemType => {
           if (typeof rawItem !== 'object' || rawItem === null) {
             console.error("Invalid raw item received:", rawItem);
             return { id: uuidv4(), title: "Invalid Item", description: "This item was not processed correctly.", category: "Error", imageUrl: "https://placehold.co/600x900.png", datePublished: "N/A", tags: [] };
           }
-          const item = rawItem as Record<string, unknown>;
+          const item = rawItem as any; // Temporarily use any to access properties
           return {
             id: item._id || item.id || uuidv4(),
             title: item.title || "Untitled Project",
@@ -243,11 +222,11 @@ export default function PortfolioPage() {
             category: item.category || "General",
             imageUrl: item.imageUrl || "https://placehold.co/600x900.png",
             datePublished: item.datePublished ? new Date(item.datePublished as string).toISOString().split('T')[0] : "N/A",
-            duration: item.duration || "N/A",
-            tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
+            duration: typeof item.duration === 'string' ? item.duration : "N/A",
+            tags: Array.isArray(item.tags) ? item.tags.map(tag => String(tag)) : [],
             videoUrl: typeof item.videoUrl === 'string' ? item.videoUrl : undefined,
             client: typeof item.client === 'string' ? item.client : undefined,
-            role: typeof item.role === 'string' ? item.role : undefined,
+            role: typeof item.role === 'string' ? item.role : "N/A",
             softwareUsed: Array.isArray(item.softwareUsed) ? item.softwareUsed.map(String) : [],
             dataAiHint: typeof item.dataAiHint === 'string' ? item.dataAiHint : undefined,
           };
@@ -256,8 +235,7 @@ export default function PortfolioPage() {
 
         // Fetch feedback for all items
         // In a real app, ensure you have the user's ID token if required by fetchFeedbackForItem
-        const idToken = user?.idToken; // Get token from your auth state
-        const feedbackPromises = transformedItems.map(item => fetchFeedbackForItem(item.id, idToken || null));
+        const feedbackPromises = transformedItems.map(item => fetchFeedbackForItem(item.id, user?.idToken || null));
         const feedbackResults = await Promise.all(feedbackPromises);
 
         const newFeedbacks: Record<string, ProjectFeedback> = {};
@@ -272,9 +250,9 @@ export default function PortfolioPage() {
         console.error("Failed to fetch portfolio items:", e);
         setError(e instanceof Error ? e.message : "An unexpected error occurred.");
       } finally {
-        setIsLoading(false);
+         setIsLoading(false);
       }
-    };
+    }; // Added closing brace
     fetchPortfolioItems();
   }, [fetchFeedbackForItem, user]); // Add user to dependency array if its change should trigger re-fetch
 
@@ -292,8 +270,7 @@ export default function PortfolioPage() {
     // });
   };
 
-  const handleRatingSubmit = async (projectId: string, newRating: RatingType) => {
-    // Optimistically update UI, then re-fetch for consistency
+  const handleRatingSubmit = async (projectId: string) => {
     // Or, the API could return the new aggregated rating
     const idToken = user?.idToken; // Get token from your auth state
     const updatedFeedback = await fetchFeedbackForItem(projectId, idToken || null);
@@ -343,8 +320,7 @@ export default function PortfolioPage() {
               feedback={feedbacks[item.id] || null}
               onCommentSubmit={handleCommentSubmit}
               onRatingSubmit={handleRatingSubmit}
-              isLoadingFeedback={isLoadingFeedbackGlobal[item.id] || false}
-              // user={user} // Pass user if PortfolioCard needs it directly
+ isLoadingFeedback={!!isLoadingFeedbackGlobal[item.id]}
             />
           ))}
         </div>

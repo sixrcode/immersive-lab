@@ -12,9 +12,9 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button'; 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, LogOut, LayoutGrid, BookOpen, LogIn, Loader2 } from 'lucide-react'; // Added LogIn, Loader2
+import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, LogOut, LayoutGrid, BookOpen, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { useEffect, useState } from 'react';

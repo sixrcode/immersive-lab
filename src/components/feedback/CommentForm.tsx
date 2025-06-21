@@ -6,9 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useSubmitComment } from '@/hooks/useSubmitComment';
 import type { Comment } from '@/lib/feedback-types';
-
+import { UseMutationResult } from '@tanstack/react-query'; // Import UseMutationResult
 // Placeholder for actual auth hook
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { app } from '@/lib/firebase/client';
 
 interface CommentFormProps {
@@ -22,7 +22,10 @@ export function CommentForm({ projectId, onSubmitSuccess, onCancel }: CommentFor
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Auth state
   const [isAuthLoading, setIsAuthLoading] = useState(true); // Auth loading state
 
-  const { mutate: submitComment, isLoading, error } = useSubmitComment();
+  // Use 'isPending' or 'status === "pending"' based on the actual UseMutationResult type
+  // Check the library documentation for the exact property name (commonly isPending or isLoading in older versions)
+  // Assuming 'isPending' for newer @tanstack/react-query
+  const { mutate: submitComment, isPending: isLoading, error } = useSubmitComment();
 
   useEffect(() => {
     const auth = getAuth(app);
@@ -52,9 +55,9 @@ export function CommentForm({ projectId, onSubmitSuccess, onCancel }: CommentFor
           onSubmitSuccess(data);
         }
       },
-      onError: (err: any) => {
+      onError: (err: Error) => {
         // Error is already available from `error` property of useMutation
-        console.error("Submission error:", err.message);
+ console.error("Submission error:", err.message);
         // alert(`Error: ${err.message}`); // Replace with better error display
       }
     });
@@ -71,7 +74,7 @@ export function CommentForm({ projectId, onSubmitSuccess, onCancel }: CommentFor
   if (!isAuthenticated) {
     return (
       <div className="p-4 border rounded-md bg-muted/50">
-        <p className="text-muted-foreground">Please <a href="#" onClick={() => getAuth(app).signInAnonymously()} className="underline">sign in</a> to leave a comment.</p>
+        <p className="text-muted-foreground">Please <a href="#" onClick={() => signInAnonymously(getAuth(app))} className="underline">sign in anonymously</a> to leave a comment.</p>
         {/* Replace href="#" with actual sign-in link or modal trigger
             For testing, added signInAnonymously. Replace with your actual sign-in flow.
         */}

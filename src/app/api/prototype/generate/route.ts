@@ -5,28 +5,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { PromptPackage, PromptToPrototypeInput } from '@/lib/types';
 import { z } from 'zod'; // Import Zod
 
+// Define a type for the expected error structure from the microservice
+interface MicroserviceError {
+  details?: string;
+  error?: string;
+  message?: string;
+  code?: string;
+  type?: string;
+}
+
 // Helper function to extract serializable error details
-function extractSerializableErrorDetails(errorBody: any): string {
+function extractSerializableErrorDetails(errorBody: unknown): string {
   if (typeof errorBody === 'string') {
     return errorBody;
   }
   if (typeof errorBody === 'object' && errorBody !== null) {
-    if (typeof errorBody.details === 'string') {
-      return errorBody.details;
+    const microserviceError = errorBody as MicroserviceError; // Type assertion
+    if (typeof microserviceError.details === 'string') {
+      return microserviceError.details;
     }
-    if (typeof errorBody.error === 'string') {
-      return errorBody.error;
+    if (typeof microserviceError.error === 'string') {
+      return microserviceError.error;
     }
-    // Attempt to stringify a limited subset or return a generic message
-    // This is a simplified example; you might want to be more selective
-    // or add more checks depending on common error structures.
+    // Attempt to stringify known properties
     try {
-      // Only include specific, known-safe properties if necessary
-      // For now, let's try a generic stringify and catch if it's too complex or circular
+      // Create an object with explicitly checked properties
       const simpleError = {
-        message: errorBody.message,
-        code: errorBody.code,
-        type: errorBody.type
+        message: microserviceError.message,
+        code: microserviceError.code,
+        type: microserviceError.type
       };
       const details = JSON.stringify(simpleError);
       if (details.length > 500) { // Limit length
@@ -37,7 +44,7 @@ function extractSerializableErrorDetails(errorBody: any): string {
       return "Error details from microservice are not in expected string format or are too complex to serialize.";
     }
   }
-  return "Error details from microservice are not in expected string format.";
+  return "Error details from microservice are not in expected format.";
 }
 
 /**
@@ -120,7 +127,7 @@ try { // Added error handling for fetch
     let errorBody = null;
     try {
       errorBody = await response.json(); // Parse error body if available
-    } catch {} // Removed unused variable _
+    } catch {}
     console.error('AI service error:', response.status, errorBody);
     const errorResponsePayload = {
       error: 'AI service request failed.',
@@ -136,7 +143,7 @@ try { // Added error handling for fetch
   const errorResponsePayload = {
     error: 'Failed to contact AI generation service.',
     details: error instanceof Error ? error.message : String(error),
-  };
+ };
   console.log('Returning error response to client (fetch failed):', JSON.stringify(errorResponsePayload, null, 2));
   return NextResponse.json(errorResponsePayload, { status: 503 });
 }

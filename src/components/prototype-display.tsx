@@ -1,18 +1,13 @@
 'use client';
 
-import Image from 'next/image';
-import React, { FC, useState } from 'react'; // Added useState
+import Image from 'next/image'; // Assuming Image from next/image is needed
+import React, { FC, useState } from 'react';
 import type { PromptPackage, MoodBoardCell } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'; // Aliased
 import { Separator } from '@/components/ui/separator'; // Aliased
-import { Flag } from 'lucide-react'; // Added Flag icon
-'use client';
-import React, { useState } from 'react';
-
-import { useToast } from '@/components/ui/use-toast';
 import {
   FeedbackDialog,
   FeedbackDialogFormData,
@@ -21,11 +16,13 @@ import {
   useSubmitFeedback,
   SubmitFeedbackHookInput,
 } from '@/hooks/useSubmitFeedback';
+import { Flag } from 'lucide-react'; // Assuming Flag icon is from lucide-react
+import { useToast } from "@/components/ui/use-toast"
 
 // Placeholder for a Refresh Icon.
 const RefreshIcon = () => (
   // Using a simple text or a unicode character for now if SVG is too verbose for diff
-  (<span className="mr-2">↻</span>)
+  <span className="mr-2">↻</span>
 );
 
 // Placeholder for Download Icon
@@ -65,8 +62,6 @@ type OnRegenerateData = { index: number } | undefined;
 type SectionKey =
   | "userInput"
   | "loglines"
-  // | "moodBoardImage" // Removed as it was commented out
-  | "moodBoard"
   | "shotList"
   | "animaticDescription"
   | "pitchSummary"
@@ -182,7 +177,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
       <Section title="Original Input" sectionKey="userInput" mainActionOverride={<div /> /* No regenerate for this section */}>
         <div className="space-y-3">
           {prompt && <p><strong className="font-medium">Prompt:</strong> {prompt}</p>}
-          {stylePreset && <p><strong className="font-medium">Style Preset:</strong> <Badge variant="secondary">{stylePreset}</Badge></p>}
+          {stylePreset && typeof stylePreset === 'string' && <p><strong className="font-medium">Style Preset:</strong> <Badge variant="secondary">{stylePreset}</Badge></p>}
           {originalImageURL && (
             <div>
               <h3 className="font-medium mb-2">Uploaded Image:</h3>
@@ -206,7 +201,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
 
       <Separator className="print:hidden" />
 
-      <Section title="Loglines" sectionKey="loglines" mainActionOverride={onRegenerate ? <RegenerateButton sectionName="All Loglines" onClick={() => onRegenerate?.('loglines')} /> : <div />}>
+      <Section title="Loglines" sectionKey="loglines" mainActionOverride={onRegenerate ? <RegenerateButton sectionName="All Loglines" onClick={() => onRegenerate?.('loglines' as SectionKey)} /> : <div />}>
         <div className="space-y-3">
           {loglines.map((logline, index) => (
             <Card key={index} className="bg-muted/30 print:shadow-none print:border">
@@ -214,7 +209,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
                  <CardTitle className="text-md font-medium">{logline.tone}</CardTitle>
                  <div className="flex items-center">
                    {onRegenerate && <RegenerateButton sectionName={`Logline ${index + 1}: ${logline.tone}`} onClick={() => onRegenerate?.('logline', { index })} />}
-                   <ReportButton itemName={`Logline ${index + 1}`} onClick={() => openFeedbackDialog(`loglines[${index}].text`, id)} />
+                   <ReportButton itemName={`Logline ${index + 1}`} onClick={() => openFeedbackDialog(`loglines[${index}].text`, id!)} /> {/* Added non-null assertion if id is guaranteed */}
                  </div>
               </CardHeader>
               <CardContent className="pb-4">
@@ -249,7 +244,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
         )}
         <h3 className="text-lg font-semibold mb-3 mt-4">Thematic Cells</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {moodBoard.cells.map((cell: MoodBoardCell, index: number) => (
+          {moodBoard.cells?.map((cell: MoodBoardCell, index: number) => ( // Added optional chaining for cells
             <Card key={index} className="flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -257,7 +252,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
                   <div className="flex items-center">
                     {onRegenerate && <RegenerateButton sectionName={`Mood Board Cell ${index + 1}: ${cell.title}`} onClick={() => onRegenerate?.('moodBoardCell', { index })} />}
                     <ReportButton itemName={`Mood Board Cell ${index + 1}`} onClick={() => openFeedbackDialog(`moodBoard.cells[${index}].description`, id)} />
-                  </div>
+                  </div> {/* Removed unnecessary closing div */}
                 </div>
               </CardHeader>
               <CardContent className="flex-grow">
@@ -270,7 +265,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
 
       <Separator />
 
-      <Section title="Shot List" sectionKey="shotList" mainActionOverride={onRegenerate ? <RegenerateButton sectionName="Entire Shot List" onClick={() => onRegenerate?.('shotList')} />: <div />}>
+      <Section title="Shot List" sectionKey="shotList" mainActionOverride={onRegenerate ? <RegenerateButton sectionName="Entire Shot List" onClick={() => onRegenerate?.('shotList' as SectionKey)} />: <div />}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -282,7 +277,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
             </TableRow>
           </TableHeader>
           <TableBody>
-            {shotList.map((shot, index) => (
+            {shotList?.map((shot, index) => ( // Added optional chaining for shotList
               <TableRow key={index}>
                 <TableCell className="font-medium">{shot.shotNumber}</TableCell>
                 <TableCell>{shot.lens}</TableCell>
@@ -291,7 +286,7 @@ export function PrototypeDisplay({ promptPackage, onRegenerate }: PrototypeDispl
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end">
                     {onRegenerate && <RegenerateButton sectionName={`Shot ${shot.shotNumber}`} onClick={() => onRegenerate?.('shot', { index })} />}
-                    <ReportButton itemName={`Shot ${shot.shotNumber}`} onClick={() => openFeedbackDialog(`shotList[${index}].framingNotes`, id)} />
+                    <ReportButton itemName={`Shot ${shot.shotNumber}`} onClick={() => openFeedbackDialog(`shotList[${index}].framingNotes`, id!)} /> {/* Added non-null assertion if id is guaranteed */}
                   </div>
                 </TableCell>
               </TableRow>

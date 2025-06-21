@@ -8,8 +8,6 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PlusCircle, MoreHorizontal, Kanban as KanbanIcon, Film, Lightbulb, Edit2, CheckCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import React, { useState, useEffect, FormEvent, useCallback } from "react";
-import io, { type Socket } from 'socket.io-client'; // Import socket.io-client
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -30,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import React, { useState, useEffect, FormEvent } from "react";
 
 // Map column IDs to icons
 const columnIcons: Record<string, React.ElementType> = {
@@ -403,12 +402,8 @@ export default function ProductionBoardPage() {
         }
 
         // On success, re-fetch data to ensure consistency
-        const movedCardResponse = await response.json(); // Assuming API returns the updated card
-
         // --- BEGIN: Automatic Progress Tracking ---
         const movedCard = movedCardResponse; // Use the card data from the move response
-                                            // This should ideally include its portfolioItemId if fetched correctly
-
         // Find the target column details to check its title
         const targetColDetails = columns.find(col => col.id === targetColumnId);
 

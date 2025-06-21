@@ -41,11 +41,16 @@ export default function LoginPage() {
     setError(null);
     setUiLoading(true);
     try {
-      await signInUser(email, password);
+ await signInUser(email, password);
       // AuthProvider's onAuthStateChanged and the useEffect above will handle next steps (MFA or redirect)
-    } catch (err: any) {
-      let errorMessage = "Failed to sign in. Please check your credentials.";
-      if (err.code) {
+    } catch (err: any) { // Using any for now due to varying error structures from Firebase/auth context
+      let errorMessage = "Failed to sign in. Please check your credentials."; // Provide a default error message
+      // Define a more specific error type if possible, or check for expected properties
+      // For now, assume err might have 'code' and 'message'
+      const firebaseError = err as { code?: string; message?: string };
+
+      if (firebaseError.code) {
+        // Handle Firebase-specific error codes
         switch (err.code) {
           case 'auth/user-not-found':
           case 'auth/invalid-credential': // Firebase v9+ uses invalid-credential for wrong password / user not found
@@ -57,7 +62,7 @@ export default function LoginPage() {
           case 'auth/too-many-requests':
             errorMessage = "Too many login attempts. Please try again later.";
             break;
-          default:
+          default: // Fallback for other Firebase auth errors
             errorMessage = `Login failed: ${err.message || 'Unknown error'}`;
         }
       }
@@ -75,10 +80,11 @@ export default function LoginPage() {
     setError(null);
     setUiLoading(true);
     try {
-      await completeMfa(mfaCode);
+ await completeMfa(mfaCode);
       // Successful MFA completion will trigger onAuthStateChanged (if claims updated)
       // or the useEffect will redirect because mfaRequired becomes false.
-      // router.push('/'); // This should be handled by useEffect
+      // The useEffect hook handles the redirect on successful MFA
+      // router.push('/'); 
     } catch (err: any) {
       setError(err.message || "MFA validation failed.");
       setUiLoading(false);
@@ -88,9 +94,9 @@ export default function LoginPage() {
   };
 
   // This handles the case where the user navigates to /login but is already fully authenticated.
+  // Ensure this logic correctly handles initial load vs subsequent state changes
   if (currentUser && !authLoading && !mfaRequired && loginStep !== "mfa") {
      router.push('/');
-     return <div className="flex justify-center items-center min-h-screen">Redirecting...</div>;
   }
 
 

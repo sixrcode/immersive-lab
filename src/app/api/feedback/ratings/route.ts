@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase/admin';
-import { initializeAdminApp } from '@/lib/firebase/admin'; // Ensure admin app is initialized
+import { db } from '@/lib/firebase/admin';
 
 export async function GET(request: Request) {
   try {
-    await initializeAdminApp(); // Ensure Firebase Admin is initialized
 
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
@@ -14,7 +12,7 @@ export async function GET(request: Request) {
     }
 
     // Fetch aggregated rating data
-    const aggregatedRatingRef = adminDb.collection('projects_aggregated_ratings').doc(projectId);
+    const aggregatedRatingRef = db.collection('projects_aggregated_ratings').doc(projectId);
     const doc = await aggregatedRatingRef.get();
 
     if (!doc.exists) {
@@ -49,7 +47,7 @@ export async function GET(request: Request) {
       }
     }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     console.error('Error fetching ratings:', error);
     return NextResponse.json({ success: false, error: { id: 'unknown-error', message: errorMessage, code: 'INTERNAL_SERVER_ERROR' } }, { status: 500 });

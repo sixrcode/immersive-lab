@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsCreator(userIsCreator);
 
           // Check if MFA is required
-          if (enableCreator2FA && userIsCreator) {
+          if (enableCreator2FA && userIsCreator && user.emailVerified) { // Check if email is verified for MFA based on the user object
             // For this mock, assume MFA is required if not already marked as completed this session
             // A real implementation might check a persistent flag or a session-specific claim
              if (!sessionStorage.getItem('mfaCompletedForSession')) {
@@ -68,11 +68,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
           console.error("Error fetching ID token result:", error);
           setIsCreator(false);
-          setIdTokenResult(null);
+          setIdTokenResult(null); // Ensure state is reset on error
           setMfaRequired(false);
-          // If token fetching fails critically (e.g. revoked session), sign out
+          // If token fetching fails critically (e.g., revoked session), sign out
           if ((error as any).code === 'auth/user-token-expired' || (error as any).code === 'auth/invalid-user-token') {
-            await signOut(auth); // directly call signOut here, onAuthStateChanged will handle the rest
+            await signOut(auth).catch((err) => console.error("Error during signOut after token error:", err)); // directly call signOut here, onAuthStateChanged will handle the rest
           }
         }
       } else {
@@ -145,8 +145,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const tokenResult = await currentUser.getIdTokenResult(forceRefresh);
         setIdTokenResult(tokenResult);
         setIsCreator(tokenResult.claims.creator === true);
-        // Check MFA status again after fetching token, in case claims changed
-         if (enableCreator2FA && tokenResult.claims.creator === true && !sessionStorage.getItem('mfaCompletedForSession')) {
+        // Check MFA status again after fetching tokenResult, in case claims changed
+         if (enableCreator2FA && tokenResult.claims.creator === true && currentUser.emailVerified && !sessionStorage.getItem('mfaCompletedForSession')) { // Also check email verification
            setMfaRequired(true);
          } else if (!(enableCreator2FA && tokenResult.claims.creator === true)) {
            setMfaRequired(false);
@@ -154,8 +154,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         return tokenResult;
       } catch (error) {
-        console.error("Error fetching ID token result in fetchTokenResult:", error);
-        if ((error as any).code === 'auth/user-token-expired' || (error as any).code === 'auth/invalid-user-token') {
+        // Check if error is an instance of Error and has a 'code' property before casting to 'any'
+        console.error("Error fetching ID token result in fetchTokenResult:", error); // Log the actual error object
+        if ((error as any)?.code === 'auth/user-token-expired' || (error as any)?.code === 'auth/invalid-user-token') { // Still need 'any' here to access 'code' safely on an unknown error object
           await signOutUser(); // Use the context's signOutUser which handles redirect
         }
         // Reset states if token fetching fails

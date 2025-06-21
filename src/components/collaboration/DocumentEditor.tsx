@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import io, { type Socket } from 'socket.io-client';
 
 interface Document {
@@ -31,7 +31,8 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
   const [content, setContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  // Using useRef to manage socket instance to avoid triggering useEffect on every socket state change
+  const socketRef = useRef<Socket | undefined | null>(null);
 
   // Initialize socket connection
   useEffect(() => {
@@ -42,9 +43,9 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
     // e.g. http://localhost:3001
     // If your socket server is at the root of the collaboration service URL:
     if (!documentId || !projectId) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null; // Set ref to null on intentional disconnect
       }
       return;
     }
@@ -57,7 +58,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
       return "dummy-socket-token";
     };
 
-    let newSocket: Socket | null = null;
+    let newSocket: Socket | undefined; // Use undefined initially
 
     const connectSocket = async () => {
       const token = await getCurrentUserIdToken();
@@ -67,43 +68,47 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
         return;
       }
 
-      // Connect to the current origin, assuming Next.js dev server proxies /socket.io/
+      // Connect to the current origin (window.location.origin), assuming Next.js dev server proxies /socket.io/
       // The server (collaboration-service) listens on its default /socket.io/ path.
-      newSocket = io(undefined, { // undefined connects to window.location.origin
+      // Specify the type explicitly for better type safety
+      newSocket = io(window.location.origin, { // undefined connects to window.location.origin
         path: '/socket.io/',      // Standard Socket.IO path
         reconnectionAttempts: 3,
         timeout: 10000,
-        query: { token } // Send token for authentication by socketService.ts
+        query: { token, projectId } // Send token and project ID for authentication and room joining
       });
 
       newSocket.on('connect', () => {
         console.log('DocumentEditor: Socket connected successfully', newSocket?.id);
-        setSocket(newSocket);
+        socketRef.current = newSocket; // Update ref on successful connection
         newSocket?.emit('joinProject', projectId); // Join a room associated with the project
       });
 
-      newSocket.on('connect_error', (err) => {
+      // Explicitly type the error object from socket.io-client
+      newSocket.on('connect_error', (err: Error) => {
         console.error('DocumentEditor: Socket connection error:', err);
         setError(`Failed to connect to real-time service: ${err.message}`);
         // Attempt to clean up the socket if it's in a bad state but not null
         if (newSocket && !newSocket.connected) {
             newSocket.disconnect();
         }
-        setSocket(null); // Clear socket state on connection error
+        socketRef.current = null; // Clear socket ref on connection error
       });
 
-      newSocket.on('disconnect', (reason) => {
+      // Explicitly type the reason parameter from socket.io-client
+      newSocket.on('disconnect', (reason: Socket.DisconnectReason) => {
         console.log('DocumentEditor: Socket disconnected:', reason);
         // Only set error if not an intentional disconnect (handled by cleanup)
         if (reason !== 'io client disconnect') {
           // setError('Disconnected from real-time service.');
         }
-        // setSocket(null); // Already handled by cleanup or connect_error
+         socketRef.current = null; // Clear socket ref on disconnect
       });
 
+      // Explicitly type the updatedDocument object
       newSocket.on('documentUpdated', (updatedDocument: { documentId: string; content: string; updatedBy: string }) => {
         // Check if the update is for the current document and not from the current socket
-        if (updatedDocument.documentId === documentId && updatedDocument.updatedBy !== newSocket?.id) {
+        if (updatedDocument.documentId === documentId && updatedDocument.updatedBy !== socketRef.current?.id) {
           setContent(updatedDocument.content);
         }
       });
@@ -118,15 +123,17 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
 
     connectSocket();
 
+    // Store the new socket in ref
+    // socketRef.current is updated in the 'connect' handler
+
     return () => {
       if (newSocket) {
         console.log(`DocumentEditor: Cleaning up socket for project ${projectId}, document ${documentId}`);
         newSocket.emit('leaveProject', projectId);
         newSocket.disconnect();
-        setSocket(null);
       }
-    };
-  }, [documentId, projectId]);
+    }; // No dependency on `socket` state, use `socketRef.current`
+  }, [documentId, projectId]); // Depend only on documentId and projectId
 
 
   // Fetch document content
@@ -163,8 +170,8 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
   // Debounced function to emit document changes
   const debouncedEmitChange = useMemo(() =>
     debounce((newContent: string) => {
-      if (socket && documentId && projectId) {
-        socket.emit('documentChange', {
+      if (socketRef.current && documentId && projectId) {
+        socketRef.current.emit('documentChange', {
           documentId,
           projectId,
           newContent,
@@ -172,8 +179,8 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
       }
     }, 500),
     [socket, documentId, projectId]
-  );
-
+  ); // Add socket to dependencies as debounced function depends on it
+ // Removed 'socket' from dependencies as it's managed by ref now
   const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = event.target.value;
     setContent(newText);
@@ -208,7 +215,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ documentId, projectId }
       <div className="mt-4 text-sm text-gray-500">
         <p>Project ID: {projectId}</p>
         <p>Document ID: {documentId}</p>
-        {socket?.connected ? <p className="text-green-500">Connected (Socket ID: {socket.id})</p> : <p className="text-red-500">Disconnected</p>}
+        {socketRef.current?.connected ? <p className="text-green-500">Connected (Socket ID: {socketRef.current.id})</p> : <p className="text-red-500">Disconnected</p>}
       </div>
     </div>
   );

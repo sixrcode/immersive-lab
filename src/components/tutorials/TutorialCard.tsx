@@ -1,6 +1,7 @@
 import React from 'react';
-import { Tutorial } from 'packages/types/src/tutorial.types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import Image from 'next/image';
+import { Tutorial } from '@/types/tutorial.types';
 import { Badge } from '@/components/ui/badge';
 
 interface TutorialCardProps {
@@ -16,7 +17,13 @@ const TutorialCard: React.FC<TutorialCardProps> = ({ tutorial }) => {
       </CardHeader>
       <CardContent className="flex-grow">
         {tutorial.thumbnailUrl && (
-          <img src={tutorial.thumbnailUrl} alt={tutorial.title} className="rounded-md mb-4 w-full h-48 object-cover" />
+          <div className="relative w-full h-48 mb-4">
+            <Image
+              src={tutorial.thumbnailUrl}
+              alt={tutorial.title}
+              fill
+              className="rounded-md object-cover" />
+          </div>
         )}
         <p className="text-sm text-muted-foreground mb-2 line-clamp-3">{tutorial.description || 'No description available.'}</p>
         <div className="space-x-2 mb-2">

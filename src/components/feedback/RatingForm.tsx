@@ -8,7 +8,7 @@ import type { Rating } from '@/lib/feedback-types';
 
 // Placeholder for actual auth hook
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { app } from '@/lib/firebase/client';
+import { firebaseApp } from '@/lib/firebase/client';
 
 interface RatingFormProps {
   projectId: string;
@@ -23,15 +23,15 @@ export function RatingForm({ projectId, currentRating = 0, onSubmitSuccess, onCa
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Auth state
   const [isAuthLoading, setIsAuthLoading] = useState(true); // Auth loading state
 
-  const { mutate: submitRating, isLoading, error } = useSubmitRating();
+  const { mutate: submitRating, isPending, error } = useSubmitRating();
 
   useEffect(() => {
     setRating(currentRating); // Sync with prop
   }, [currentRating]);
 
   useEffect(() => {
-    const auth = getAuth(app);
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const auth = getAuth(firebaseApp);
+    const unsubscribe = onAuthStateChanged(getAuth(firebaseClientApp), (user) => {
       setIsAuthenticated(!!user);
       setIsAuthLoading(false);
     });
@@ -53,8 +53,8 @@ export function RatingForm({ projectId, currentRating = 0, onSubmitSuccess, onCa
         if (onSubmitSuccess) {
           onSubmitSuccess(data);
         }
-      },
-      onError: (err: any) => {
+      }, 
+      onError: (err: Error) => {
         console.error("Submission error:", err.message);
         // alert(`Error: ${err.message}`); // Replace
       }
@@ -72,7 +72,7 @@ export function RatingForm({ projectId, currentRating = 0, onSubmitSuccess, onCa
   if (!isAuthenticated) {
     return (
       <div className="p-4 border rounded-md bg-muted/50">
-        <p className="text-muted-foreground">Please <a href="#" onClick={() => getAuth(app).signInAnonymously()} className="underline">sign in</a> to leave a rating.</p>
+        <p className="text-muted-foreground">Please <a href="#" onClick={() => getAuth(firebaseApp).signInAnonymously()} className="underline">sign in</a> to leave a rating.</p>
          {/* Replace href="#" with actual sign-in link or modal trigger
              For testing, added signInAnonymously. Replace with your actual sign-in flow.
         */}
@@ -92,22 +92,22 @@ export function RatingForm({ projectId, currentRating = 0, onSubmitSuccess, onCa
                 ? "text-yellow-400 fill-yellow-400"
                 : "text-muted-foreground hover:text-yellow-300"
             )}
-            onClick={() => !isLoading && setRating(starValue)}
-            onMouseEnter={() => !isLoading && setHoverRating(starValue)}
-            onMouseLeave={() => !isLoading && setHoverRating(0)}
+            onClick={() => !isPending && setRating(starValue)}
+            onMouseEnter={() => !isPending && setHoverRating(starValue)}
+            onMouseLeave={() => !isPending && setHoverRating(0)}
           />
         ))}
       </div>
       {error && <p className="text-sm text-center text-destructive">{(error as Error).message}</p>}
       <div className="flex justify-end space-x-2">
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+        {onCancel && !isPending && (
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
             Cancel
           </Button>
         )}
-        <Button onClick={handleSubmit} disabled={isLoading || rating === 0}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isLoading ? 'Submitting...' : 'Submit Rating'}
+        <Button onClick={handleSubmit} disabled={isPending || rating === 0}>
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending ? 'Submitting...' : 'Submit Rating'}
         </Button>
       </div>
     </div>

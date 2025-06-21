@@ -1,27 +1,20 @@
 // src/app/api/projects/[projectId]/storyboards/route.test.ts
 
-jest.useRealTimers(); // Ensure real timers are used
-
-import { GET } from '../route'; // Adjust path as necessary
-import { NextResponse } from 'next/server'; // Import NextResponse for mocking
+jest.useRealTimers();
+import { NextResponse } from 'next/server';
+import { GET } from '../route'; // Assuming GET is exported from the route file
 
 // --- Mocks Start ---
 
 // Mock next/server's NextResponse
 jest.mock('next/server', () => {
-  const originalModule = jest.requireActual('next/server');
   return {
-    ...originalModule,
     NextResponse: {
-      ...originalModule.NextResponse,
-      json: jest.fn((body, init) => {
-        // This is a simplified mock. A real Response object has more methods/properties.
-        return {
-          json: () => Promise.resolve(body), // Simulates response.json()
-          status: init?.status || 200,     // Simulates response.status
-          headers: new Headers(init?.headers), // Simulates response.headers
-          // Add other properties/methods if your code under test uses them
-        };
+      json: jest.fn((body, init) => ({
+        json: () => Promise.resolve(body), // Simplified mock response object
+        status: init?.status || 200,
+        headers: new Headers(init?.headers),
+
       }),
     },
   };
@@ -29,9 +22,13 @@ jest.mock('next/server', () => {
 
 // Define the actual Jest mock functions that tests will interact with for Firebase
 const mockVerifyIdToken = jest.fn();
-const mockCollection = jest.fn().mockReturnThis();
+const mockCollection = jest.fn();
 const mockWhere = jest.fn().mockReturnThis();
-const mockGet = jest.fn();
+const mockGet = jest.fn().mockResolvedValue({ // Default mock for get
+ empty: true,
+    docs: [],
+    forEach: jest.fn(),
+  });
 
 jest.mock('@/lib/firebase/admin', () => {
   return {
@@ -39,23 +36,18 @@ jest.mock('@/lib/firebase/admin', () => {
       name: 'mockedApp',
       options: {},
       getOrInitService: jest.fn((serviceName: string) => {
-        if (serviceName === 'auth') { // Explicitly type args
- return { verifyIdToken: (...args: [string, any?]) => mockVerifyIdToken(...args) };
-        }
         if (serviceName === 'firestore') {
-          return { getDatabase: () => ({ collection: (...args: any[]) => mockCollection(...args) }) };
+          return { getDatabase: () => ({ collection: (...args: [string]) => mockCollection(...args) }) };
         }
         return null;
       }),
-    },
-    auth: { verifyIdToken: (...args: [string, any?]) => mockVerifyIdToken(...args) }, // Explicitly type args
-    db: { collection: (...args: [string, any?]) => mockCollection(...args) } // Explicitly type args
+ },
+ auth: { verifyIdToken: (...args: [string, { checkRevoked?: boolean }?]) => mockVerifyIdToken(...args) }, // Explicitly type args
+ db: { collection: (...args: [string]) => mockCollection(...args) } // Explicitly type args
   };
 });
 
 // --- Mocks End ---
-
-// Minimal mock for NextRequest based on usage in the GET handler
 type MockRequest = {
   headers: {
     get: jest.Mock<string | null, [string]>;
@@ -75,40 +67,42 @@ function createMockRequest(authorizationHeaderValue: string | null): MockRequest
   };
 }
 
+// Define a type for the mock document data
+interface MockStoryboardData {
+  id: string;
+  name: string; // Assuming name is a string
+  projectId: string; // Assuming projectId is a string
+  frames: any[]; // TODO: Replace 'any' with a more specific type for frames if possible
+}
+
 describe('API Route: /api/projects/[projectId]/storyboards', () => {
   const mockProjectId = 'test-project-id';
   const mockUserId = 'test-user-id';
-
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockVerifyIdToken.mockResolvedValue({ uid: mockUserId });
-    mockCollection.mockReturnValue({ where: mockWhere } as any);
-    mockWhere.mockReturnValue({ get: mockGet } as any);
-    mockGet.mockResolvedValue({
-        empty: true,
-        docs: [],
-        forEach: jest.fn()
-      });
+ jest.clearAllMocks(); // Clears all mocks before each test
+ mockVerifyIdToken.mockResolvedValue({ uid: mockUserId }); // Default mock for auth
+ mockCollection.mockClear();
+ mockWhere.mockClear();
+ mockGet.mockClear();
     (NextResponse.json as jest.Mock).mockClear();
   });
 
-  describe('GET /api/projects/[projectId]/storyboards', () => {
-    it('should return 200 and storyboards if found', async () => {
-      const mockStoryboardsData = [
+  describe('GET /api/projects/[projectId]/storyboards', () => { // Explicitly type mockStoryboardsData
+    it('should return 200 and storyboards if found', async () => { // Explicitly type mockStoryboardsData
+      const mockStoryboardsData: MockStoryboardData[] = [
         { id: 'storyboard1', name: 'Storyboard 1', projectId: mockProjectId, frames: [] },
         { id: 'storyboard2', name: 'Storyboard 2', projectId: mockProjectId, frames: [] },
       ];
       mockGet.mockResolvedValueOnce({
-        empty: false,
-        docs: mockStoryboardsData.map(s => ({ data: () => s })),
-        forEach: (callback: (doc: any) => void) => mockStoryboardsData.map(s => ({ data: () => s })).forEach(callback)
+ empty: false,
+ docs: mockStoryboardsData.map(s => ({ id: s.id, data: () => s })), // Map data to simulate DocumentSnapshot
  });
 
       const req = createMockRequest('Bearer valid-token');
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
       const body = await response.json();
-
-      expect(response.status).toBe(200);
+ // Adjusted the expected value to match the mocked response structure
+      expect(response.status).toBe(200); // Check status code
       expect(body).toEqual(mockStoryboardsData);
       expect(NextResponse.json).toHaveBeenCalledWith(mockStoryboardsData, { status: 200 });
       expect(mockVerifyIdToken).toHaveBeenCalledWith('valid-token');
@@ -122,7 +116,7 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
       const body = await response.json();
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(200); // Check status code
       expect(body).toEqual([]);
       expect(NextResponse.json).toHaveBeenCalledWith([], { status: 200 });
       expect(mockVerifyIdToken).toHaveBeenCalledWith('valid-token');
@@ -136,7 +130,7 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
       const body = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(500); // Check status code
       expect(body.error).toBe('Failed to fetch storyboards.');
       expect(body.details).toBe('Firestore error');
       expect(NextResponse.json).toHaveBeenCalledWith(
@@ -146,13 +140,12 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
       expect(mockVerifyIdToken).toHaveBeenCalledWith('valid-token');
     });
 
-    // Using .only for this test
-    it.only('should return 401 if Authorization header is missing', async () => {
-      const req = createMockRequest(null);
+ it('should return 401 if Authorization header is missing', async () => { // Removed .only
+      const req = createMockRequest(null); // Pass null for missing Authorization header
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
-      const body = await response.json();
-
-      expect(response.status).toBe(401);
+ const body = await response.json(); // Adjusted the expected value to match the mocked response structure
+      expect(response.status).toBe(401); // Check status code
+ // Adjusted the expected value to match the mocked response structure
       expect(body.error).toBe('Unauthorized. No Bearer token provided.');
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'Unauthorized. No Bearer token provided.' },
@@ -164,9 +157,8 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
     it('should return 401 if Bearer token is empty', async () => {
       const req = createMockRequest('Bearer ');
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
-      const body = await response.json();
-
-      expect(response.status).toBe(401);
+ const body = await response.json(); // Adjusted the expected value to match the mocked response structure
+      expect(response.status).toBe(401); // Check status code
       expect(body.error).toBe('Unauthorized. Bearer token is empty.');
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'Unauthorized. Bearer token is empty.' },
@@ -181,9 +173,8 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
 
       const req = createMockRequest('Bearer invalid-token');
       const response = await GET(req as any, { params: { projectId: mockProjectId } });
-      const body = await response.json();
-
-      expect(response.status).toBe(403);
+ const body = await response.json(); // Adjusted the expected value to match the mocked response structure
+      expect(response.status).toBe(403); // Check status code
       expect(body.error).toBe('Unauthorized. Invalid ID token.');
       expect(NextResponse.json).toHaveBeenCalledWith(
         { error: 'Unauthorized. Invalid ID token.' },
@@ -193,9 +184,10 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
     });
 
     it('should return 400 if projectId is missing or invalid', async () => {
-      const reqForEmpty = createMockRequest('Bearer valid-token');
-      let response = await GET(reqForEmpty as any, { params: { projectId: '' } });
-      let body = await response.json();
+      const reqForEmpty = createMockRequest('Bearer valid-token') as any;
+      let response = await GET(reqForEmpty, { params: { projectId: '' } });
+      let body = await response.json(); // Get response body
+
       expect(response.status).toBe(400);
       expect(body.error).toBe('Invalid or missing projectId.');
       expect(NextResponse.json).toHaveBeenCalledWith(
@@ -203,9 +195,10 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
         { status: 400 }
       );
 
-      const reqForSpaces = createMockRequest('Bearer valid-token');
+      const reqForSpaces = createMockRequest('Bearer valid-token') as any;
       response = await GET(reqForSpaces as any, { params: { projectId: '   ' } });
-      body = await response.json();
+      body = await response.json(); // Get response body after the second call
+ // Adjusted the expected value to match the mocked response structure
       expect(response.status).toBe(400);
       expect(body.error).toBe('Invalid or missing projectId.');
       expect(NextResponse.json).toHaveBeenCalledWith(
@@ -215,13 +208,11 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
     });
 
     it('should return 500 if Firebase Admin SDK is not initialized', async () => {
-        jest.resetModules();
-        const localMockVerifyIdToken = jest.fn();
-        const localMockCollection = jest.fn().mockReturnThis();
+        jest.resetModules(); // Reset module registry to ensure a fresh import
 
         jest.doMock('next/server', () => {
           const originalModule = jest.requireActual('next/server');
-          return {
+ return {
             ...originalModule,
             NextResponse: {
               ...originalModule.NextResponse,
@@ -235,26 +226,26 @@ describe('API Route: /api/projects/[projectId]/storyboards', () => {
         });
 
         jest.doMock('@/lib/firebase/admin', () => ({
-          firebaseAdminApp: null,
-          auth: { verifyIdToken: (...args: any[]) => localMockVerifyIdToken(...args) },
- db: { collection: (...args: [string, any?]) => localMockCollection(...args) }
+ firebaseAdminApp: null, // Simulate uninitialized SDK by setting to null
+ auth: null, // Also set auth to null for uninitialized state
+ db: { collection: (...args: [string]) => mockCollection(...args) } // Type args // Corrected typo here
         }));
-
+        // Import the route after mocking
         const { GET: GET_LOCAL } = await import('../route');
-
+ // Simplified mock request creator for local test
         const localCreateMockRequest = (token: string | null) => ({
           headers: { get: jest.fn().mockReturnValue(token) }
         });
 
         const req = localCreateMockRequest('Bearer valid-token');
         const response = await GET_LOCAL(req as any, { params: { projectId: mockProjectId } });
-        const body = await response.json();
+ const body = await response.json(); // Consume the response body
 
-        expect(response.status).toBe(500);
+ expect(response.status).toBe(500); // Check status code
         expect(body.error).toBe('Firebase Admin SDK not initialized.');
 
-        const MockedNextResponse = require('next/server').NextResponse;
-        expect(MockedNextResponse.json).toHaveBeenCalledWith(
+        const MockedNextResponse = (await import('next/server')).NextResponse; // Use import instead of require
+        expect(MockedNextResponse.json).toHaveBeenCalledWith( 
             { error: 'Firebase Admin SDK not initialized.' }, { status: 500 }
         );
         jest.unmock('@/lib/firebase/admin');

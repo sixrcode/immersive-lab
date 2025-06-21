@@ -3,12 +3,8 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
 import { RatingSchema } from '@/lib/feedback-types';
-import { initializeAdminApp } from '@/lib/firebase/admin'; // Ensure admin app is initialized
-
 export async function POST(request: Request) {
   try {
-    await initializeAdminApp(); // Ensure Firebase Admin is initialized
-
     const authorizationHeader = request.headers.get('Authorization');
     if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
       return NextResponse.json({ success: false, error: { message: 'Unauthorized: Missing or invalid token', code: 'UNAUTHENTICATED' } }, { status: 401 });
@@ -49,16 +45,20 @@ export async function POST(request: Request) {
       value,
       timestamp: FieldValue.serverTimestamp(),
     };
-    const ratingRef = await adminDb.collection('project_ratings').add(newRatingDoc);
+
+    if (!db) {
+      throw new Error('Firebase Admin db is not initialized.');
+    }
+    const ratingRef = await db.collection('project_ratings').add(newRatingDoc);
 
     // Update aggregated rating in a separate document or collection
     // For simplicity, let's assume a 'projects_aggregated_ratings' collection
     // Document ID can be the projectId
-    const aggregatedRatingRef = adminDb.collection('projects_aggregated_ratings').doc(projectId);
-
-    await adminDb.runTransaction(async (transaction) => {
+    const aggregatedRatingRef = db.collection('projects_aggregated_ratings').doc(projectId);
+    await db.runTransaction(async (transaction: any) => { // Added type for transaction
       const doc = await transaction.get(aggregatedRatingRef);
-      if (!doc.exists) {
+
+			if (!doc.exists) {
         transaction.set(aggregatedRatingRef, {
           totalRating: value,
           ratingCount: 1,

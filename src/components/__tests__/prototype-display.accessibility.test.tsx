@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { PrototypeDisplay } from '../prototype-display';
-import type { PromptPackage, MoodBoardCell } from '@/lib/types';
+import type { PromptPackage } from '@/lib/types';
 
 // Extend expect with jest-axe matchers (globally done in jest.setup.js, but can be here for clarity too)
 expect.extend(toHaveNoViolations);

@@ -1,9 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { FeedbackReport } from '@/lib/feedback-types';
-import { getAuth, User } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase/client'; // Corrected import name
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 export type SubmitFeedbackHookInput = Pick<
   FeedbackReport,
   'prototypeId' | 'reportedContentPath' | 'reason'

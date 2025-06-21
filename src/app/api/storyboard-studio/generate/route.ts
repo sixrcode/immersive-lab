@@ -10,7 +10,7 @@ import {
 } from 'packages/types/src/storyboard.types';
 import { firebaseAdminApp } from '@/lib/firebase/admin';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp, Firestore, DocumentData } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, Firestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { v4 as uuidv4 } from 'uuid';
 // import { StoryboardPackage } from '../../../../../../types/src/storyboard.types'; // Adjust path as necessary
