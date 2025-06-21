@@ -12,6 +12,7 @@ const BENCHMARK_BASELINE_FILE = path.join(__dirname, 'benchmark_baseline.json');
 
 // --- Global State ---
 let performanceRegressionDetected = false;
+const CONCURRENT_REQUESTS = 20; // Number of concurrent requests for load testing
 
 // --- Helper Functions ---
 function checkPerformance(featureName, currentRunTimes, baselineFeatureData) {
@@ -139,19 +140,64 @@ async function main() {
     baselineData = {}; // Ensure it's an object if parsing failed
   }
 
-  const prompts = await loadSampleData(PROMPTS_FILE);
+  const allPrompts = await loadSampleData(PROMPTS_FILE);
+
+  // --- PromptToPrototype Load Test ---
+  const spaceAdventurePrompt = allPrompts.find(p => p.id === "prompt_006_space_adventure_default_style");
+  if (!spaceAdventurePrompt) {
+    console.error("Error: 'prompt_006_space_adventure_default_style' not found in prompts.json. Skipping PromptToPrototype load test.");
+  } else {
+    console.log(`
+Running load test for PromptToPrototype with prompt "${spaceAdventurePrompt.id}" (${CONCURRENT_REQUESTS} concurrent requests)...`);
+    const loadTestPromises = [];
+    for (let i = 0; i < CONCURRENT_REQUESTS; i++) {
+      // Create a unique sampleId for each concurrent request to distinguish them in logs/results
+      const sampleId = `${spaceAdventurePrompt.id}_concurrent_req_${i + 1}`;
+      loadTestPromises.push(runBenchmark('/promptToPrototype', spaceAdventurePrompt.payload, sampleId, 'promptToPrototypeLoadTest'));
+    }
+
+    const loadTestRawResults = await Promise.all(loadTestPromises);
+    loadTestRawResults.forEach(result => {
+      allResults.push(result); // Add to overall results
+      console.log(`  Request ${result.sampleId} finished in ${result.responseTime}ms. Success: ${result.successStatus}, Complete: ${result.completenessCheck}`);
+      if (result.errorDetails) {
+        console.error(`    Error for ${result.sampleId}: ${JSON.stringify(result.errorDetails)}`);
+      }
+    });
+
+    const promptToPrototypeLoadTestTimes = loadTestRawResults
+      .filter(r => r.successStatus && r.completenessCheck)
+      .map(r => r.responseTime);
+
+    if (promptToPrototypeLoadTestTimes.length > 0) {
+      const avgResponseTime = promptToPrototypeLoadTestTimes.reduce((sum, time) => sum + time, 0) / promptToPrototypeLoadTestTimes.length;
+      console.log(`  Average response time for PromptToPrototype load test (${promptToPrototypeLoadTestTimes.length} successful requests): ${avgResponseTime.toFixed(2)}ms`);
+      const minTime = Math.min(...promptToPrototypeLoadTestTimes);
+      const maxTime = Math.max(...promptToPrototypeLoadTestTimes);
+      console.log(`  Min/Max response time: ${minTime.toFixed(2)}ms / ${maxTime.toFixed(2)}ms`);
+    } else {
+      console.warn("  No successful requests in the PromptToPrototype load test to calculate average time.");
+    }
+    // Note: Performance regression check against baseline might not be directly applicable here
+    // as this is a load test, not a single sequential run. We're more interested in individual step timings from console.time.
+  }
+
+  // --- Original Sequential Benchmarks (Optional - can be kept or removed) ---
   console.log(`
-Running benchmarks for PromptToPrototype (${prompts.length} samples)...`);
-  let promptToPrototypeResults = [];
-  for (const prompt of prompts) {
+Running original sequential benchmarks...`);
+  const promptsForSequential = allPrompts.filter(p => p.id !== "prompt_006_space_adventure_default_style"); // Exclude the one used in load test if desired
+  console.log(`Running sequential benchmarks for PromptToPrototype (${promptsForSequential.length} other samples)...`);
+  let promptToPrototypeSequentialResults = [];
+  for (const prompt of promptsForSequential) {
     console.log(`  Benchmarking prompt: ${prompt.id}`);
-    // Pass baselineData.promptToPrototype to runBenchmark (removed)
     const result = await runBenchmark('/promptToPrototype', prompt.payload, prompt.id, 'promptToPrototype');
     allResults.push(result);
-    promptToPrototypeResults.push(result.responseTime);
+    promptToPrototypeSequentialResults.push(result.responseTime);
     console.log(`    ...done in ${result.responseTime}ms. Success: ${result.successStatus}, Complete: ${result.completenessCheck}`);
   }
-  checkPerformance('promptToPrototype', promptToPrototypeResults, baselineData.promptToPrototype);
+  if (promptsForSequential.length > 0) {
+    checkPerformance('promptToPrototypeSequential', promptToPrototypeSequentialResults, baselineData.promptToPrototype);
+  }
 
 
   const scripts = await loadSampleData(SCRIPTS_FILE);
@@ -160,7 +206,6 @@ Running benchmarks for AnalyzeScript (${scripts.length} samples)...`);
   let analyzeScriptResults = [];
   for (const script of scripts) {
     console.log(`  Benchmarking script: ${script.id}`);
-    // Pass baselineData.analyzeScript to runBenchmark (removed)
     const result = await runBenchmark('/analyzeScript', script.payload, script.id, 'analyzeScript');
     allResults.push(result);
     analyzeScriptResults.push(result.responseTime);

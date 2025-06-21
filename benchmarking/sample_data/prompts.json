@@ -31,5 +31,11 @@
       "prompt": "A fantasy scene inspired by the provided image. Focus on the magical elements and the creature shown.",
       "imageDataUri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     }
+  },
+  {
+    "id": "prompt_006_space_adventure_default_style",
+    "payload": {
+      "prompt": "A thrilling space adventure where a diverse crew aboard a starship explores a newly discovered nebula, only to encounter a mysterious alien signal and a derelict, ancient spacecraft."
+    }
   }
 ]
