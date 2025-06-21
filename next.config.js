@@ -1,7 +1,5 @@
 
-import type {NextConfig} from 'next';
-
-const nextConfig: NextConfig = {
+const nextConfig = {
   async rewrites() {
     const collaborationServiceUrl = process.env.COLLABORATION_SERVICE_INTERNAL_URL || 'http://localhost:3001';
     return [
@@ -40,4 +38,4 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['https://6000-firebase-studio-1747556875666.cluster-aj77uug3sjd4iut4ev6a4jbtf2.cloudworkstations.dev'],
 };
 
-export default nextConfig;
+module.exports = nextConfig;
