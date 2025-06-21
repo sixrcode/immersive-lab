@@ -14,10 +14,11 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, LogOut, LayoutGrid, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, LogOut, LayoutGrid, BookOpen, LogIn, Loader2 } from 'lucide-react'; // Added LogIn, Loader2
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,13 +33,17 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { currentUser, loading: authLoading, signOutUser } = useAuth(); // Use auth context
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  // Combined loading state: component is mounted AND auth state is determined
+  const isLoading = !mounted || authLoading;
+
+  if (isLoading) {
     return (
       <Sidebar>
         <SidebarHeader className="p-4">
@@ -120,24 +125,48 @@ export function AppSidebar() {
       </SidebarContent>
       <div className="mx-2 my-2 h-px w-auto bg-sidebar-border group-data-[collapsible=icon]:mx-auto" />
       <SidebarFooter className="p-4 mt-auto">
-        <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src="https://placehold.co/100x100.png" alt="User Avatar" data-ai-hint="user avatar" />
-            <AvatarFallback>CV</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-medium">User Name</span>
-            <span className="text-xs text-muted-foreground">user@example.com</span>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" className="w-full justify-start mt-2 group-data-[collapsible=icon]:px-2">
-          <Settings className="h-4 w-4 mr-2 group-data-[collapsible=icon]:mr-0" />
-          <span className="group-data-[collapsible=icon]:hidden">Settings</span>
-        </Button>
-        <Button variant="ghost" size="sm" className="w-full justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive group-data-[collapsible=icon]:px-2">
-          <LogOut className="h-4 w-4 mr-2 group-data-[collapsible=icon]:mr-0" />
-          <span className="group-data-[collapsible=icon]:hidden">Log Out</span>
-        </Button>
+        {currentUser ? (
+          <>
+            <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={currentUser.photoURL || "https://placehold.co/100x100.png"} alt="User Avatar" data-ai-hint="user avatar" />
+                <AvatarFallback>{currentUser.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+                <span className="text-sm font-medium truncate">{currentUser.displayName || currentUser.email}</span>
+                <span className="text-xs text-muted-foreground truncate">{currentUser.email}</span>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" className="w-full justify-start mt-2 group-data-[collapsible=icon]:px-2">
+              <Settings className="h-4 w-4 mr-2 group-data-[collapsible=icon]:mr-0" />
+              <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive group-data-[collapsible=icon]:px-2"
+              onClick={async () => {
+                try {
+                  await signOutUser();
+                  // Router push to /login is handled in signOutUser in AuthContext
+                } catch (error) {
+                  console.error("Failed to log out", error);
+                  // Optionally show a toast or error message to the user
+                }
+              }}
+            >
+              <LogOut className="h-4 w-4 mr-2 group-data-[collapsible=icon]:mr-0" />
+              <span className="group-data-[collapsible=icon]:hidden">Log Out</span>
+            </Button>
+          </>
+        ) : (
+          <Link href="/login" className="w-full">
+            <Button variant="default" size="sm" className="w-full justify-start group-data-[collapsible=icon]:px-2">
+                <LogIn className="h-4 w-4 mr-2 group-data-[collapsible=icon]:mr-0" />
+              <span className="group-data-[collapsible=icon]:hidden">Log In</span>
+            </Button>
+          </Link>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

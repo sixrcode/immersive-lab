@@ -8,22 +8,23 @@ import { useGeneratePrototype, type GeneratePrototypeHookInput } from "@/hooks/u
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import withAuth from '@/components/auth/withAuth'; // Import the HOC
 
 
-export default function PromptToPrototypePage() {
+function PromptToPrototypePageInternal() { // Renamed original component
   const { toast } = useToast();
 
   const {
-    mutate: generatePrototypeMutate, // Renamed to avoid conflict if a handleGenerate function wrapper is kept
-    data: generatedPrototypePackage, // This will be PromptPackageAPIOutput | undefined from the hook
-    error: hookError, // This is Error | null
-    isPending, // Correctly destructure isPending
+    mutate: generatePrototypeMutate,
+    data: generatedPrototypePackage,
+    error: hookError,
+    isPending,
   } = useGeneratePrototype();
 
   const handleFormSubmit = (submissionData: { prompt: string; imageDataUri?: string; stylePreset?: string }) => {
-    const promptPackageForHook: GeneratePrototypeHookInput = { // Changed type to GeneratePrototypeHookInput
+    const promptPackageForHook: GeneratePrototypeHookInput = {
       inputs: [{ prompt: submissionData.prompt }],
-      params: {}, // Initialize params
+      params: {},
     };
 
     if (submissionData.stylePreset) {
@@ -33,25 +34,23 @@ export default function PromptToPrototypePage() {
       promptPackageForHook.params = { ...promptPackageForHook.params, imageDataUri: submissionData.imageDataUri };
     }
     if (Object.keys(promptPackageForHook.params || {}).length === 0) {
-      delete promptPackageForHook.params; // Remove params if empty, as per original hook structure
+      delete promptPackageForHook.params;
     }
 
     generatePrototypeMutate(promptPackageForHook, {
-      onSuccess: () => { // data here is the result from the mutationFn, assumed to be HookPromptPackage
+      onSuccess: () => {
         toast({
           title: 'Prototype Generated!',
           description: 'Your new prototype is ready below.',
         });
-        // No need to set local state for data, `generatedPrototypePackage` will update
       },
-      onError: (error) => { // error here is the Error object
+      onError: (error) => {
         console.error('Generation error:', error);
         toast({
           variant: 'destructive',
           title: 'Generation Failed',
           description: error.message || 'An unexpected error occurred during generation.',
         });
-        // No need to set local state for error, `hookError` will update
       },
     });
   };
@@ -81,7 +80,7 @@ export default function PromptToPrototypePage() {
 
 
   return (
-    <div className="container mx-auto p-4 md:p-8 max-w-4xl"> {/* Constrain width for better readability */}
+    <div className="container mx-auto p-4 md:p-8 max-w-4xl">
       <header className="mb-10 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
           Prompt-to-Prototype Studio
@@ -91,12 +90,11 @@ export default function PromptToPrototypePage() {
         </p>
       </header>
 
-      <Card className="shadow-xl border-0 overflow-hidden"> {/* Subtle shadow, remove border */}
-        <CardHeader className="bg-gradient-to-br from-primary/80 via-primary to-secondary/80 p-6"> {/* Gradient header */}
+      <Card className="shadow-xl border-0 overflow-hidden">
+        <CardHeader className="bg-gradient-to-br from-primary/80 via-primary to-secondary/80 p-6">
           <CardTitle className="text-2xl text-primary-foreground">Start Your Creation</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          {/* Pass handleFormSubmit directly to PromptInput */}
           <PromptInput onSubmit={handleFormSubmit} isLoading={isPending} />
         </CardContent>
       </Card>
@@ -104,17 +102,9 @@ export default function PromptToPrototypePage() {
       {isPending && <LoadingSkeleton />}
 
       {hookError && !isPending && (
-         <Card className="mt-8 border-destructive bg-destructive/5 text-destructive"> {/* Lighter error bg */}
+         <Card className="mt-8 border-destructive bg-destructive/5 text-destructive">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle>An Error Occurred</CardTitle>
-            {/* Error state is now directly from the hook, no local dismiss function for hookError directly,
-                but re-submitting might clear it or it might persist until a successful call.
-                For a manual dismiss, one might need a separate local state flag if the hook doesn't auto-reset error.
-                Keeping it simple for now by just displaying the error.
-            */}
-            {/* <Button variant="ghost" size="sm" onClick={() => hookError = null} aria-label="Dismiss error">
-              Dismiss
-            </Button> */}
           </CardHeader>
           <CardContent>
             <p>{hookError.message}</p>
@@ -122,15 +112,14 @@ export default function PromptToPrototypePage() {
         </Card>
       )}
 
-      {/* Display PrototypeDisplay when data (generatedPrototypePackage) is available and not loading */}
       {!isPending && generatedPrototypePackage && (
-        <div className="mt-10"> {/* Add more spacing before results */}
+        <div className="mt-10">
           <Separator className="my-8" />
-          {/* Ensure useGeneratePrototype returns the PromptPackage object as data */}
-          {/* And PrototypeDisplay expects a prop named promptPackage */}
           <PrototypeDisplay promptPackage={generatedPrototypePackage} />
         </div>
       )}
     </div>
   );
 }
+
+export default withAuth(PromptToPrototypePageInternal); // Wrap with HOC
