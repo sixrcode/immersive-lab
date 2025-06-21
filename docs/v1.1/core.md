@@ -9,7 +9,7 @@ The Prompt-to-Prototype Studio is a tool designed to rapidly transform a user's 
 -   **Prompt Input UI:**
     -   Text area for detailed user prompts.
     -   Optional file upload for a reference image.
-    -   Optional selection from a list of style presets to guide the generation tone and aesthetics.
+    -   Optional selection from an expanded list of style presets (including genres like Horror, Comedy, Sci-Fi, Fantasy, and artistic styles like Cyberpunk, Anime, Film Noir, and Lo-fi) to guide the generation tone and aesthetics.
 -   **Output Generation (PromptPackage):**
     -   **Loglines:** Multiple distinct loglines (e.g., targeting different tones).
     -   **Mood Board:**
