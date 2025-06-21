@@ -3,6 +3,11 @@ import { FeedbackReportSchema } from '@/lib/feedback-types';
 import { db, firebaseAdminApp } from '@/lib/firebase/admin'; // Assuming firebaseAdminApp is initialized and exported from here
 
 export async function POST(request: NextRequest) {
+  if (!firebaseAdminApp || !db) {
+    console.error('Firebase Admin SDK not initialized. Check server environment variables.');
+    return NextResponse.json({ success: false, error: { message: 'Required backend services are not available.', code: 'SERVICE_UNAVAILABLE' } }, { status: 503 });
+  }
+
   try {
     const authorization = request.headers.get('Authorization');
     if (!authorization) {
@@ -56,7 +61,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error) {
       message = error.message;
       // Check for specific error types if needed, e.g., Firebase errors
-      // This is a generic example; you might need to refine based on actual Firebase error structure
+      // This is a generic example; you might need to refine based on actual Firebase error object structure
       if (error instanceof Error && 'code' in error && typeof (error as {code?: string}).code === 'string') {
         // Attempt to use Firebase error codes if available
         // This is a common pattern but might need adjustment based on the exact error object structure

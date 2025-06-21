@@ -3,8 +3,12 @@ import { db } from '@/lib/firebase/admin'; // Ensure admin app is initialized an
 import { DocumentSnapshot } from 'firebase-admin/firestore';
 
 export async function GET(request: Request): Promise<NextResponse> {
-  try {
+  if (!db) {
+    console.error('Firebase Admin DB not initialized. Check server environment variables.');
+    return NextResponse.json({ success: false, error: { message: 'Database service is not available.', code: 'DB_UNAVAILABLE' } }, { status: 503 });
+  }
 
+  try {
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
 
