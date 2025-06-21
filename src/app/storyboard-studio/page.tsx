@@ -2,7 +2,9 @@
 "use client";
 
 // import { generateStoryboard } from "@/ai/flows/storyboard-generator-flow"; // Removed direct import
-import type { StoryboardGeneratorInput, StoryboardGeneratorOutput } from "@/lib/ai-types"; // Updated import
+// Updated import: Use StoryboardPackage and Panel from the canonical types
+import type { StoryboardGeneratorInput } from "@/lib/ai-types";
+import type { StoryboardPackage, Panel as StoryboardPanelType } from "packages/types/src/storyboard.types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -71,7 +73,8 @@ async function getCurrentUserIdToken(): Promise<string | null> {
 
 export default function StoryboardStudioPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<StoryboardGeneratorOutput | null>(null);
+  // Update results state to use StoryboardPackage
+  const [results, setResults] = useState<StoryboardPackage | null>(null);
   const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
 
@@ -125,7 +128,8 @@ export default function StoryboardStudioPage() {
         throw new Error(errorMessage);
       }
 
-      const output: StoryboardGeneratorOutput = await response.json();
+      // Expecting StoryboardPackage from the API
+      const output: StoryboardPackage = await response.json();
       setResults(output);
       toast({
         title: "Storyboard Generated!",
@@ -149,13 +153,15 @@ export default function StoryboardStudioPage() {
     }
   }
 
-  const handleDownloadImage = (imageDataUri: string, panelNumber: number) => {
-    if (imageDataUri && !imageDataUri.includes('placehold.co')) {
+  const handleDownloadImage = (imageUrl: string, panelNumber: number) => {
+    // Use imageUrl, and check if it's a valid URL (not placeholder or empty)
+    if (imageUrl && !imageUrl.includes('placehold.co') && imageUrl.startsWith('http')) {
       const sceneDesc = form.getValues("sceneDescription");
-      const filenameSuffix = sanitizeForFilename(results?.titleSuggestion || sceneDesc);
+      // results.title is from StoryboardPackage, not titleSuggestion
+      const filenameSuffix = sanitizeForFilename(results?.title || sceneDesc);
       const link = document.createElement('a');
-      link.href = imageDataUri;
-      link.download = `ISL_Storyboard_${filenameSuffix}_Panel_${panelNumber}.png`;
+      link.href = imageUrl; // Use imageUrl for download
+      link.download = `ISL_Storyboard_${filenameSuffix}_Panel_${panelNumber}.png`; // Consider deriving extension from URL if possible
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -329,34 +335,40 @@ export default function StoryboardStudioPage() {
         {results && !isLoading && results.panels.length > 0 && (
           <div className="mt-12">
             <h2 className="text-2xl font-semibold mb-2 text-center text-foreground">
-              {results.titleSuggestion || "Generated Storyboard"}
+              {/* Use results.title from StoryboardPackage */}
+              {results.title || "Generated Storyboard"}
             </h2>
              <p className="text-sm text-muted-foreground text-center mb-6">
               {results.panels.length} panels generated. Review and refine as needed.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {results.panels.map((panel) => (
-                <Card key={panel.panelNumber} className="flex flex-col overflow-hidden shadow-lg">
+              {/* Ensure panel type matches StoryboardPanelType */}
+              {results.panels.map((panel: StoryboardPanelType, index: number) => (
+                // Use panel.id for key if available and unique, otherwise index or panel.panelNumber
+                <Card key={panel.id || index} className="flex flex-col overflow-hidden shadow-lg">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold">Panel {panel.panelNumber}</CardTitle>
+                    {/* panel.panelNumber might not exist on StoryboardPanelType, use index+1 or ensure it's added if needed */}
+                    <CardTitle className="text-base font-semibold">Panel {index + 1}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow space-y-3">
                     <div className="relative aspect-[4/3] w-full bg-muted rounded-md overflow-hidden border">
                       <NextImage
-                        src={panel.imageDataUri}
-                        alt={`Storyboard Panel ${panel.panelNumber}: ${panel.description}`}
+                        src={panel.imageURL} // Use imageURL
+                        alt={panel.alt || `Storyboard Panel ${index + 1}`} // Use panel.alt
                         layout="fill"
                         objectFit="contain"
                         data-ai-hint="storyboard panel"
                       />
-                      {!panel.imageDataUri.includes('placehold.co') && (
+                      {/* Check panel.imageURL for placeholder and validity */}
+                      {panel.imageURL && !panel.imageURL.includes('placehold.co') && panel.imageURL.startsWith('http') && (
                          <Tooltip>
                             <TooltipTrigger asChild>
                                <Button
                                   variant="ghost"
                                   size="icon"
                                   className="absolute top-2 right-2 h-7 w-7 bg-black/30 text-white hover:bg-accent/80 hover:text-accent-foreground"
-                                  onClick={() => handleDownloadImage(panel.imageDataUri, panel.panelNumber)}
+                                  // Pass panel.imageURL and ensure panelNumber is available or use index+1
+                                  onClick={() => handleDownloadImage(panel.imageURL, (panel as any).panelNumber || index + 1)}
                                 >
                                   <Download className="h-4 w-4" />
                                 </Button>
@@ -366,17 +378,20 @@ export default function StoryboardStudioPage() {
                       )}
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-foreground mt-1">Description:</h4>
-                      <p className="text-xs text-muted-foreground break-words">{panel.description}</p>
+                      <h4 className="text-xs font-semibold text-foreground mt-1">Description/Caption:</h4>
+                      {/* Use panel.caption from StoryboardPanelType. Fallback to panel.description if migrating. */}
+                      <p className="text-xs text-muted-foreground break-words">{panel.caption || (panel as any).description}</p>
                     </div>
                     <div>
                       <h4 className="text-xs font-semibold text-foreground">Shot Details:</h4>
-                      <p className="text-xs text-muted-foreground">{panel.shotDetails}</p>
+                      {/* Use panel.camera from StoryboardPanelType. Fallback to panel.shotDetails if migrating. */}
+                      <p className="text-xs text-muted-foreground">{panel.camera || (panel as any).shotDetails}</p>
                     </div>
-                    {panel.dialogueOrSound && (
+                    {/* panel.dialogueOrSound might not exist on StoryboardPanelType. Check if it's part of 'caption' or another field */}
+                    {(panel as any).dialogueOrSound && (
                        <div>
                         <h4 className="text-xs font-semibold text-foreground">Dialogue/Sound:</h4>
-                        <p className="text-xs text-muted-foreground">{panel.dialogueOrSound}</p>
+                        <p className="text-xs text-muted-foreground">{(panel as any).dialogueOrSound}</p>
                       </div>
                     )}
                   </CardContent>
@@ -387,10 +402,16 @@ export default function StoryboardStudioPage() {
                               variant="outline" 
                               size="sm" 
                               className="w-full text-xs"
-                              onClick={() => handleCopyText(
-                                `Panel ${panel.panelNumber}\nDescription: ${panel.description}\nShot Details: ${panel.shotDetails}${panel.dialogueOrSound ? `\nDialogue/Sound: ${panel.dialogueOrSound}` : ''}`,
-                                `Panel ${panel.panelNumber} Details`
-                              )}
+                              onClick={() => {
+                                const panelNumber = (panel as any).panelNumber || index + 1;
+                                const description = panel.caption || (panel as any).description;
+                                const shotDetails = panel.camera || (panel as any).shotDetails;
+                                const dialogueOrSound = (panel as any).dialogueOrSound;
+                                handleCopyText(
+                                  `Panel ${panelNumber}\nDescription: ${description}\nShot Details: ${shotDetails}${dialogueOrSound ? `\nDialogue/Sound: ${dialogueOrSound}` : ''}`,
+                                  `Panel ${panelNumber} Details`
+                                );
+                              }}
                             >
                               <Copy className="mr-1.5 h-3 w-3" /> Copy Panel Text
                             </Button>
