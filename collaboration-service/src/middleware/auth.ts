@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../firebaseAdmin';           // Firebase Admin wrapper
+import { auth } from '../firebaseAdmin';           // Firebase Admin wrapper (initialized elsewhere)
 import * as admin from 'firebase-admin';           // For DecodedIdToken typing
-import logger from '../logger';                    // Centralised Winston/Pino logger (assumed)
+import logger from '../logger';                    // Centralised (Winston/Pino) logger
 
 /**
  * Extend Express Request with a verified Firebase user object.
@@ -24,6 +24,9 @@ export const authenticate = async (
 ) => {
   logger.info('Authenticating request', { path: req.path, ip: req.ip });
 
+  // ---------------------------------------------------------------------------
+  // 1) Extract and validate the Authorization header
+  // ---------------------------------------------------------------------------
   const authorizationHeader = req.headers.authorization;
   if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
     logger.warn('No Bearer token found in Authorization header', {
@@ -35,6 +38,9 @@ export const authenticate = async (
       .json({ message: 'Unauthorized: No Bearer token provided.' });
   }
 
+  // ---------------------------------------------------------------------------
+  // 2) Extract the ID token
+  // ---------------------------------------------------------------------------
   const idToken = authorizationHeader.split('Bearer ')[1];
   if (!idToken) {
     logger.warn('Bearer token is empty', { path: req.path, ip: req.ip });
@@ -43,13 +49,18 @@ export const authenticate = async (
       .json({ message: 'Unauthorized: Bearer token is empty.' });
   }
 
+  // ---------------------------------------------------------------------------
+  // 3) Verify the token with Firebase Admin
+  // ---------------------------------------------------------------------------
   try {
     const decodedToken = await auth.verifyIdToken(idToken);
     req.user = decodedToken;
+
     logger.info('User authenticated', {
       userId: decodedToken.uid,
       path: req.path,
     });
+
     return next();
   } catch (error: any) {
     logger.error('Error verifying ID token', {
