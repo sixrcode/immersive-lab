@@ -35,6 +35,11 @@ const portfolioItemSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  productionStatus: { // New field for production status
+    type: String,
+    trim: true,
+    default: null, // Or a default status like "Pre-production"
+  },
   // You might also want to add timestamps for creation and updates
   // createdAt: { type: Date, default: Date.now },
   // updatedAt: { type: Date, default: Date.now }

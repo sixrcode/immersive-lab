@@ -11,6 +11,7 @@ export interface KanbanCardType {
   dueDate?: string; 
   coverImage?: string;
   dataAiHint?: string;
+  portfolioItemId?: string; // Link to the portfolio item
 }
 
 // New interfaces for PromptPackage

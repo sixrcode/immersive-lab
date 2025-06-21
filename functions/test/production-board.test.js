@@ -68,7 +68,7 @@ describe('Production Board API', () => {
         { id: 'col2', title: 'Column 2', createdAt: new Date().toISOString(), cardOrder: [] },
       ];
       const mockCardsDataCol1 = [
-        { id: 'card1A', columnId: 'col1', title: 'Card 1A', orderInColumn: 0 },
+        { id: 'card1A', columnId: 'col1', title: 'Card 1A', orderInColumn: 0, portfolioItemId: 'portfolio-abc' },
       ];
 
       // Mock for columns fetch
@@ -107,6 +107,7 @@ describe('Production Board API', () => {
       expect(response.body[0].title).toBe('Column 1');
       expect(response.body[0].cards).toHaveLength(1);
       expect(response.body[0].cards[0].id).toBe('card1A');
+      expect(response.body[0].cards[0].portfolioItemId).toBe('portfolio-abc'); // Verify portfolioItemId
       expect(response.body[1].id).toBe('col2');
       expect(response.body[1].cards).toHaveLength(0);
 
@@ -367,11 +368,12 @@ describe('Production Board API', () => {
       title: 'Awesome New Card',
       description: 'This is a test card.',
       priority: 'high',
+      portfolioItemId: 'portfolio-123', // Added for testing
       // orderInColumn will be determined by the endpoint logic if not provided
     };
     const mockGeneratedCardId = 'new-card-generated-id';
 
-    it('should return 201 and the new card on successful creation', async () => {
+    it('should return 201 and the new card with portfolioItemId on successful creation', async () => {
       // Mock for runTransaction
       dbMock.runTransaction.mockImplementation(async (updateFunction) => {
         const mockTransaction = {
@@ -389,6 +391,7 @@ describe('Production Board API', () => {
             id: mockGeneratedCardId,
             columnId: columnId,
             orderInColumn: 2, // Assuming it's added to the end of ['cardA', 'cardB']
+            portfolioItemId: newCardData.portfolioItemId, // Ensure this is passed through
             createdAt: 'MOCK_SERVER_TIMESTAMP', // Or a real date string
             updatedAt: 'MOCK_SERVER_TIMESTAMP',
         };
@@ -411,6 +414,7 @@ describe('Production Board API', () => {
       expect(response.body.id).toBe(mockGeneratedCardId);
       expect(response.body.title).toBe(newCardData.title);
       expect(response.body.columnId).toBe(columnId);
+      expect(response.body.portfolioItemId).toBe(newCardData.portfolioItemId); // Verify portfolioItemId
       expect(response.body.orderInColumn).toBe(2); // Based on mock logic above
 
       expect(dbMock.runTransaction).toHaveBeenCalledTimes(1);
@@ -532,6 +536,7 @@ describe('Production Board API', () => {
       title: 'Updated Card Title',
       description: 'Updated description.',
       priority: 'low',
+      portfolioItemId: 'portfolio-xyz-updated', // Add portfolioItemId to payload
     };
     const originalCardData = {
         title: 'Original Card Title',
@@ -539,12 +544,13 @@ describe('Production Board API', () => {
         columnId: 'col1',
         orderInColumn: 0,
         priority: 'high',
+        portfolioItemId: 'portfolio-abc-original', // Original portfolioItemId
         createdAt: 'sometime',
         updatedAt: 'sometimeago'
     };
 
 
-    it('should return 200 and the updated card data on successful update', async () => {
+    it('should return 200 and the updated card data including portfolioItemId on successful update', async () => {
       // Mock for the transaction's get(cardRef)
       const mockTransactionGet = jest.fn().mockResolvedValue({
         exists: true,
@@ -579,6 +585,7 @@ describe('Production Board API', () => {
       expect(response.body.title).toBe(updatePayload.title);
       expect(response.body.description).toBe(updatePayload.description);
       expect(response.body.priority).toBe(updatePayload.priority);
+      expect(response.body.portfolioItemId).toBe(updatePayload.portfolioItemId); // Verify portfolioItemId
       expect(response.body.updatedAt).toBe('MOCK_SERVER_TIMESTAMP');
 
       expect(dbMock.runTransaction).toHaveBeenCalledTimes(1);
