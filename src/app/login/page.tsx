@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, FormEvent, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/services/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

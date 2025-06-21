@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { FeedbackReport } from '@/lib/feedback-types';
 
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/services/AuthContext'; // Import useAuth
 export type SubmitFeedbackHookInput = Pick<
   FeedbackReport,
   'prototypeId' | 'reportedContentPath' | 'reason'

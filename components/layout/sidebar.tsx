@@ -18,7 +18,7 @@ import { LayoutDashboard, Sparkles, ScanText, Kanban, Users, Film, Settings, Log
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useAuth } from '@/services/AuthContext'; // Import useAuth
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
