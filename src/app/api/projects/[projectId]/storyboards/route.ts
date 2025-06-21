@@ -6,26 +6,18 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { StoryboardPackage } from '../../../../../../../packages/types/src/storyboard.types'; // Adjust path as necessary
 
-// Initialize Firebase Admin components if not already done in admin.ts
-let adminAuth: ReturnType<typeof getAuth>;
-let adminFirestore: ReturnType<typeof getFirestore>;
-
-if (firebaseAdminApp) {
-  adminAuth = getAuth(firebaseAdminApp);
-  adminFirestore = getFirestore(firebaseAdminApp);
-} else {
-  // This block should ideally not be reached if firebaseAdminApp is correctly initialized globally
-  console.error("Firebase Admin SDK not initialized at API route level. Ensure '@/lib/firebase/admin' is correctly configured.");
-  // You might throw an error here or attempt a last-minute initialization if critical
-}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { projectId: string } }
 ) {
   if (!firebaseAdminApp) {
+    console.error("Firebase Admin SDK not initialized. Cannot process request.");
     return NextResponse.json({ error: 'Firebase Admin SDK not initialized.' }, { status: 500 });
   }
+  const adminAuth = getAuth(firebaseAdminApp);
+  const adminFirestore = getFirestore(firebaseAdminApp);
+
 
   try {
     // Authentication

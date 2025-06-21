@@ -25,25 +25,16 @@ interface MicroserviceOutput {
   [key: string]: unknown; // Allow other top-level properties from AI, though ideally should be typed
 }
 
-// Ensure Firebase Admin is initialized
-if (!firebaseAdminApp) {
-  console.error('Firebase Admin SDK has not been initialized.');
-  // This should ideally not happen if admin.ts is correctly set up and imported.
-}
-
-const adminAuth = getAuth(firebaseAdminApp);
-const adminFirestore: Firestore = getFirestore();
-const adminStorage = getStorage(firebaseAdminApp);
-
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  let projectId: string;
   if (!firebaseAdminApp) {
-    return NextResponse.json({ error: 'Firebase Admin SDK not initialized.' }, { status: 500 });
+    console.error('Firebase Admin SDK has not been initialized. Cannot process request.');
+    return NextResponse.json({ error: 'Server configuration error.' }, { status: 500 });
   }
-  if (!AI_MICROSERVICE_URL) {
-    console.error('AI_MICROSERVICE_URL is not set.');
-    return NextResponse.json({ error: 'Service configuration error.' }, { status: 500 });
-  }
+  const adminAuth = getAuth(firebaseAdminApp);
+  const adminFirestore: Firestore = getFirestore(firebaseAdminApp);
+  const adminStorage = getStorage(firebaseAdminApp);
+  
+  let projectId: string;
 
   let validatedInput: StoryboardGeneratorInput;
   try {
@@ -79,6 +70,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // 1. Decode ID token to get userId
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const userId = decodedToken.uid;
+
+    if (!AI_MICROSERVICE_URL) {
+      console.error('AI_MICROSERVICE_URL is not set.');
+      return NextResponse.json({ error: 'Service configuration error.' }, { status: 500 });
+    }
 
     // 2. Call AI Microservice
     const microserviceResponse = await fetch(`${AI_MICROSERVICE_URL}/generateStoryboard`, {
