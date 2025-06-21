@@ -31,6 +31,14 @@ describe('download utility', () => {
 
 
   beforeEach(() => {
+    // Ensure URL.createObjectURL and URL.revokeObjectURL exist before spying
+    if (typeof global.URL.createObjectURL === 'undefined') {
+      global.URL.createObjectURL = jest.fn(() => 'blob:http://localhost/mock-url-default-created');
+    }
+    if (typeof global.URL.revokeObjectURL === 'undefined') {
+      global.URL.revokeObjectURL = jest.fn();
+    }
+
     // Mock DOM manipulation and URL object methods
     clickSpy = jest.fn();
     createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
@@ -42,8 +50,9 @@ describe('download utility', () => {
     appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation(node => node);
     removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(node => node);
 
-    createObjectURLSpy = jest.spyOn(URL, 'createObjectURL').mockReturnValue('blob:http://localhost/mock-url');
-    revokeObjectURLSpy = jest.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    // Now spy on the potentially polyfilled methods
+    createObjectURLSpy = jest.spyOn(global.URL, 'createObjectURL').mockReturnValue('blob:http://localhost/mock-url-spied');
+    revokeObjectURLSpy = jest.spyOn(global.URL, 'revokeObjectURL').mockImplementation(() => {});
 
     alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
