@@ -12,3 +12,23 @@ export const FeedbackReportSchema = z.object({
 });
 
 export type FeedbackReport = z.infer<typeof FeedbackReportSchema>;
+
+export const CommentSchema = z.object({
+  id: z.string().uuid().optional(),
+  projectId: z.string(),
+  userId: z.string(),
+  text: z.string().min(1).max(1000),
+  timestamp: z.preprocess((val) => (typeof val === 'string' || val instanceof Date ? new Date(val) : undefined), z.date()),
+});
+
+export type Comment = z.infer<typeof CommentSchema>;
+
+export const RatingSchema = z.object({
+  id: z.string().uuid().optional(),
+  projectId: z.string(),
+  userId: z.string(),
+  value: z.number().min(1).max(5),
+  timestamp: z.preprocess((val) => (typeof val === 'string' || val instanceof Date ? new Date(val) : undefined), z.date()),
+});
+
+export type Rating = z.infer<typeof RatingSchema>;
