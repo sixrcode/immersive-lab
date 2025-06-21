@@ -104,7 +104,7 @@ export default function DashboardPage() {
       <section>
         <h2 className="text-2xl font-semibold mb-6 text-foreground">Explore Core Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-          {features.map((feature) => (
+          {features.map((feature: Feature) => (
             <Card key={feature.title} className="flex flex-col overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300">
               <CardHeader className="relative h-48 p-0">
                 <NextImage 
