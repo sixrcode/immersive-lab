@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'; // Added useEffect
 import { Button } from '@/components/ui/button';
 import { Star, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSubmitRating } from '@/hooks/useSubmitRating';
+import { useSubmitRating } from '@/lib/useSubmitRating';
 import type { Rating } from '@/lib/feedback-types';
 
 // Placeholder for actual auth hook
