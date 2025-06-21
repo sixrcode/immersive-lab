@@ -15,7 +15,7 @@ jest.mock('next/server', () => {
         status: init?.status || 200,
         headers: new Headers(init?.headers) // Removed trailing comma
 
-      }),
+      })) // Removed trailing comma from this line
     },
   };
 });
