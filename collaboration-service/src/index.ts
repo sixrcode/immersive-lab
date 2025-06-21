@@ -1,6 +1,8 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import './firebaseAdmin'; // Initialize Firebase Admin SDK
 import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import logger from './logger';
 import http from 'http';
 import { authenticate } from './middleware/auth'; // Import authentication middleware
 import { Server as SocketIOServer } from 'socket.io';
@@ -68,10 +70,40 @@ const io = new SocketIOServer(server, {
 // Initialize Socket.IO service (passing the io instance)
 initializeSocket(io); // This function will be in src/services/socketService.ts
 
-// Global error handler (optional, basic example)
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+// Global error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  const errorId = err.errorId || uuidv4(); // Use existing errorId or generate new
+  const userId = (req as any).user ? (req as any).user.uid : 'unknown'; // Assuming user might be on req
+  const errorMessage = err.message || 'An unexpected error occurred.';
+  const errorCode = err.code || 'INTERNAL_ERROR';
+  const errorStatus = typeof err.status === 'number' ? err.status : 500;
+
+  logger.error(errorMessage, { // Winston takes message first, then metadata object
+    errorId,
+    userId,
+    route: req.path,
+    method: req.method,
+    errorCode,
+    stack: err.stack,
+    requestDetails: { // Log request details cautiously
+      // body: req.body, // Avoid logging sensitive PII by default
+      params: req.params,
+      query: req.query,
+    }
+  });
+
+  if (res.headersSent) {
+    return next(err); // If headers already sent, delegate to default Express error handler
+  }
+
+  res.status(errorStatus).json({
+    success: false,
+    error: {
+      id: errorId,
+      message: errorMessage,
+      code: errorCode,
+    }
+  });
 });
 
 // Start server logic wrapped in a function
@@ -82,11 +114,11 @@ export async function startServer() {
   // For tests, Mongoose connection is assumed to be handled by globalSetup.
   // For direct execution, Mongoose connection is handled before calling startServer.
   // Thus, no explicit Mongoose connection call or check within startServer itself.
-  console.log('startServer called. Mongoose connection assumed to be handled externally.');
+  logger.info('startServer called. Mongoose connection assumed to be handled externally.');
 
   return new Promise<void>((resolve, reject) => {
     server.on('error', (err) => {
-      console.error('Server failed to start:', err);
+      logger.error('Server failed to start:', { error: err });
       if (process.env.NODE_ENV === 'test') {
         reject(err);
       } else {
@@ -94,8 +126,8 @@ export async function startServer() {
       }
     });
     server.listen(currentPort, () => {
-      console.log(`Collaboration service is listening on port ${currentPort}`);
-      console.log(`Socket.IO initialized and listening on port ${currentPort}`);
+      logger.info(`Collaboration service is listening on port ${currentPort}`);
+      logger.info(`Socket.IO initialized and listening on port ${currentPort}`);
       resolve();
     });
   });
@@ -107,28 +139,28 @@ export async function startServer() {
 if (process.env.NODE_ENV !== 'test') {
   const mongoURI_direct = process.env.MONGODB_URI;
   if (!mongoURI_direct) {
-    console.error('FATAL ERROR: MONGODB_URI is not defined. Cannot start server for direct execution.');
+    logger.error('FATAL ERROR: MONGODB_URI is not defined. Cannot start server for direct execution.');
     process.exit(1);
   }
 
   const connectAndStart = async () => {
     try {
       if (mongoose.connection.readyState !== 1 && mongoose.connection.readyState !== 2) { // 1=connected, 2=connecting
-        console.log('MongoDB not connected, attempting to connect for direct execution...');
+        logger.info('MongoDB not connected, attempting to connect for direct execution...');
         await mongoose.connect(mongoURI_direct);
-        console.log('MongoDB connected successfully for direct execution.');
+        logger.info('MongoDB connected successfully for direct execution.');
       } else {
-        console.log(`MongoDB already connected or connecting (readyState: ${mongoose.connection.readyState}). Skipping new connection.`);
+        logger.info(`MongoDB already connected or connecting (readyState: ${mongoose.connection.readyState}). Skipping new connection.`);
       }
 
       // Initialize models after Mongoose connection for direct execution
       const { initModels } = await import('./models'); // Adjust path as necessary
       initModels(mongoose); // Pass the connected mongoose instance
-      console.log('Models initialized for direct execution.');
+      logger.info('Models initialized for direct execution.');
 
       await startServer(); // Now start the server
     } catch (err) {
-      console.error("Failed to connect MongoDB or start server for direct execution:", err);
+      logger.error("MongoDB connection error:", { error: err });
       process.exit(1);
     }
   };
