@@ -73,7 +73,7 @@
     "@types/jest-axe": "^3.5.9",
     "@types/mongodb-memory-server": "^1.8.0",
     "@types/node": "^20",
-    "@types/react": "^18",
+    "@types/react": "^18.3.23",
     "@types/react-dom": "^18",
     "@types/socket.io": "^3.0.1",
     "@types/socket.io-client": "^1.4.36",
