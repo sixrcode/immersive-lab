@@ -9,29 +9,21 @@
     ],
     "rewrites": [
       {
-        "source": "/api/**",
-        "run": {
-          "serviceId": "your-isl-sixr-tv-cloud-run-service-id",
-          "region": "your-cloud-run-region"
-        }
-      },
-      {
         "source": "**",
-        "run": {
-          "serviceId": "your-isl-sixr-tv-cloud-run-service-id",
-          "region": "your-cloud-run-region"
-        }
+        "function": "webApp"
       }
     ]
   },
   "functions": [
     {
       "source": "functions",
-      "runtime": "nodejs18"
+      "runtime": "nodejs18",
+      "codebase": "default"
     },
     {
       "source": "ai-microservice",
-      "runtime": "nodejs18"
+      "runtime": "nodejs18",
+      "codebase": "ai"
     }
   ]
 }
