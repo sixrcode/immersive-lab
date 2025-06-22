@@ -67,6 +67,30 @@ The Immersive Storytelling Lab Platform (ISL.SIXR.tv) offers a suite of tools de
 
 ## System Architecture
 
+The ISL.SIXR.tv platform employs a modern web architecture. The following sections describe the architecture in more detail.
+
+### ISL.SIXR.tv Architecture Diagrams
+
+#### System-Level Architecture
+
+[SYSTEM-LEVEL DIAGRAM HERE]
+
+The system-level architecture of ISL.SIXR.tv centers on a Next.js frontend and centralized AI microservices. The Next.js app (deployed via Firebase Hosting or Vercel) handles the UI and user authentication (using Firebase Auth) and accesses data through Firestore and Cloud Storage. When a user submits a prompt or requests content generation, the frontend calls the **Centralized AI Microservice** (a Firebase Function or Cloud Run container) via its API. This AI microservice orchestrates GenKit-powered AI flows and calls Google’s AI models to generate assets. It also reads/writes project data in Firestore and stores large assets (like generated images) in Cloud Storage. Heavy GPU-based tasks (such as image synthesis) can be routed from the AI microservice to an external GPU service (RunPod) for processing. The diagram above illustrates how users interact with the frontend, how API requests route to Firebase services and AI microservices, and how data flows between Firestore, Cloud Storage, Google AI, and RunPod.
+
+#### Workflow-Level Architecture
+
+[WORKFLOW-LEVEL DIAGRAM HERE]
+
+This diagram maps the **Prompt-to-Prototype Studio** workflow. First, the user inputs a text prompt (and optional style or reference image) into the frontend UI. The UI sends a POST to the AI microservice’s `/promptToPrototype` endpoint. The microservice then runs GenKit-powered AI logic (using Google AI models) to generate a suite of assets – including a logline, moodboard images, shot list, and animatic description – from the prompt. These outputs are saved to Firestore (structured data like shot lists and text) and Cloud Storage (generated images). Next, the user may invoke storyboard generation by calling `/generateStoryboard` (passing in scene descriptions or shot lists); this tells the microservice to run a diffusion model (on RunPod GPUs) to produce storyboard panels, which are also stored in Cloud Storage. Similarly, a request to `/analyzeScript` sends script text to the microservice, which calls AI models for analysis and logs results to Firestore. Arrows in the diagram show the flow of data (API calls to the microservice, AI model invocations, and data reads/writes to Firebase). This illustrates how a single user prompt is turned into creative assets and how each step interacts with Firestore and Storage.
+
+#### Infrastructure & Deployment Architecture
+
+[INFRASTRUCTURE & DEPLOYMENT DIAGRAM HERE]
+
+This diagram shows the CI/CD and deployment pipeline. The code is stored on GitHub, and **GitHub Actions** automates builds and deployments. On commits or PR merges, Actions run tests and then build/deploy services: the Next.js frontend is built and deployed to Firebase Hosting (or optionally Vercel), and the AI microservice is deployed using the Firebase CLI (e.g. `firebase deploy --only functions:aiApi` as noted in the docs). Any containerized backend (e.g. collaboration or portfolio services) are Docker-built and pushed to Google Artifact Registry, then deployed to Google Cloud Run using `gcloud run deploy`. Terraform scripts (also run via GitHub Actions) are used to provision GPU pods on RunPod. Environment variables and secrets (Firebase credentials, RunPod API keys, etc.) are managed via GitHub Secrets and the respective service configurations. Arrows in the diagram trace these pipelines: from GitHub to Actions, then to Firebase Deploy (functions/hosting), to Artifact Registry and Cloud Run, and to Terraform/RunPod.
+
+### Legacy System Architecture Text
+
 The ISL.SIXR.tv platform employs a modern web architecture:
 
 -   **Frontend & BFF (Backend-For-Frontend):** The primary application is built with Next.js, serving both as the user interface and a backend layer that handles user authentication, data management with Firestore, and orchestration of calls to other services.
