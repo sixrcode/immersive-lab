@@ -1,6 +1,6 @@
 import { ai } from '../genkit';
 import { z } from 'genkit';
-import { AnalyzeScriptOutputSchema } from './ai-script-analyzer'; // Assuming this can be imported
+import { AnalyzeScriptOutputSchema, AnalyzeScriptOutput } from './ai-script-analyzer'; // Assuming this can be imported
 
 // Define Task Categories
 const TaskCategorySchema = z.enum([
@@ -89,14 +89,23 @@ export const generateProductionChecklistFlow = ai.defineFlow(
     inputSchema: ProductionChecklistInputSchema,
     outputSchema: ProductionChecklistOutputSchema,
   },
-  async (input) => {
+  async (input: ProductionChecklistInput) => {
     // A simple validation, more can be added.
-    if (!input.scriptAnalysis || !input.scriptAnalysis.analysis) {
+    const scriptAnalysis = input.scriptAnalysis as AnalyzeScriptOutput; // Type assertion
+    if (!scriptAnalysis || !scriptAnalysis.analysis) {
         console.warn("Insufficient script analysis data provided.");
         return [];
     }
-    if (!input.checklistRequirements || input.checklistRequirements.include.length === 0) {
-        console.warn("No checklist requirements specified.");
+    // Ensure checklistRequirements and its include property are valid
+    if (
+      !input.checklistRequirements ||
+      typeof input.checklistRequirements !== 'object' ||
+      !('include' in input.checklistRequirements) ||
+      !input.checklistRequirements.include ||
+      !Array.isArray(input.checklistRequirements.include) ||
+      input.checklistRequirements.include.length === 0
+    ) {
+        console.warn("No checklist requirements specified or 'include' array is invalid/empty.");
         return [];
     }
 

@@ -10,7 +10,7 @@ const router: Router = express.Router();
 // --- Document Routes ---
 
 // GET /api/projects/:projectId/documents - Get all documents for a project
-router.get('/projects/:projectId/documents', async (req: Request, res: Response) => {
+router.get('/projects/:projectId/documents', async (req: Request, res: Response, next: NextFunction) => {
   const { Document } = getModels();
   try {
     const documents = await Document.find({ projectId: req.params.projectId });

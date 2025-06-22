@@ -9,8 +9,11 @@ jest.mock('../genkit', () => ({
       const tasks: ProductionChecklistOutput = [];
       let taskIdCounter = 1;
 
-      const scriptText = input.scriptAnalysis.analysis.toLowerCase();
-      const reqCategories = input.checklistRequirements.include;
+      const scriptAnalysis = input.scriptAnalysis as AnalyzeScriptOutput;
+      const checklistRequirements = input.checklistRequirements as { include: TaskCategory[] };
+
+      const scriptText = scriptAnalysis.analysis.toLowerCase();
+      const reqCategories = checklistRequirements.include;
 
       // Simplified extraction logic for mock
       if (reqCategories.includes('casting')) {
@@ -148,10 +151,13 @@ describe('generateProductionChecklistFlow', () => {
     const mockPrompt = require('../genkit').ai.definePrompt();
     mockPrompt.mockImplementationOnce(async (input: ProductionChecklistInput): Promise<{ output: ProductionChecklistOutput | null }> => {
         const tasks: ProductionChecklistOutput = [];
-        if (input.checklistRequirements.include.includes('casting') && input.scriptAnalysis.analysis.toLowerCase().includes('chef')) {
+        const scriptAnalysis = input.scriptAnalysis as AnalyzeScriptOutput;
+        const checklistRequirements = input.checklistRequirements as { include: TaskCategory[] };
+
+        if (checklistRequirements.include.includes('casting') && scriptAnalysis.analysis.toLowerCase().includes('chef')) {
             tasks.push({ id: 'task-c1', type: 'casting', description: 'Cast character: CHEF' });
         }
-        if (input.checklistRequirements.include.includes('animals') && input.scriptAnalysis.analysis.toLowerCase().includes('cat')) {
+        if (checklistRequirements.include.includes('animals') && scriptAnalysis.analysis.toLowerCase().includes('cat')) {
             tasks.push({ id: 'task-a1', type: 'animals', description: 'Arrange for animal: CAT' });
         }
         return { output: tasks };

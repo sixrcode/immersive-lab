@@ -70,7 +70,7 @@ const io = new SocketIOServer(server, {
 });
 
 // Initialize Socket.IO service (passing the io instance)
-initializeSocket(io); // This function will be in src/services/socketService.ts
+initializeSocketService(io); // This function will be in src/services/socketService.ts
 
 // Global error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

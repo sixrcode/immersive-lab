@@ -12,12 +12,21 @@ jest.mock('../../services/firestoreSyncService', () => ({
   handleProjectRenamed: jest.fn().mockResolvedValue(undefined), // Mock to check calls
 }));
 
-jest.mock('../../firebaseAdmin', () => ({
-  auth: {
-    verifyIdToken: jest.fn(),
-  },
-}));
-import { auth as mockAuth } from '../../firebaseAdmin'; // Import the mocked auth
+jest.mock('../../firebaseAdmin', () => {
+  const actualAdmin = jest.requireActual('../../firebaseAdmin');
+  return {
+    ...actualAdmin, // Spread actual exports
+    __esModule: true, // This is important for ES modules
+    default: { // Mock the default export
+      ...actualAdmin.default,
+      auth: () => ({ // Mock the auth method
+        verifyIdToken: jest.fn(),
+      }),
+    },
+    // If there are other named exports you want to mock or keep, handle them here
+  };
+});
+import admin from '../../firebaseAdmin'; // Import the mocked admin
 
 // Variable to hold the server instance for this test suite
 let currentTestServer: import('http').Server;
@@ -66,12 +75,12 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     const { Project } = getModels();
     await Project.deleteMany({});
     // Default mock for successful authentication for most tests
-    (mockAuth.verifyIdToken as jest.Mock).mockResolvedValue({ uid: mockUserId, email: 'test@example.com' });
+    (admin.auth().verifyIdToken as jest.Mock).mockResolvedValue({ uid: mockUserId, email: 'test@example.com' });
   });
 
   describe('POST /api/projects', () => {
     it('should create a new project and return 201', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
       const { Project } = getModels(); // Get model within the test
       const projectData = {
         name: 'Test Project 1',
@@ -89,13 +98,20 @@ describe('Project API Endpoints (with Refactored Models)', () => {
       expect(response.body.members).toContain(mockUserId);
       const projectInDb = await Project.findById(response.body._id);
       expect(projectInDb).not.toBeNull();
-      expect(projectInDb?.name).toBe(projectData.name);
-      expect(projectInDb?.createdBy.toString()).toBe(mockUserId);
-      expect(projectInDb?.members.map(m => m.toString())).toContain(mockUserId);
+      // Add a null check for projectInDb before accessing its properties
+      if (projectInDb) {
+        expect(projectInDb.name).toBe(projectData.name);
+        expect(projectInDb.createdBy.toString()).toBe(mockUserId);
+        // Add a check for members before mapping
+        expect(projectInDb.members).toBeDefined();
+        if (projectInDb.members) {
+          expect(projectInDb.members.map(m => m.toString())).toContain(mockUserId);
+        }
+      }
     });
 
     it('should return 400 if name is missing', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
       const projectData = { description: 'Missing name' }; // createdBy removed
       const response = await request(app)
         .post('/api/projects')
@@ -106,7 +122,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     });
 
     it('should return 400 if name is an empty string', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
       const projectData = { name: '   ', description: 'Empty name test' };
       const response = await request(app)
         .post('/api/projects')
@@ -125,7 +141,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     });
 
     it('should return 403 if token is invalid', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockRejectedValueOnce(new Error('Invalid token'));
+      (admin.auth().verifyIdToken as jest.Mock).mockRejectedValueOnce(new Error('Invalid token'));
       const projectData = { name: 'Test Project Invalid Token', description: 'A project for testing' };
       const response = await request(app)
         .post('/api/projects')
@@ -137,7 +153,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
 
   describe('GET /api/projects', () => {
     it('should return an array of projects for an authenticated user', async () => {
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: mockUserId, email: 'test@example.com' });
       const { Project } = getModels();
       await Project.create([
         { name: 'Project Alpha', createdBy: mockUserId, members: [mockUserId] },
@@ -165,7 +181,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
 
   describe('GET /api/projects/:projectId', () => {
     it('should return a single project if ID is valid and user is a member', async () => {
-      // mockAuth.verifyIdToken is already set in global beforeEach
+      // admin.auth().verifyIdToken is already set in global beforeEach
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Gamma', createdBy: mockUserId, members: [mockUserId] });
       const response = await request(app)
@@ -176,7 +192,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     });
 
     it('should return 404 if project ID is not found', async () => {
-      // mockAuth.verifyIdToken is already set in global beforeEach
+      // admin.auth().verifyIdToken is already set in global beforeEach
       const nonExistentId = new mongoose.Types.ObjectId().toString();
       const response = await request(app)
         .get(`/api/projects/${nonExistentId}`)
@@ -185,7 +201,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     });
 
     it('should return 500 if project ID is invalid', async () => {
-      // mockAuth.verifyIdToken is already set in global beforeEach
+      // admin.auth().verifyIdToken is already set in global beforeEach
         const invalidId = 'invalid-id-format';
         const response = await request(app)
           .get(`/api/projects/${invalidId}`)
@@ -196,7 +212,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Gamma', createdBy: mockUserId, members: [mockUserId] });
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const response = await request(app)
         .get(`/api/projects/${(project as any)._id}`)
         .set('Authorization', 'Bearer fake-token');
@@ -207,7 +223,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
 
   describe('PUT /api/projects/:projectId', () => {
     it('should update a project and return 200 if user is a member', async () => {
-      // mockAuth.verifyIdToken is already set in global beforeEach for mockUserId
+      // admin.auth().verifyIdToken is already set in global beforeEach for mockUserId
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Delta', description: 'Original Desc', createdBy: mockUserId, members: [mockUserId] });
       const updates = { name: 'Project Delta Updated', description: 'Updated Desc' };
@@ -222,7 +238,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member when updating', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Delta', description: 'Original Desc', createdBy: mockUserId, members: [mockUserId] });
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const updates = { name: 'Project Delta Updated Attempt' };
       const response = await request(app)
         .put(`/api/projects/${(project as any)._id}`)
@@ -235,7 +251,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 400 if name is an empty string when updating', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Delta', description: 'Original Desc', createdBy: mockUserId, members: [mockUserId] });
-      // mockAuth.verifyIdToken is already set in global beforeEach to mockUserId (member)
+      // admin.auth().verifyIdToken is already set in global beforeEach to mockUserId (member)
       const updates = { name: '   ' };
       const response = await request(app)
         .put(`/api/projects/${(project as any)._id}`)
@@ -248,7 +264,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
 
   describe('DELETE /api/projects/:projectId', () => {
     it('should delete a project and return 200 if user is a member', async () => {
-      // mockAuth.verifyIdToken is already set in global beforeEach for mockUserId
+      // admin.auth().verifyIdToken is already set in global beforeEach for mockUserId
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Epsilon', createdBy: mockUserId, members: [mockUserId] });
       const response = await request(app)
@@ -261,7 +277,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member when deleting', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Project Epsilon', createdBy: mockUserId, members: [mockUserId] });
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const response = await request(app)
         .delete(`/api/projects/${(project as any)._id}`)
         .set('Authorization', 'Bearer fake-token');
@@ -273,7 +289,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
   // --- Project Membership Tests ---
   describe('POST /api/projects/:projectId/members', () => {
     it('should add a member to a project and return 201 if requester is a member', async () => {
-      // mockAuth.verifyIdToken is already set in global beforeEach for mockUserId
+      // admin.auth().verifyIdToken is already set in global beforeEach for mockUserId
       const { Project } = getModels();
       const project = await Project.create({ name: 'Membership Project', createdBy: mockUserId, members: [mockUserId] }) as IProject;
       const response = await request(app)
@@ -287,7 +303,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member when adding a member', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Membership Project', createdBy: mockUserId, members: [mockUserId] }) as IProject;
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const response = await request(app)
         .post(`/api/projects/${(project as any)._id}/members`)
         .set('Authorization', 'Bearer fake-token')
@@ -299,7 +315,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
 
   describe('DELETE /api/projects/:projectId/members/:userId', () => {
     it('should remove a member from a project and return 200 if requester is a member', async () => {
-      // mockAuth.verifyIdToken is already set in global beforeEach for mockUserId
+      // admin.auth().verifyIdToken is already set in global beforeEach for mockUserId
       const { Project } = getModels();
       const project = await Project.create({ name: 'Remove Member Project', createdBy: mockUserId, members: [mockUserId, anotherMockUserId] });
       const response = await request(app)
@@ -312,7 +328,7 @@ describe('Project API Endpoints (with Refactored Models)', () => {
     it('should return 403 if authenticated user is not a project member when removing a member', async () => {
       const { Project } = getModels();
       const project = await Project.create({ name: 'Remove Member Project', createdBy: mockUserId, members: [mockUserId, thirdMockUserId] });
-      (mockAuth.verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
+      (admin.auth().verifyIdToken as jest.Mock).mockResolvedValueOnce({ uid: anotherMockUserId, email: 'nonmember@example.com' });
       const response = await request(app)
         .delete(`/api/projects/${(project as any)._id}/members/${thirdMockUserId}`)
         .set('Authorization', 'Bearer fake-token');
@@ -330,7 +346,7 @@ describe('Project Data Synchronization', () => {
 
   // Helper to set auth token for this specific user
   const setAuthForSyncUser = () => {
-    (mockAuth.verifyIdToken as jest.Mock).mockResolvedValue({ uid: testUserIdSync, email: 'syncuser@example.com' });
+    (admin.auth().verifyIdToken as jest.Mock).mockResolvedValue({ uid: testUserIdSync, email: 'syncuser@example.com' });
   };
 
 
@@ -375,7 +391,7 @@ describe('Project Data Synchronization', () => {
 
   // Test for Project Deletion
   it('should trigger handleProjectDeleted and remove project from DB when a project is deleted', async () => {
-    const response = await agent.delete(`/api/projects/${createdProject._id}`)
+    const response = await agent.delete(`/api/projects/${createdProject.id}`)
       .set('Authorization', 'Bearer fake-token-sync-user'); // Token content doesn't matter due to mock
 
     expect(response.status).toBe(200);
@@ -383,12 +399,12 @@ describe('Project Data Synchronization', () => {
 
     // Check if project is deleted from MongoDB
     const { Project } = getModels();
-    const dbProject = await Project.findById(createdProject._id);
+    const dbProject = await Project.findById(String(createdProject.id));
     expect(dbProject).toBeNull();
 
     // Check if firestoreSyncService.handleProjectDeleted was called
     expect(firestoreSyncService.handleProjectDeleted).toHaveBeenCalledWith({
-      projectId: createdProject._id.toString(),
+      projectId: String(createdProject.id),
     });
     expect(firestoreSyncService.handleProjectDeleted).toHaveBeenCalledTimes(1);
 
@@ -403,7 +419,7 @@ describe('Project Data Synchronization', () => {
   // Test for Project Rename
   it('should trigger handleProjectRenamed and update project in DB when a project is renamed', async () => {
     const newName = 'Test Sync Project Renamed';
-    const response = await agent.put(`/api/projects/${createdProject._id}`)
+    const response = await agent.put(`/api/projects/${createdProject.id}`)
       .set('Authorization', 'Bearer fake-token-sync-user') // Token content doesn't matter
       .send({ name: newName });
 
@@ -412,13 +428,13 @@ describe('Project Data Synchronization', () => {
 
     // Check if project is updated in MongoDB
     const { Project } = getModels();
-    const dbProject = await Project.findById(createdProject._id);
+    const dbProject = await Project.findById(String(createdProject.id));
     expect(dbProject).not.toBeNull();
     expect(dbProject?.name).toBe(newName);
 
     // Check if firestoreSyncService.handleProjectRenamed was called
     expect(firestoreSyncService.handleProjectRenamed).toHaveBeenCalledWith({
-      projectId: createdProject._id.toString(),
+      projectId: String(createdProject.id),
       newName: newName,
     });
     expect(firestoreSyncService.handleProjectRenamed).toHaveBeenCalledTimes(1);

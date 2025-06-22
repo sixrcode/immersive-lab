@@ -5,7 +5,7 @@ import logger from '../logger'; // Import logger
 const router: Router = express.Router();
 
 // GET /api/projects/:projectId/chats - Get all chat messages for a project
-router.get('/projects/:projectId/chats', async (req: Request, res: Response) => {
+router.get('/projects/:projectId/chats', async (req: Request, res: Response, next: NextFunction) => {
   const { projectId } = req.params;
   const { limit = 50, before } = req.query;
   const { ChatMessage, Project } = getModels(); // Corrected: single destructuring

@@ -48,6 +48,10 @@ export async function uploadImageToStorage(
 
   } catch (error) {
     console.error(`Failed to upload image to Firebase Storage at ${fileName}`, error);
-    throw new Error(`Storage upload failed: ${error.message}`);
+    if (error instanceof Error) {
+      throw new Error(`Storage upload failed: ${error.message}`);
+    } else {
+      throw new Error(`Storage upload failed: ${String(error)}`);
+    }
   }
 }
