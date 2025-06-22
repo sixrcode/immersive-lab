@@ -1,7 +1,7 @@
 
 const nextConfig = {
   async rewrites() {
-    const collaborationServiceUrl = process.env.COLLABORATION_SERVICE_INTERNAL_URL || 'http://localhost:3001';
+    const collaborationServiceUrl = process.env.NEXT_PUBLIC_COLLABORATION_API_BASE_URL || 'http://localhost:3001';
     return [
       {
         source: '/api/collaboration/:path*',
@@ -35,10 +35,6 @@ const nextConfig = {
       },
     ],
   },
- allowedDevOrigins: [
- 'https://6000-firebase-studio-1747556875666.cluster-aj77uug3sjd4iut4ev6a4jbtf2.cloudworkstations.dev',
- 'https://9000-firebase-studio-1747556875666.cluster-aj77uug3sjd4iut4ev6a4jbtf2.cloudworkstations.dev'
- ],
 };
 
 module.exports = nextConfig;
