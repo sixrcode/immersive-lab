@@ -83,9 +83,19 @@ export default async function handler(
 
     // For this initial version, we'll await the full package.
     // True streaming would involve a different flow with `res.write` for each update.
+
+    // TODO: Properly obtain projectId and idToken (e.g., from session or auth headers)
+    const mockProjectId = "mockProject123"; // Placeholder
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authorization token is required.' });
+    }
+    const idToken = authHeader.split('Bearer ')[1];
+
     const storyboardPackage = await generateStoryboardWithGenkit(
-      { sceneDescription, panelCount, stylePreset /* referenceImage */ },
-      (update) => {
+      { sceneDescription, numPanels: panelCount, stylePreset, projectId: mockProjectId /* referenceImage */ },
+      idToken,
+      (update: StoryboardStreamResponse) => {
         // If using SSE, this is where you would res.write()
         // Example: res.write(`data: ${JSON.stringify(update)}\n\n`);
         // For now, just logging on the server. The client will get the final package.

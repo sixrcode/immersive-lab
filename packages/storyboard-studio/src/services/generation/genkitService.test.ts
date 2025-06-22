@@ -24,10 +24,12 @@ describe('genkitService', () => {
     test('should generate a storyboard package with the correct number of panels', async () => {
       const props = {
         sceneDescription: 'Test scene',
-        panelCount: 3,
+        numPanels: 3, // Changed from panelCount
         stylePreset: 'test-style',
+        projectId: 'test-project-id', // Added
       };
-      const result = await generateStoryboardWithGenkit(props, mockOnProgress);
+      const mockIdToken = "mock-token"; // Added
+      const result = await generateStoryboardWithGenkit(props, mockIdToken, mockOnProgress);
 
       expect(result.panels.length).toBe(3);
       expect(result.sceneDescription).toBe(props.sceneDescription);
@@ -36,8 +38,13 @@ describe('genkitService', () => {
     });
 
     test('should call onProgress with processing and success updates', async () => {
-      const props = { sceneDescription: 'Progress test', panelCount: 2 };
-      await generateStoryboardWithGenkit(props, mockOnProgress);
+      const props = {
+        sceneDescription: 'Progress test',
+        numPanels: 2, // Changed
+        projectId: 'test-project-id', // Added
+      };
+      const mockIdToken = "mock-token"; // Added
+      await generateStoryboardWithGenkit(props, mockIdToken, mockOnProgress);
 
       expect(mockOnProgress).toHaveBeenCalledWith(expect.objectContaining({ status: 'processing', progress: 0 }));
       // For each panel (2 panels)
@@ -49,8 +56,15 @@ describe('genkitService', () => {
     });
 
     test('each panel should have required fields and mocked URLs from persistence', async () => {
-      const props = { sceneDescription: 'Panel structure test', panelCount: 1 };
-      const result = await generateStoryboardWithGenkit(props);
+      const props = {
+        sceneDescription: 'Panel structure test',
+        numPanels: 1, // Changed
+        projectId: 'test-project-id', // Added
+      };
+      const mockIdToken = "mock-token"; // Added
+      // Note: onProgress is optional, so not passing it here for this test
+      const result = await generateStoryboardWithGenkit(props, mockIdToken);
+
 
       const panel = result.panels[0];
       expect(panel.id).toMatch(/^panel_\d+_0$/);
@@ -62,13 +76,18 @@ describe('genkitService', () => {
     });
 
     test('should call mocked persistence functions', async () => {
-      const props = { sceneDescription: 'Persistence test', panelCount: 2 };
-      await generateStoryboardWithGenkit(props, mockOnProgress);
+      const props = {
+        sceneDescription: 'Persistence test',
+        numPanels: 2, // Changed
+        projectId: 'test-project-id', // Added
+      };
+      const mockIdToken = "mock-token"; // Added
+      await generateStoryboardWithGenkit(props, mockIdToken, mockOnProgress);
 
       const { uploadImageToStorage, saveStoryboardToFirestore } = require('../persistence/firebaseService');
 
       // Called twice for each panel (image + preview)
-      expect(uploadImageToStorage).toHaveBeenCalledTimes(props.panelCount * 2);
+      expect(uploadImageToStorage).toHaveBeenCalledTimes(props.numPanels * 2); // Changed to numPanels
       expect(uploadImageToStorage).toHaveBeenCalledWith(expect.any(String), expect.stringContaining('image.png'));
       expect(uploadImageToStorage).toHaveBeenCalledWith(expect.any(String), expect.stringContaining('preview.webp'));
 

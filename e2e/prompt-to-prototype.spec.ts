@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.describe('Prompt to Prototype Flow', () => {
-  test('should allow user to submit a prompt and see prototype display', async ({ page }) => {
+  test('should allow users to input a prompt and generate a prototype', async ({ page }: { page: Page }) => {
     // 1. Navigate to the /prompt-to-prototype page
     await page.goto('/prompt-to-prototype');
 

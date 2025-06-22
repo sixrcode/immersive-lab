@@ -1,11 +1,14 @@
 import { generateStoryboard, StoryboardGeneratorInput } from './storyboard-generator-flow';
-// Import 'ai' for use in tests, and the special testing-only export from the mocked module.
+// Import 'ai' for use in tests.
 // Note: The actual '../genkit' module does not export __actualCallablePromptMockForTestsOnly.
 // Jest's mock system will provide it based on the factory function below.
-import { ai, __actualCallablePromptMockForTestsOnly } from '../genkit';
+import { ai } from '../genkit';
+
+// Define a type for the mock function to satisfy TypeScript
+type JestMockFn = jest.Mock<any, any>;
 
 jest.mock('../genkit', () => {
-  const localActualCallablePromptMock = jest.fn();
+  const localActualCallablePromptMock: JestMockFn = jest.fn();
   return {
     ai: {
       definePrompt: jest.fn(() => localActualCallablePromptMock),
@@ -19,7 +22,8 @@ jest.mock('../genkit', () => {
 
 const mockTextGenerationPromptOutput = (panels: any[], titleSuggestion: string = 'Test Title') => {
   // Access the exposed mock to configure it.
-  (__actualCallablePromptMockForTestsOnly as jest.Mock).mockResolvedValueOnce({
+  // Use a type assertion for the mock function
+  ((ai.definePrompt(() => {}) as any) as JestMockFn).mockResolvedValueOnce({
     output: {
       panels,
       titleSuggestion,
@@ -47,7 +51,8 @@ describe('storyboardGeneratorFlow', () => {
 
   beforeEach(() => {
     // Clear all necessary mocks.
-    (__actualCallablePromptMockForTestsOnly as jest.Mock).mockClear();
+    // Use a type assertion for the mock function
+    ((ai.definePrompt(() => {}) as any) as JestMockFn).mockClear();
     (ai.generate as jest.Mock).mockClear();
     (ai.definePrompt as jest.Mock).mockClear(); // Clear the factory function mock too.
   });
@@ -187,7 +192,8 @@ describe('storyboardGeneratorFlow', () => {
   });
 
   test('Handles text generation failure', async () => {
-    (__actualCallablePromptMockForTestsOnly as jest.Mock).mockResolvedValueOnce({ output: null });
+    // Use a type assertion for the mock function
+    ((ai.definePrompt(() => {}) as any) as JestMockFn).mockResolvedValueOnce({ output: null });
 
     await expect(generateStoryboard(basicInput))
       .rejects
