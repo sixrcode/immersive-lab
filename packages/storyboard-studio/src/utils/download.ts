@@ -24,13 +24,16 @@ interface StoryboardPackage {
  * @param fileName The desired name for the downloaded file (e.g., "storyboard-data.json").
  */
 export const downloadStoryboardJson = (
-  storyboardPackage: StoryboardPackage,
-  fileName: string = `storyboard-${storyboardPackage.id || 'package'}.json`
+  storyboardPackage: StoryboardPackage | null, // Allow null
+  fileName?: string // Optional fileName
 ): void => {
   if (!storyboardPackage) {
     console.error("No storyboard package data provided to download.");
     return;
   }
+
+  // Determine filename safely
+  const actualFileName = fileName || `storyboard-${storyboardPackage.id || 'package'}.json`;
 
   try {
     const jsonString = JSON.stringify(storyboardPackage, null, 2);
@@ -39,13 +42,13 @@ export const downloadStoryboardJson = (
 
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName;
+    link.download = actualFileName; // Use determined filename
     document.body.appendChild(link);
     link.click();
 
     document.body.removeChild(link);
     URL.revokeObjectURL(url); // Clean up
-    console.log(`Storyboard JSON download initiated: ${fileName}`);
+    console.log(`Storyboard JSON download initiated: ${actualFileName}`);
   } catch (error) {
     console.error("Error preparing storyboard JSON for download:", error);
     alert("Failed to prepare storyboard data for download. See console for details.");
@@ -60,9 +63,19 @@ export const downloadStoryboardJson = (
  * @param fileName The desired name for the ZIP file.
  */
 export const downloadFullStoryboardZip = async (
-  storyboardPackage: StoryboardPackage,
-  fileName: string = `storyboard-${storyboardPackage.id || 'package'}-full.zip`
+  storyboardPackage: StoryboardPackage | null, // Allow null
+  fileName?: string // Optional fileName
 ): Promise<void> => {
+  if (!storyboardPackage) {
+    console.error("No storyboard package data provided for ZIP download.");
+    // Optionally, alert the user or handle more gracefully
+    alert("Cannot download ZIP: No storyboard data available.");
+    return;
+  }
+
+  // Determine filename safely
+  const actualFileName = fileName || `storyboard-${storyboardPackage.id || 'package'}-full.zip`;
+
   console.warn(
     "downloadFullStoryboardZip is a placeholder. " +
     "Actual ZIP creation with images requires client-side fetching and a ZIP library (e.g., JSZip)."
@@ -106,5 +119,5 @@ export const downloadFullStoryboardZip = async (
   //   });
 
   // For now, just download the JSON as a fallback
-  downloadStoryboardJson(storyboardPackage, `TEMP_JSON_ONLY_${fileName.replace('.zip', '.json')}`);
+  downloadStoryboardJson(storyboardPackage, `TEMP_JSON_ONLY_${actualFileName.replace('.zip', '.json')}`);
 };

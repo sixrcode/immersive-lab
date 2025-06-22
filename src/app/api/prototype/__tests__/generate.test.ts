@@ -110,7 +110,7 @@ describe('/api/prototype/generate API Endpoint', () => {
     // Ensure a full URL is provided to the NextRequest constructor
     const fullUrl = url.startsWith('http') ? url : `http://localhost${url.startsWith('/') ? '' : '/'}${url}`;
 
-    return new NextRequest(fullUrl, {
+    return new NextRequest(fullUrl.toString(), {
       method: method,
       headers: new Headers(headers),
       body: body ? JSON.stringify(body) : null,

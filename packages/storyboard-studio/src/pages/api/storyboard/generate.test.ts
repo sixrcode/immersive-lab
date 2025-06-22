@@ -105,6 +105,9 @@ describe('/api/storyboard/generate API Endpoint', () => {
 
     const { req, res } = createMocks({
       method: 'POST',
+      headers: {
+        authorization: 'Bearer mock-id-token', // Add mock token
+      },
       body: mockRequestBody,
     });
 
@@ -113,7 +116,13 @@ describe('/api/storyboard/generate API Endpoint', () => {
 
     expect(mockGenerateStoryboardWithGenkit).toHaveBeenCalledTimes(1);
     expect(mockGenerateStoryboardWithGenkit).toHaveBeenCalledWith(
-      expect.objectContaining(mockRequestBody),
+      expect.objectContaining({
+        sceneDescription: mockRequestBody.sceneDescription,
+        numPanels: mockRequestBody.panelCount, // API handler maps panelCount to numPanels
+        stylePreset: mockRequestBody.stylePreset,
+        projectId: 'mockProject123', // As used in the handler
+      }),
+      'mock-id-token', // The token from headers
       expect.any(Function) // For the onProgress callback
     );
     expect(res._getStatusCode()).toBe(200);
@@ -130,6 +139,9 @@ describe('/api/storyboard/generate API Endpoint', () => {
 
     const { req, res } = createMocks({
       method: 'POST',
+      headers: {
+        authorization: 'Bearer mock-id-token', // Add mock token
+      },
       body: mockRequestBody,
     });
 

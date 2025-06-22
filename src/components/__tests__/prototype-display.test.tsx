@@ -4,6 +4,59 @@ import '@testing-library/jest-dom';
 import { PrototypeDisplay } from '../prototype-display'; // Adjust path
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PromptPackage, MoodBoardCell } from '@/lib/types';
+import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
+
+// Mock Firebase services
+jest.mock('firebase/app', () => ({
+  initializeApp: jest.fn(),
+  getApps: jest.fn(() => [{ name: '[DEFAULT]' }]), // Mock getApps to return a default app
+  getApp: jest.fn(() => ({ name: '[DEFAULT]' })),  // Mock getApp
+}));
+jest.mock('firebase/auth', () => ({
+  // Mock all functions that are directly imported and used in AuthContext.tsx
+  getAuth: jest.fn(() => ({
+    // If getAuth is called and its return value's methods are used, mock them here.
+    // For now, onAuthStateChanged is the primary one used in AuthContext's useEffect.
+  })),
+  onAuthStateChanged: jest.fn((authInstance, callback) => {
+    // Simulate the behavior: invoke callback, return unsubscribe function
+    callback(null); // Simulate initial state (no user)
+    return jest.fn(); // Mock unsubscribe
+  }),
+  signInWithEmailAndPassword: jest.fn(() => Promise.resolve({ user: { uid: 'test-uid' } })),
+  createUserWithEmailAndPassword: jest.fn(() => Promise.resolve({ user: { uid: 'test-uid' } })),
+  signOut: jest.fn(() => Promise.resolve()),
+  // Add any other specific auth functions that might be directly imported by AuthContext:
+  // e.g., GoogleAuthProvider: jest.fn(),
+  // getIdTokenResult: jest.fn(), // If User.getIdTokenResult is called.
+}));
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    // Add other router methods if needed by AuthProvider or its children
+  }),
+  // Mock other exports from next/navigation if needed
+}));
+
+// Mock useAuth directly to simplify testing components that consume it
+jest.mock('@/contexts/AuthContext', () => ({
+  ...jest.requireActual('@/contexts/AuthContext'), // Import and retain actual AuthProvider
+  useAuth: () => ({
+    currentUser: { uid: 'test-user-id', email: 'test@example.com' }, // Mock a signed-in user
+    loading: false, // Simulate auth state loaded
+    isCreator: false,
+    mfaRequired: false,
+    idTokenResult: null,
+    signInUser: jest.fn(),
+    signUpUser: jest.fn(),
+    signOutUser: jest.fn(),
+    completeMfa: jest.fn(),
+    fetchTokenResult: jest.fn(),
+  }),
+}));
+
 
 // Mock the useToast hook
 jest.mock('@/hooks/use-toast', () => ({
@@ -125,7 +178,9 @@ describe('PrototypeDisplay Component', () => {
   it('renders null if no promptPackage is provided', () => {
     const { container } = render(
       <QueryClientProvider client={queryClient}>
-        <PrototypeDisplay promptPackage={null} />
+        <AuthProvider>
+          <PrototypeDisplay promptPackage={null} />
+        </AuthProvider>
       </QueryClientProvider>
     );
     expect(container.firstChild).toBeNull();
@@ -134,7 +189,9 @@ describe('PrototypeDisplay Component', () => {
   it('renders all sections with correct data from promptPackage', () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />
+        <AuthProvider>
+          <PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />
+        </AuthProvider>
       </QueryClientProvider>
     );
 
@@ -176,7 +233,9 @@ describe('PrototypeDisplay Component', () => {
   it('renders placeholder "Regenerate" buttons for sections', () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />
+        <AuthProvider>
+          <PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />
+        </AuthProvider>
       </QueryClientProvider>
     );
     // screen.debug(undefined, 100000); // Keep debug for now, will remove once stable
@@ -197,7 +256,9 @@ describe('PrototypeDisplay Component', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <PrototypeDisplay promptPackage={mockPromptPackage} />
+        <AuthProvider>
+          <PrototypeDisplay promptPackage={mockPromptPackage} />
+        </AuthProvider>
       </QueryClientProvider>
     );
 
@@ -221,7 +282,9 @@ describe('PrototypeDisplay Component', () => {
     const pkgWithoutOriginalImage = { ...mockPromptPackage, originalImageURL: undefined };
     render(
       <QueryClientProvider client={queryClient}>
-        <PrototypeDisplay promptPackage={pkgWithoutOriginalImage} />
+        <AuthProvider>
+          <PrototypeDisplay promptPackage={pkgWithoutOriginalImage} />
+        </AuthProvider>
       </QueryClientProvider>
     );
     expect(screen.queryByAltText('User uploaded reference')).not.toBeInTheDocument();

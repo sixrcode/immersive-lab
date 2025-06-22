@@ -6,6 +6,17 @@ import { GET } from '../route'; // Assuming GET is exported from the route file
 
 // --- Mocks Start ---
 
+// Define the actual Jest mock functions that tests will interact with for Firebase
+// It's important to define these BEFORE they are used in jest.mock('@/lib/firebase/admin', ...)
+const mockVerifyIdToken = jest.fn();
+const mockGet = jest.fn().mockResolvedValue({ empty: true, docs: [] }); // Default mock for get
+const mockWhere = jest.fn(() => ({ get: mockGet }));
+const mockCollection = jest.fn((collectionPath: string) => ({ // Updated mockCollection
+  where: mockWhere,
+  // Add other collection methods if needed by tests, e.g., .doc(), .add()
+}));
+
+
 // Mock next/server's NextResponse
 jest.mock('next/server', () => {
   return {
@@ -13,28 +24,12 @@ jest.mock('next/server', () => {
       json: jest.fn((body, init) => ({
         json: () => Promise.resolve(body), // Simplified mock response object
         status: init?.status || 200,
-        headers: new Headers(init?.headers) // Removed trailing comma
+        headers: new Headers(init?.headers)
 
-      })) // Removed trailing comma from this line
+      }))
     },
   };
 });
-
-// Define the actual Jest mock functions that tests will interact with for Firebase
-const mockVerifyIdToken = jest.fn();
-const mockResolvedValueForGet = { // Defined object separately
-  empty: true,
-  docs: [],
-};
-const mockGet = jest.fn().mockResolvedValue(mockResolvedValueForGet); // Default mock for get
-const mockWhere = jest.fn(() => ({
-  get: mockGet,
-}));
-// Updated mockCollection to accept collectionPath argument
-const mockCollection = jest.fn((collectionPath: string) => ({
-  where: mockWhere,
-  // Add other collection methods if needed by tests, e.g., .doc(), .add()
-}));
 
 jest.mock('@/lib/firebase/admin', () => {
   return {
@@ -42,14 +37,11 @@ jest.mock('@/lib/firebase/admin', () => {
       name: 'mockedApp',
       options: {},
       auth: () => ({ // Mock the auth method on firebaseAdminApp
-        verifyIdToken: mockVerifyIdToken,
+        verifyIdToken: mockVerifyIdToken, // Uses the pre-defined mockVerifyIdToken
       })
     },
-    // auth is typically accessed via firebaseAdminApp.auth(), so we might not need a separate top-level auth mock
-    // If it IS accessed directly as import { auth } from ..., then the below is needed.
-    // auth: { verifyIdToken: mockVerifyIdToken },
     db: {
-      collection: mockCollection // collection itself is a function
+      collection: mockCollection // Uses the pre-defined mockCollection
     }
   };
 });

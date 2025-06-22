@@ -16,6 +16,27 @@ describe('genkitService', () => {
 
     beforeEach(() => {
       mockOnProgress.mockClear();
+      global.fetch = jest.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            id: 'sb_mock123', // Mocked storyboard ID
+            sceneDescription: 'Mock scene',
+            numPanels: 1,
+            stylePreset: 'default',
+            panels: [{
+              id: 'panel_mock123_0',
+              imageURL: 'mock://uploaded/storyboards/sb_mock123/panels/panel_mock123_0/image.png',
+              previewURL: 'mock://uploaded/storyboards/sb_mock123/panels/panel_mock123_0/preview.webp',
+              alt: 'Panel 1: Mock panel',
+              caption: 'Panel 1: Your action or dialogue here.',
+              generatedAt: new Date().toISOString(),
+            }],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+        } as Response)
+      );
       // Clear mocks for firebaseService functions
       require('../persistence/firebaseService').uploadImageToStorage.mockClear();
       require('../persistence/firebaseService').saveStoryboardToFirestore.mockClear();
