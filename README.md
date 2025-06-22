@@ -120,7 +120,7 @@ Follow these instructions to get a copy of the project up and running on your lo
     ```
 2.  Navigate to the project directory:
     ```bash
-    cd project-directory-name
+    cd immersive-lab
     ```
 3.  Install the dependencies:
     ```bash
@@ -370,12 +370,12 @@ These services are responsible for the core AI-driven functionalities of the pla
     *   The resulting URL should be set as the `NEXT_PUBLIC_AI_MICROSERVICE_URL` environment variable in the Next.js application, which is used for all features relying on this microservice, including prompt-to-prototype.
 *   **Note:** This service centralizes common AI tasks and model interactions, providing a consistent interface for the frontend. For more details, see the [Centralized AI Microservice README](./ai-microservice/README.md).
 
-#### AI Script Analyzer (`functions/`)
+#### AI Script Analyzer
 
 *   **Purpose:** Analyzes textual scripts to provide users with insights on narrative elements such as pacing, character development, and potential plot inconsistencies.
-*   **Key Technologies:** Firebase Function (core logic invoked by Centralized AI Microservice)
-*   **Location:** The core logic resides in `functions/src_copy/ai/flows/ai-script-analyzer.ts`, with the endpoint defined in `functions/index.js`. It is invoked via the Centralized AI Microservice's `/analyzeScript` endpoint.
-*   **Note:** This microservice provides specialized AI analysis for scriptwriting, integrating with the Centralized AI Microservice for API exposure. For an overview of functions in this directory, see the [Firebase Functions README](./functions/README.md).
+*   **Key Technologies:** The core logic is implemented as a Genkit flow within the Centralized AI Microservice.
+*   **Location:** The primary logic resides in `ai-microservice/src/flows/ai-script-analyzer.ts`. This flow is exposed via the `/analyzeScript` endpoint of the Centralized AI Microservice (`aiApi`).
+*   **Note:** This functionality is part of the Centralized AI Microservice, which orchestrates AI-related tasks. The `functions/` directory may contain other general-purpose Firebase Functions, but the AI Script Analyzer specific logic and its primary endpoint are managed via the `ai-microservice`. For an overview of any other functions, see the [Firebase Functions README](./functions/README.md).
 
 ### Collaboration & Community
 
@@ -401,8 +401,8 @@ These services provide tools and functionalities to aid in the planning, organiz
 
 #### Production Board Service
 *   **Purpose:** Manages and visualizes the production workflow, from pre-production stages (like concept development and scriptwriting) through to final output. Helps track project status and tasks.
-*   **Key Technologies:** (To be detailed - likely Next.js components interacting with Firestore)
-*   **Location:** (To be detailed - likely part of the core Next.js application logic or a dedicated microservice if planned for separation)
+*   **Key Technologies:** Next.js components interacting with Firestore.
+*   **Location:** The frontend components and primary logic are part of the core Next.js application, located under `src/app/production-board/`.
 *   **Note:** This service is integral to the Production-Gate Board feature, providing a Kanban-style or similar interface for project management.
 
 #### Storyboard Studio
@@ -591,8 +591,8 @@ This section outlines the general phased development approach for the ISL.SIXR.t
         *   Integrate additional AI capabilities as platform features expand (e.g., advanced script analysis, refined storyboard image generation with inputs from Prompt-to-Prototype like shot lists and styles).
         *   Enable streaming responses for features like storyboard generation.
     *   *Phase 3 (Future):* Support for more complex, multi-step AI workflows, potential integration with MLOps pipelines for model management and deployment, and enhanced security measures for sensitive AI operations.
-*   **AI Script Analyzer (`functions/` - logic now primarily within `ai-microservice`)**
-    *   *Phase 1 (Completed via `ai-microservice`):* Basic script parsing, scene detection, and initial analysis (e.g., tone, pacing estimates, keyword extraction).
+*   **AI Script Analyzer (logic within `ai-microservice`)**
+    *   *Phase 1 (Completed via `ai-microservice`):* Basic script parsing, scene detection, and initial analysis (e.g., tone, pacing estimates, keyword extraction). The core logic is in `ai-microservice/src/flows/ai-script-analyzer.ts`.
     *   *Phase 2:* More nuanced analysis (e.g., character dialogue patterns, plot structure visualization), and providing actionable suggestions for improvement.
     *   *Phase 3:* Deeper understanding of cinematic conventions and genre-specific feedback, potential integration with other writing or pre-production tools.
 *   **Collaboration Service (`collaboration-service/`)**
@@ -707,7 +707,7 @@ By using the AI features on ISL.SIXR.tv, you agree to adhere to these guidelines
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details (if available). It is recommended to add a `LICENSE` file to the project root.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details. It is recommended to add a `LICENSE` file to the project root.
 
 ## Prompt-to-Prototype Studio
 
