@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { PrototypeDisplay } from '../prototype-display';
 import type { PromptPackage } from '@/lib/types';
+import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
 
 // Extend expect with jest-axe matchers (globally done in jest.setup.js, but can be here for clarity too)
 expect.extend(toHaveNoViolations);
@@ -102,7 +103,11 @@ const queryClient = new QueryClient();
 
 describe('PrototypeDisplay Accessibility', () => {
   it('should have no axe violations on initial render', async () => {
-    const { container } = render(<QueryClientProvider client={queryClient}><PrototypeDisplay promptPackage={mockPromptPackage} /></QueryClientProvider>);
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider><PrototypeDisplay promptPackage={mockPromptPackage} /></AuthProvider>
+      </QueryClientProvider>
+    );
     const results = await axe(container);
 
     expect(results).toHaveNoViolations();
@@ -110,7 +115,10 @@ describe('PrototypeDisplay Accessibility', () => {
 
   it('should have no axe violations when originalImageURL is not provided', async () => {
     const pkgWithoutOriginalImage = { ...mockPromptPackage, originalImageURL: undefined };
-    const { container } = render(<PrototypeDisplay promptPackage={pkgWithoutOriginalImage} />);
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider><PrototypeDisplay promptPackage={pkgWithoutOriginalImage} /></AuthProvider>
+      </QueryClientProvider>);
     const results = await axe(container);
 
     expect(results).toHaveNoViolations();
@@ -118,7 +126,10 @@ describe('PrototypeDisplay Accessibility', () => {
 
   it('should have no axe violations when onRegenerate is provided', async () => {
     const mockOnRegenerate = jest.fn();
-    const { container } = render(<PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} />);
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider><PrototypeDisplay promptPackage={mockPromptPackage} onRegenerate={mockOnRegenerate} /></AuthProvider>
+      </QueryClientProvider>);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
 

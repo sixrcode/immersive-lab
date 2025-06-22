@@ -19,7 +19,7 @@ module.exports = {
   testPathIgnorePatterns: ['<rootDir>/e2e/'],
   clearMocks: true,
   transformIgnorePatterns: [
-    '/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson)/)'
+    '/node_modules/(?!(lucide-react|d3-\\\\w*|unist-\\\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson|chai|supertest)/)'
   ],
   collectCoverage: true,
   coverageDirectory: "coverage",

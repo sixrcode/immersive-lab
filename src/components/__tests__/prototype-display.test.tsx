@@ -177,11 +177,9 @@ describe('PrototypeDisplay Component', () => {
 
   it('renders null if no promptPackage is provided', () => {
     const { container } = render(
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <PrototypeDisplay promptPackage={null} />
-        </AuthProvider>
-      </QueryClientProvider>
+ <AuthProvider>
+ <QueryClientProvider client={queryClient}><PrototypeDisplay promptPackage={null} /></QueryClientProvider>
+ </AuthProvider>
     );
     expect(container.firstChild).toBeNull();
   });
