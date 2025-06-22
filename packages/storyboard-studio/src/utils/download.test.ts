@@ -73,11 +73,11 @@ describe('download utility', () => {
       expect(clickSpy).toHaveBeenCalled();
       expect(removeChildSpy).toHaveBeenCalled();
       expect(createObjectURLSpy).toHaveBeenCalledWith(expect.any(Blob));
-      expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:http://localhost/mock-url');
+      expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:http://localhost/mock-url-spied');
 
       const link = createElementSpy.mock.results[0].value;
       expect(link.download).toBe('test-file.json');
-      expect(link.href).toBe('blob:http://localhost/mock-url');
+      expect(link.href).toBe('blob:http://localhost/mock-url-spied');
 
       const blob = createObjectURLSpy.mock.calls[0][0] as Blob;
       expect(blob.type).toBe('application/json');

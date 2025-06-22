@@ -100,8 +100,8 @@ describe('generateProductionChecklistFlow', () => {
 
     // Check if total tasks match the mock's potential output
     // (2 casting + 1 location + 1 prop + 1 wardrobe + 1 makeup = 6)
-    expect(output.length).toEqual(5); // Corrected based on the mock's current logic. If Mark's beard is prop, then 5. If makeup, then 5.
-                                      // The mock currently creates 5 distinct tasks with the given input.
+    expect(output.length).toEqual(6); // Corrected based on the mock's current logic.
+                                      // The mock currently creates 6 distinct tasks with the given input.
   });
 
   it('should return an empty array if script analysis is empty or missing', async () => {

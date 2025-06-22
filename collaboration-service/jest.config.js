@@ -23,5 +23,5 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx|js|jsx)$': 'ts-jest', // Ensure js/jsx are also handled if any exist
   },
-  transformIgnorePatterns: ['/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson)/)'],
+  transformIgnorePatterns: ['/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson|mongodb)/)'],
 };

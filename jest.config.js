@@ -1,5 +1,5 @@
 module.exports = {
-  preset: 'ts-jest',
+  preset: './node_modules/ts-jest', // Explicitly point to ts-jest
   testEnvironment: 'jest-environment-jsdom',
   globalSetup: '<rootDir>/jest.globalSetup.js',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
@@ -16,7 +16,7 @@ module.exports = {
     }],
   },
   // Automatically clear mock calls and instances between every test
-  testPathIgnorePatterns: ['<rootDir>/e2/'],
+  testPathIgnorePatterns: ['<rootDir>/e2e/'],
   clearMocks: true,
   transformIgnorePatterns: [
     '/node_modules/(?!(lucide-react|d3-\\w*|unist-\\w*|jose|jwks-rsa|firebase-admin|@firebase|mongoose|bson)/)'

@@ -6,7 +6,7 @@ import { Tutorial } from 'packages/types/src/tutorial.types';
 // Mock NextRequest if necessary, or use a simplified request object for testing
 const createMockRequest = (queryParams: Record<string, string>): NextRequest => {
   const url = new URL(`http://localhost/api/tutorials?${new URLSearchParams(queryParams).toString()}`);
-  return new NextRequest(url);
+  return new NextRequest(url.toString());
 };
 
 describe('Tutorials API Endpoint (GET)', () => {
