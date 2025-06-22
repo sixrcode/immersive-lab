@@ -1,6 +1,7 @@
 // Firebase Admin SDK initialization (used for Firestore, Auth, etc.)
 const admin = require("firebase-admin");
 const axios = require('axios'); // Import axios
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Firebase Functions v2 (modern HTTP functions + logging)
 const { onRequest } = require("firebase-functions/v2/https");
@@ -25,7 +26,7 @@ const notifyCollaborationService = async (projectId, updatedBySocketId) => {
   }
   try {
     const endpoint = `${collaborationServiceUrl}/api/internal/broadcast-board-change`;
-    const params = { projectId };
+    let params = { projectId };
     if (updatedBySocketId) {
       params.updatedBySocketId = updatedBySocketId;
     }
@@ -120,7 +121,7 @@ app.use(authenticate);
 // --- Production Board API Endpoints ---
 
 // Columns Endpoints
-app.get('/production-board/columns', async (req, res) => {
+app.get('/production-board/columns', async (req, res, next) => {
   try {
     const columnsSnapshot = await db.collection('productionBoardColumns')
                                     .orderBy('createdAt', 'asc')
@@ -561,7 +562,7 @@ app.patch('/production-board/cards/:cardId/move', async (req, res, next) => {
             sourceColumnData = sourceColumnDoc.data();
             sourceCardOrder = [...(sourceColumnData.cardOrder || [])];
           } else {
-            functions.logger.warn(`Source column ${sourceColumnId} not found during card move. Card's columnId might be stale.`);
+            logger.warn(`Source column ${sourceColumnId} not found during card move. Card's columnId might be stale.`);
             // Proceed with removing from an empty array if source column is gone for some reason
           }
         } else { // Moving within the same column
@@ -686,6 +687,18 @@ app.use((err, req, res, next) => {
  * Example route: `/api/production-board/columns`
  */
 exports.api = onRequest(app);
+
+// The webApp function that firebase.json rewrites to
+exports.webApp = onRequest({timeoutSeconds: 300}, createProxyMiddleware({
+  target: 'http://127.0.0.1:9002', // Target the Next.js dev server
+  changeOrigin: true,
+  ws: true, // Proxy websockets for HMR
+  logLevel: 'debug',
+  onError: (err, req, res) => {
+    logger.error("Proxy Error:", { error: err.message });
+  }
+}));
+
 
 /**
  * Conceptual Firestore Collections:
