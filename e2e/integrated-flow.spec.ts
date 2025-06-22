@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.describe('Integrated Prompt-to-Prototype to Storyboard Studio Flow', () => {
-  test('should generate a prototype and use its output to generate a storyboard', async ({ page }) => {
+  test('should generate a prototype and use its output to generate a storyboard', async ({ page }: { page: Page }) => {
     // Part 1: Prompt-to-Prototype
     await page.goto('/prompt-to-prototype');
 

@@ -20,7 +20,8 @@ router.post('/broadcast-board-change', (req: Request, res: Response) => {
 
   if (!projectId || typeof projectId !== 'string') {
     logger.warn('Internal broadcast-board-change: Missing or invalid projectId query parameter.', { query: req.query });
-    return res.status(400).json({ success: false, message: 'projectId query parameter is required and must be a string.' });
+    res.status(400).json({ success: false, message: 'projectId query parameter is required and must be a string.' });
+    return;
   }
 
   try {

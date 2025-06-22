@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../firebaseAdmin';           // Firebase Admin wrapper (initialized elsewhere)
-import * as admin from 'firebase-admin';           // For DecodedIdToken typing
+import admin from '../firebaseAdmin';              // Firebase Admin wrapper (initialized elsewhere)
+// import * as admin from 'firebase-admin';        // For DecodedIdToken typing - admin is now the default import
 import logger from '../logger';                    // Centralised (Winston/Pino) logger
 
 /**
@@ -33,9 +33,10 @@ export const authenticate = async (
       path: req.path,
       ip: req.ip,
     });
-    return res
+    res
       .status(401)
       .json({ message: 'Unauthorized: No Bearer token provided.' });
+    return;
   }
 
   // ---------------------------------------------------------------------------
@@ -44,16 +45,17 @@ export const authenticate = async (
   const idToken = authorizationHeader.split('Bearer ')[1];
   if (!idToken) {
     logger.warn('Bearer token is empty', { path: req.path, ip: req.ip });
-    return res
+    res
       .status(401)
       .json({ message: 'Unauthorized: Bearer token is empty.' });
+    return;
   }
 
   // ---------------------------------------------------------------------------
   // 3) Verify the token with Firebase Admin
   // ---------------------------------------------------------------------------
   try {
-    const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken;
 
     logger.info('User authenticated', {
@@ -71,13 +73,15 @@ export const authenticate = async (
     });
 
     if (error.code === 'auth/id-token-expired') {
-      return res
+      res
         .status(401)
         .json({ message: 'Unauthorized: Token expired.', errorCode: error.code });
+      return;
     }
 
-    return res
+    res
       .status(403)
       .json({ message: 'Forbidden: Invalid or expired token.', errorCode: error.code });
+    return;
   }
 };

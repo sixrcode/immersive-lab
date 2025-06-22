@@ -1,6 +1,6 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import { auth } from '../firebaseAdmin'; // Import Firebase Admin auth
-import * as admin from 'firebase-admin'; // For DecodedIdToken type
+import admin from '../firebaseAdmin';      // Import Firebase Admin
+// import * as admin from 'firebase-admin'; // For DecodedIdToken type - admin is now the default import
 import logger from '../logger'; // Import logger
 
 // Extend Socket data with an optional user property
@@ -23,7 +23,7 @@ export function initializeSocket(io: SocketIOServer) {
     }
 
     try {
-      const decodedToken = await auth.verifyIdToken(token);
+      const decodedToken = await admin.auth().verifyIdToken(token);
       socket.data.user = decodedToken;
       logger.info(`Socket ${socket.id} authenticated for user ${decodedToken.uid}. Client connected.`, { socketId: socket.id, userId: decodedToken.uid });
 
@@ -66,7 +66,8 @@ export function initializeSocket(io: SocketIOServer) {
       });
 
     } catch (error) {
-      logger.error(`Socket ${socket.id} authentication failed: ${error.message}`, { error, socketId: socket.id });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Socket ${socket.id} authentication failed: ${errorMessage}`, { error, socketId: socket.id });
       socket.disconnect(true);
       return;
     }

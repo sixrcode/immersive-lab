@@ -1,7 +1,14 @@
-import ClientIO, { Socket as SocketIOClientSocket } from 'socket.io-client'; // Aliased Socket type
+import ClientIO, { type Socket as SocketIOClientSocket } from 'socket.io-client'; // Aliased Socket type, imported as type
+// import type { DisconnectReason } from 'socket.io-client'; // DisconnectReason not found, using string
 import { Server as SocketIOServer, Socket as ServerSocket } from 'socket.io';
 import { server as httpServer, io as serverIOInstance, startServer, app } from '../../index'; // Import your HTTP server and Socket.IO instance
 import http from 'http';
+
+interface DocumentUpdatedData {
+  documentId: string;
+  content: string;
+  updatedBy?: string; // Assuming updatedBy might be sent
+}
 
 describe('Socket.IO Service Tests', () => {
   let clientSocket: SocketIOClientSocket; // Use aliased type
@@ -61,7 +68,7 @@ describe('Socket.IO Service Tests', () => {
     // Connect a new client before each test
     clientSocket = ClientIO(socketURL, { reconnectionAttempts: 3, timeout: 5000 }); // Use ClientIO for value
     clientSocket.on('connect', () => done());
-    clientSocket.on('connect_error', (err) => {
+    clientSocket.on('connect_error', (err: Error) => {
         console.error('Client connection error in beforeEach:', err.message);
         done(err); // Fail the test if connection error occurs
     });
@@ -83,7 +90,7 @@ describe('Socket.IO Service Tests', () => {
   });
 
   it('should handle client disconnection', (done) => {
-    clientSocket.on('disconnect', (reason) => {
+    clientSocket.on('disconnect', (reason: string) => { // Using string for reason
       // console.log('Client disconnected:', reason);
       expect(reason).toBeDefined(); // Or specific reasons if applicable
       done();
@@ -99,7 +106,7 @@ describe('Socket.IO Service Tests', () => {
     // For this example, we'll use a custom event 'joinedProject' from socketService.ts
     let timeoutId: NodeJS.Timeout | null = null;
 
-    clientSocket.on('joinedProject', (joinedRoomId) => {
+    clientSocket.on('joinedProject', (joinedRoomId: string) => {
       if (timeoutId) clearTimeout(timeoutId);
       expect(joinedRoomId).toBe(projectId);
       done();
@@ -126,11 +133,11 @@ describe('Socket.IO Service Tests', () => {
 
       // Client 1 (clientSocket) joins the project room first
       clientSocket.emit('joinProject', projectId);
-      clientSocket.on('joinedProject', (joinedRoomId1) => {
+      clientSocket.on('joinedProject', (joinedRoomId1: string) => {
         if (joinedRoomId1 !== projectId) return done(new Error('Client 1 failed to join correct room'));
 
         // Client 1 is now in the room and sets up its listener
-        clientSocket.on('documentUpdated', (data) => {
+        clientSocket.on('documentUpdated', (data: DocumentUpdatedData) => {
           expect(data.documentId).toBe(documentId);
           expect(data.content).toBe(eventData.newContent);
           // Ensure it's not the emitter itself (anotherClientSocket)
@@ -147,7 +154,7 @@ describe('Socket.IO Service Tests', () => {
         anotherClientSocket.emit('documentChange', eventData);
       });
     });
-    anotherClientSocket.on('connect_error', (err) => done(err)); // Handle connection error for client 2
+    anotherClientSocket.on('connect_error', (err: Error) => done(err)); // Handle connection error for client 2
 
     // Add a timeout for the test itself to prevent hanging indefinitely
     // This is redundant if Jest's global testTimeout is sufficient, but can be useful for specific async tests.

@@ -12,14 +12,14 @@
 import {ai} from '../genkit';
 import {z} from 'genkit';
 
-const AnalyzeScriptInputSchema = z.object({
+export const AnalyzeScriptInputSchema = z.object({
   script: z
     .string()
     .describe('The script to be analyzed, including dialogue and scene descriptions.'),
 });
 export type AnalyzeScriptInput = z.infer<typeof AnalyzeScriptInputSchema>;
 
-const AnalyzeScriptOutputSchema = z.object({
+export const AnalyzeScriptOutputSchema = z.object({
   analysis: z
     .string()
     .describe(

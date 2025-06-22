@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.describe('Storyboard Studio Flow', () => {
-  test('should allow user to input scene descriptions and generate a storyboard', async ({ page }) => {
+  test('should allow users to input scene details and generate a storyboard', async ({ page }: { page: Page }) => {
     // 1. Navigate to the /storyboard-studio page
     await page.goto('/storyboard-studio');
 

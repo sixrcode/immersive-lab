@@ -1,6 +1,6 @@
 // import { getIO } from './socketService'; // If you need to emit socket events from here
 import { IDocument, DocumentModel } from '../models/Document'; // Changed import
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose'; // Import Schema
 import { getModels } from '../models'; // Added getModels import
 import logger from '../logger'; // Import logger
 
@@ -8,7 +8,7 @@ import logger from '../logger'; // Import logger
  * Service for handling document-related business logic.
  */
 export const DocumentService = {
-  async getDocumentById(documentId: string | mongoose.Types.ObjectId): Promise<IDocument | null> {
+  async getDocumentById(documentId: string | Schema.Types.ObjectId): Promise<IDocument | null> {
     try {
       const document = await getModels().Document.findById(documentId)
         .populate('createdBy', 'username email')
@@ -20,7 +20,7 @@ export const DocumentService = {
     }
   },
 
-  async getDocumentsByProjectId(projectId: string | mongoose.Types.ObjectId): Promise<IDocument[]> {
+  async getDocumentsByProjectId(projectId: string | Schema.Types.ObjectId): Promise<IDocument[]> {
     try {
       const documents = await getModels().Document.find({ projectId })
         .populate('createdBy', 'username email')
@@ -35,8 +35,8 @@ export const DocumentService = {
 
   async createDocument(
     title: string,
-    projectId: string | mongoose.Types.ObjectId,
-    userId: string | mongoose.Types.ObjectId,
+    projectId: string | Schema.Types.ObjectId,
+    userId: string | Schema.Types.ObjectId,
     content: string = ''
   ): Promise<IDocument> {
     try {
@@ -44,8 +44,8 @@ export const DocumentService = {
         title,
         projectId,
         content,
-        createdBy: userId,
-        lastModifiedBy: userId,
+        createdBy: userId, // Mongoose handles string to ObjectId conversion if userId is string
+        lastModifiedBy: userId, // Mongoose handles string to ObjectId conversion if userId is string
       });
       await document.save();
       // Example: Emit an event after creating a document (if using socketService directly)
@@ -58,9 +58,9 @@ export const DocumentService = {
   },
 
   async updateDocumentContent(
-    documentId: string | mongoose.Types.ObjectId,
+    documentId: string | Schema.Types.ObjectId,
     content: string,
-    userId: string | mongoose.Types.ObjectId
+    userId: string | Schema.Types.ObjectId
   ): Promise<IDocument | null> {
     try {
       const document = await getModels().Document.findById(documentId);
@@ -68,7 +68,11 @@ export const DocumentService = {
         return null; // Or throw an error
       }
       document.content = content;
-      document.lastModifiedBy = userId as mongoose.Types.ObjectId; // Cast needed if userId is string
+      if (typeof userId === 'string') {
+        document.lastModifiedBy = new Schema.Types.ObjectId(userId);
+      } else {
+        document.lastModifiedBy = userId;
+      }
       await document.save();
 
       // Example: Emit an event after updating a document
@@ -84,7 +88,7 @@ export const DocumentService = {
     }
   },
 
-  async deleteDocument(documentId: string | mongoose.Types.ObjectId): Promise<IDocument | null> {
+  async deleteDocument(documentId: string | Schema.Types.ObjectId): Promise<IDocument | null> {
     try {
       const document = await getModels().Document.findByIdAndDelete(documentId);
       if (document) {
