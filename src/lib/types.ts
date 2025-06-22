@@ -37,8 +37,22 @@ export interface Shot {
   framingNotes: string; // e.g., "Close up on character's eyes"
 }
 
-// Import and re-export PromptPackage
-export type { PromptPackage } from './models/prompt-package';
+export interface PromptPackage {
+  id: string;
+  userId: string;
+  prompt: string;
+  stylePreset?: string;
+  originalImageURL?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  loglines: Logline[];
+  moodBoard: MoodBoard;
+  shotList: Shot[];
+  animaticDescription: string;
+  pitchSummary: string;
+  version: number;
+  collaboratorIds?: string[];
+}
 
 export interface KanbanColumnType {
   id: string;

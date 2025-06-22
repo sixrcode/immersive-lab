@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { mockTutorials } from '@/lib/mock-tutorials';
-import { Tutorial } from 'packages/types/src/tutorial.types';
+import { Tutorial } from '../../../../packages/types/src/tutorial.types';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
