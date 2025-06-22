@@ -19,9 +19,6 @@ const nextConfig = {
     ];
   },
   /* config options here */
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     remotePatterns: [
       {
